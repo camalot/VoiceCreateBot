@@ -2,7 +2,7 @@
 
 Dedicated bot for creating temp voice channels with commands for changing permissions.
 
-This bot runs on discord.py rw If you need help with the code use the discord.py server :  [https://discord.gg/r3sSKJJ](https://discord.gg/r3sSKJJ)
+This bot runs on [discord.py](https://discord.gg/r3sSKJJ) rw If you need help with the code use the [discord.py server](https://discord.gg/r3sSKJJ)
 
 As there is a very high demand for me to release the source code for my bot I've finally decided to release it.
 
@@ -15,23 +15,35 @@ If you'd like to support the bot you could pay for my coffee and the servers usi
 
 # How to setup the bot:
 
-1.Download python using the following link:
+1. Download python using the following link:
+	- https://www.python.org/downloads/release/python-373/
+1. Open command prompt and paste the following:
+	```shell
+	pip3 install discord.py
+	pip3 install validators
+	```  
 
-	https://www.python.org/downloads/release/python-373/
+1. Download the bot from github
+	- clone the repo using `git clone` or download the repo zip file.
+1. Set environment variable `DISCORD_BOT_TOKEN` to contain your Discord Bot Token.
+	- Go to the [Discord Developer site](https://discordapp.com/developers/applications/me) and create an application. You will need the Bot Token, and the application Client Id.
+1. Run:
+	```shell
+	python voicecreate.py
+	```
 
-2.Open command prompt and paste the following:
+1. Invite Bot to your discord using the following url:  
+`https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&permissions=285213712&scope=bot`
 
-	  pip3 install discord.py
-  
-	  pip3 install validators
-  
-3.Download the bot from github
+# Run the bot in Docker
 
-4.Open **voicecreate.py** in a text editor and replace **'Enter Discord Token here'** with your bots token
-
-5.Run the bot
-
-
-# Invite Bot to your discord
-
-https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&permissions=285213712&scope=bot
+```shell
+docker run \
+	--rm -d \
+	--restart=unless-stopped \
+	-e DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN} \
+	-e VCB_DB_PATH=/data \
+	-v /path/to/persistent/data:/data \
+	--name voice_create \
+	camalot/voice-create-bot-docker:latest
+```
