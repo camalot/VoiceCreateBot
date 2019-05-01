@@ -23,7 +23,7 @@ class voice(commands.Cog):
         c.execute("CREATE TABLE IF NOT EXISTS `guild` ( `guildID` INTEGER, `ownerID` INTEGER, `voiceChannelID` INTEGER, `voiceCategoryID` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `guildSettings` ( `guildID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `userSettings` ( `userID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
-        c.execute("CREATE TABLE  IF NOT EXISTS `voiceChannel` ( `userID` INTEGER, `voiceID` INTEGER )")
+        c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `userID` INTEGER, `voiceID` INTEGER )")
         conn.commit()
         c.close()
         conn.close()
