@@ -81,12 +81,12 @@ class voice(commands.Cog):
                     categoryID = voice[0]
                     id = member.id
                     category = self.bot.get_channel(categoryID)
-                    channel2 = await member.guild.create_voice_channel(name,category=category)
+                    channel2 = await member.guild.create_voice_channel(name, category=category)
                     channelID = channel2.id
                     await member.move_to(channel2)
-                    await channel2.set_permissions(self.bot.user, connect=True,read_messages=True)
-                    await channel2.edit(name= name, user_limit = limit)
-                    c.execute("INSERT INTO voiceChannel VALUES (?, ?)", (id,channelID))
+                    await channel2.set_permissions(self.bot.user, connect=True, read_messages=True)
+                    await channel2.edit(name=name, user_limit=limit)
+                    c.execute("INSERT INTO voiceChannel VALUES (?, ?)", (id, channelID))
                     conn.commit()
                     def check(a,b,c):
                         return len(channel2.members) == 0
@@ -123,17 +123,17 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
-        id = ctx.author.id
         print(f"User id triggering setup: {ctx.author.id}")
-        print(ctx.author)
+        print(f"Owner id: {ctx.guild.owner.id}")
         print(self.admin_ids)
+        print(ctx.author.id in self.admin_ids)
         if ctx.author.id == ctx.guild.owner.id or ctx.author.id in self.admin_ids:
             def check(m):
                 return m.author.id == ctx.author.id
             await ctx.channel.send("**You have 60 seconds to answer each question!**")
             await ctx.channel.send(f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**")
             try:
-                category = await self.bot.wait_for('message', check=check, timeout = 60.0)
+                category = await self.bot.wait_for('message', check=check, timeout=60.0)
             except asyncio.TimeoutError:
                 await ctx.channel.send('Took too long to answer!')
             else:
