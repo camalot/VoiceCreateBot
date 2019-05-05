@@ -116,7 +116,7 @@ class voice(commands.Cog):
     async def voice(self, ctx):
         pass
 
-    @voice.command()
+    @voice.command(pass_context=True)
     async def setup(self, ctx):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -155,7 +155,7 @@ class voice(commands.Cog):
         conn.commit()
         conn.close()
 
-    @commands.command()
+    @commands.command(pass_context=True)
     async def setlimit(self, ctx, num):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
