@@ -79,7 +79,6 @@ class voice(commands.Cog):
                             name = setting[0]
                             limit = setting[1]
                     categoryID = voice[0]
-                    id = member.id
                     category = self.bot.get_channel(categoryID)
                     channel2 = await member.guild.create_voice_channel(name, category=category)
                     channelID = channel2.id
@@ -126,8 +125,8 @@ class voice(commands.Cog):
         print(f"User id triggering setup: {ctx.author.id}")
         print(f"Owner id: {ctx.guild.owner.id}")
         print(self.admin_ids)
-        print(ctx.author.id in self.admin_ids)
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.id in self.admin_ids:
+        print(str(ctx.author.id) in self.admin_ids)
+        if ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids:
             def check(m):
                 return m.author.id == ctx.author.id
             await ctx.channel.send("**You have 60 seconds to answer each question!**")
