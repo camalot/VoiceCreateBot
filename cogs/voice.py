@@ -102,7 +102,8 @@ class voice(commands.Cog):
     @commands.command()
     async def help(self, ctx):
         embed = discord.Embed(title="Help", description="",color=0x7289da)
-        embed.set_author(name="Voice Create",url="https://discordbots.org/bot/472911936951156740", icon_url="https://i.imgur.com/i7vvOo5.png")
+        embed.set_author(name="Voice Create", url="http://darthminos.tv",
+                         icon_url="https://i.imgur.com/i7vvOo5.png")
         embed.add_field(name=f'**Commands**', value=f'**Lock your channel by using the following command:**\n\n`.voice lock`\n\n------------\n\n'
                         f'**Unlock your channel by using the following command:**\n\n`.voice unlock`\n\n------------\n\n'
                         f'**Change your channel name by using the following command:**\n\n`.voice name <name>`\n\n**Example:** `.voice name EU 5kd+`\n\n------------\n\n'
@@ -125,6 +126,7 @@ class voice(commands.Cog):
         id = ctx.author.id
         print(f"User id triggering setup: {ctx.author.id}")
         print(ctx.author)
+        print(self.admin_ids)
         if ctx.author.id == ctx.guild.owner.id or ctx.author.id in self.admin_ids:
             def check(m):
                 return m.author.id == ctx.author.id
