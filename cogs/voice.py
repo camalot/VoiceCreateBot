@@ -122,7 +122,7 @@ class voice(commands.Cog):
         c = conn.cursor()
         guildID = ctx.guild.id
         id = ctx.author.id
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.server_permissions.administrator:
+        if ctx.author.id == ctx.guild.owner.id or ctx.message.author.server_permissions.administrator:
             def check(m):
                 return m.author.id == ctx.author.id
             await ctx.channel.send("**You have 60 seconds to answer each question!**")
@@ -160,7 +160,7 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         # removed the specific user permission and checked for admin status instead.
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.server_permissions.administrator:
+        if ctx.author.id == ctx.guild.owner.id or ctx.message.author.server_permissions.administrator:
             c.execute("SELECT * FROM guildSettings WHERE guildID = ?", (ctx.guild.id,))
             voice=c.fetchone()
             if voice is None:
