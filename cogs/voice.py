@@ -109,7 +109,7 @@ class voice(commands.Cog):
                         f'**Give users permission to join by using the following command:**\n\n`.voice permit @person`\n\n**Example:** `.voice permit @Sam#9452`\n\n------------\n\n'
                         f'**Claim ownership of channel once the owner has left:**\n\n`.voice claim`\n\n**Example:** `.voice claim`\n\n------------\n\n'
                         f'**Remove permission and the user from your channel using the following command:**\n\n`.voice reject @person`\n\n**Example:** `.voice reject @Sam#9452`\n\n', inline='false')
-        embed.set_footer(text='Bot developed by Sam#9452')
+        embed.set_footer(text='Bot developed by Sam#9452. Improved by DarthMinos#1161')
         await ctx.channel.send(embed=embed)
 
     @commands.group()
@@ -122,7 +122,7 @@ class voice(commands.Cog):
         c = conn.cursor()
         guildID = ctx.guild.id
         id = ctx.author.id
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.id == 151028268856770560:
+        if ctx.author.id == ctx.guild.owner.id or ctx.author.server_permissions.administrator:
             def check(m):
                 return m.author.id == ctx.author.id
             await ctx.channel.send("**You have 60 seconds to answer each question!**")
@@ -151,7 +151,7 @@ class voice(commands.Cog):
                     except:
                         await ctx.channel.send("You didn't enter the names properly.\nUse `.voice setup` again!")
         else:
-            await ctx.channel.send(f"{ctx.author.mention} only the owner of the server can setup the bot!")
+            await ctx.channel.send(f"{ctx.author.mention} only the owner or admins of the server can setup the bot!")
         conn.commit()
         conn.close()
 
@@ -159,7 +159,8 @@ class voice(commands.Cog):
     async def setlimit(self, ctx, num):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.id == 151028268856770560:
+        # removed the specific user permission and checked for admin status instead.
+        if ctx.author.id == ctx.guild.owner.id or ctx.author.server_permissions.administrator:
             c.execute("SELECT * FROM guildSettings WHERE guildID = ?", (ctx.guild.id,))
             voice=c.fetchone()
             if voice is None:
@@ -168,7 +169,7 @@ class voice(commands.Cog):
                 c.execute("UPDATE guildSettings SET channelLimit = ? WHERE guildID = ?", (num, ctx.guild.id))
             await ctx.send("You have changed the default channel limit for your server!")
         else:
-            await ctx.channel.send(f"{ctx.author.mention} only the owner of the server can setup the bot!")
+            await ctx.channel.send(f"{ctx.author.mention} only the owner or admins of the server can setup the bot!")
         conn.commit()
         conn.close()
 
