@@ -123,6 +123,8 @@ class voice(commands.Cog):
         c = conn.cursor()
         guildID = ctx.guild.id
         id = ctx.author.id
+        print(f"User id triggering setup: {ctx.author.id}")
+        print(ctx.author)
         if ctx.author.id == ctx.guild.owner.id or ctx.author.id in self.admin_ids:
             def check(m):
                 return m.author.id == ctx.author.id
