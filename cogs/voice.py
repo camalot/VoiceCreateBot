@@ -49,7 +49,7 @@ class voice(commands.Cog):
         else:
             voiceID = voice[0]
             try:
-                if after.channel.id == voiceID:
+                if after.channel is not None and after.channel.id == voiceID:
                     c.execute(
                         "SELECT * FROM voiceChannel WHERE userID = ?", (member.id,))
                     cooldown = c.fetchone()
