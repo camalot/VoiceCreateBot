@@ -27,6 +27,9 @@ If you'd like to support the bot you could pay for my coffee and the servers usi
 	- clone the repo using `git clone` or download the repo zip file.
 1. Set environment variable `DISCORD_BOT_TOKEN` to contain your Discord Bot Token.
 	- Go to the [Discord Developer site](https://discordapp.com/developers/applications/me) and create an application. You will need the Bot Token, and the application Client Id.
+1. Set environment variable `ADMIN_USERS` to be a list of space separated discord user ids.
+	- To get a user's id, in a text channel type `\@UserName#1111`. This is just like if you were going to mention a user, but then add a `\` in front. 
+	- This will return something like `<@1234567890>`. The `1234567890` is the id.
 1. Run:
 	```shell
 	python voicecreate.py
