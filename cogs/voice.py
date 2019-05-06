@@ -42,11 +42,12 @@ class voice(commands.Cog):
         c = conn.cursor()
         guildID = member.guild.id
         c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
-        voiceGroup = c.fetchone()
-        if voiceGroup is None:
+        voice = c.fetchone()
+        if voice is None:
+            print(f"No voice channel found for GuildID: {guildID}")
             pass
         else:
-            voiceID = voiceGroup[0]
+            voiceID = voice[0]
             try:
                 if after.channel.id == voiceID:
                     c.execute(
@@ -59,7 +60,7 @@ class voice(commands.Cog):
                         await asyncio.sleep(15)
                     c.execute(
                         "SELECT voiceCategoryID FROM guild WHERE guildID = ?", (guildID,))
-                    voiceGroup = c.fetchone()
+                    voice = c.fetchone()
                     c.execute(
                         "SELECT channelName, channelLimit FROM userSettings WHERE userID = ?", (member.id,))
                     setting = c.fetchone()
@@ -82,13 +83,18 @@ class voice(commands.Cog):
                         else:
                             name = setting[0]
                             limit = setting[1]
-                    categoryID = voiceGroup[0]
+                    categoryID = voice[0]
                     category = self.bot.get_channel(categoryID)
+                    print(f"Creating channel {name} in {category}")
                     channel2 = await member.guild.create_voice_channel(name, category=category)
                     channelID = channel2.id
+                    print(f"Moving {member} to {channel2}")
                     await member.move_to(channel2)
+                    print(f"Setting permissions on {channel2}")
                     await channel2.set_permissions(self.bot.user, connect=True, read_messages=True)
+                    print(f"Set user limit to {limit} on {channel2}")
                     await channel2.edit(name=name, user_limit=limit)
+                    print(f"Track voiceChannel {id},{channelID}")
                     c.execute(
                         "INSERT INTO voiceChannel VALUES (?, ?)", (id, channelID))
                     conn.commit()
@@ -96,6 +102,7 @@ class voice(commands.Cog):
                     def check(a, b, c):
                         return len(channel2.members) == 0
                     await self.bot.wait_for('voice_state_update', check=check)
+                    print(f"Deleting Channel {channel2} because everyone left")
                     await channel2.delete()
                     await asyncio.sleep(3)
                     c.execute('DELETE FROM voiceChannel WHERE userID=?', (id,))
@@ -109,7 +116,7 @@ class voice(commands.Cog):
     async def help(self, ctx):
         embed = discord.Embed(title="Help", description="", color=0x7289da)
         embed.set_author(name="Voice Create", url="http://darthminos.tv",
-                         icon_url="https://i.imgur.com/i7vvOo5.png")
+                         icon_url="https://i.imgur.com/EIqP24c.png")
         embed.add_field(name=f'**Commands**', value=f'**Lock your channel by using the following command:**\n\n`.voice lock`\n\n------------\n\n'
                         f'**Unlock your channel by using the following command:**\n\n`.voice unlock`\n\n------------\n\n'
                         f'**Change your channel name by using the following command:**\n\n`.voice name <name>`\n\n**Example:** `.voice name EU 5kd+`\n\n------------\n\n'
