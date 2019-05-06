@@ -329,7 +329,7 @@ class voice(commands.Cog):
             voiceGroup = c.fetchone()
             if voiceGroup is None:
                 c.execute(
-                    "INSERT INTO userSettings VALUES (?, ?, ?)", (id, name, 0))
+                    "INSERT INTO userSettings VALUES (?, ?, ?)", (aid, name, 0))
             else:
                 c.execute(
                     "UPDATE userSettings SET channelName = ? WHERE userID = ?", (name, aid))
