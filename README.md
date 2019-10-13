@@ -32,7 +32,7 @@ If you'd like to support the bot you could pay for my coffee and the servers usi
 	- This will return something like `<@1234567890>`. The `1234567890` is the id.
 1. Run:
 	```shell
-	python voicecreate.py
+	python main.py
 	```
 
 1. Invite Bot to your discord using the following url:  

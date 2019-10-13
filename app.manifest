@@ -1,0 +1,64 @@
+{
+	"name": "Voice Create",
+	"url": "http://darthminos.tv",
+	"version": "1.0.0-snapshot",
+	"icon": "https://i.imgur.com/EIqP24c.png",
+	"author": "DarthMinos#1161",
+	"commands": {
+		"unlock": {
+			"help": "**Unlock your channel by using the following command:**",
+			"usage": ".voice unlock",
+			"example": ".voice unlock",
+			"admin": false
+		},
+		"lock": {
+			"help": "**Lock your channel by using the following command:**",
+			"usage": ".voice lock",
+			"example": ".voice lock",
+			"admin": false
+		},
+		"name": {
+			"help": "**Change your channel name by using the following command:**",
+			"usage": ".voice name <name>",
+			"example": ".voice name EU 5kd+",
+			"admin": false
+		},
+		"limit": {
+			"help": "**Change your channel limit by using the following command:**",
+			"usage": ".voice limit <number>",
+			"example": ".voice limit 3",
+			"admin": false
+		},
+		"permit": {
+			"help": "**Give users permission to join by using the following command:**",
+			"usage": ".voice permit <@person>",
+			"example": ".voice permit @DarthMinos#1161",
+			"admin": false
+		},
+		"claim": {
+			"help": "**Claim ownership of channel once the owner has left:**",
+			"usage": ".voice claim",
+			"example": ".voice claim",
+			"admin": false
+		},
+		"reject": {
+			"help": "**Remove permission and the user from your channel using the following command:**",
+			"usage": ".voice reject <@person>",
+			"example": ".voice reject @DarthMinos#1161",
+			"admin": false
+		},
+
+		"settings": {
+			"help": "**Change the Group Settings for Channels (ADMIN):**",
+			"usage": ".voice settings \"<category name>\" <locked> <limit>",
+			"example": ".voice settings \"Voice Channels\" no 5",
+			"admin": true
+		},
+		"setup": {
+			"help": "**Setup a Create Voice Channel (ADMIN):**",
+			"usage": ".voice setup",
+			"example": ".voice setup",
+			"admin": true
+		}
+	}
+}

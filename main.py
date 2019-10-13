@@ -9,6 +9,7 @@ import traceback
 import sqlite3
 import sys
 import os
+from dotenv import load_dotenv, find_dotenv
 
 client = discord.Client()
 
@@ -19,6 +20,8 @@ DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
 initial_extensions = ['cogs.voice']
 
 if __name__ == '__main__':
+    load_dotenv(find_dotenv())
+    print(os.environ['VCB_DB_PATH'])
     for extension in initial_extensions:
         try:
             bot.load_extension(extension)
