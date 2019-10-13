@@ -90,11 +90,11 @@ class voice(commands.Cog):
                         if guildSetting is None:
                             name = setting[0]
                             limit = setting[1]
-                            locked = guildSetting[1]
+                            locked = False
                         elif guildSetting is not None and setting[1] == 0:
                             name = setting[0]
                             limit = guildSetting[0]
-                            locked = guildSetting[1]
+                            locked = guildSetting[1] or False
                         else:
                             name = setting[0]
                             limit = setting[1]
