@@ -54,7 +54,7 @@ class voice(commands.Cog):
                 # for chanID in chans:
                 #     print(f"Looking up: {chanID}")
                 #     chan = member.guild.get_channel(chanID)
-                #     print(f"Checking {chan}")
+                #     print(f"Checking chan}")
                 #     if chan:
                 #         def check_empty(a, b, c):
                 #             return len(chan.members) == 0
