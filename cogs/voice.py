@@ -143,7 +143,7 @@ class voice(commands.Cog):
         command_list = app['commands']
         if command and command.lower() in command_list:
             cmd = command_list[command.lower()]
-            if cmd['admin'] and self.isAdmin(ctx):
+            if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
                 embed = discord.Embed(title=f"Help '{command.lower()}'", description=cmd['help'], color=0x7289da)
                 embed.set_author(name=f"{app['name']} v{app['version']}", url=app['url'],
                                 icon_url=app['icon'])
