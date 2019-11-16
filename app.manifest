@@ -44,7 +44,8 @@
 		"owner": {
 			"help": "**Set the ownership of a channel:**",
 			"usage": ".voice owner <@person>",
-			"example": ".voice owner @DarthMinos#1161"
+			"example": ".voice owner @DarthMinos#1161",
+			"admin": false
 		},
 		"reject": {
 			"help": "**Remove permission and the user from your channel using the following command:**",
