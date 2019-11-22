@@ -504,7 +504,7 @@ class voice(commands.Cog):
             if channel is not None:
 
                 if textGroup is not None:
-                    textChannel = self.bot.get_channel(textChannel[0])
+                    textChannel = self.bot.get_channel(textGroup[0])
                 if textChannel is not None:
                     await textChannel.edit(name=name)
 
