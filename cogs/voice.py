@@ -509,7 +509,7 @@ class voice(commands.Cog):
                     await textChannel.edit(name=name)
 
                 await channel.edit(name=name)
-                await self.sendEmbed(ctx, "Updated Channel Name", f'{ctx.author.mention} You have changed the channel name to {name}!', delete_after=5)
+                await self.sendEmbed(ctx, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
                 c.execute(
                     "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                 voiceGroup = c.fetchone()
