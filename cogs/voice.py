@@ -600,8 +600,9 @@ class voice(commands.Cog):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
         embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
                         icon_url=self.settings['icon'])
-        for f in fields:
-            embed.add_field(name=f.name, value=f.value, inline='false')
+        if fields is not None:
+            for f in fields:
+                embed.add_field(name=f.name, value=f.value, inline='false')
         if footer is None:
             embed.set_footer(text=f'Developed by {self.settings["author"]}')
         else:
