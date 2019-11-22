@@ -119,6 +119,7 @@ class voice(commands.Cog):
                     await self.bot.wait_for('voice_state_update', check=check)
                     print(f"Deleting Channel {channel2} because everyone left")
                     await channel2.delete()
+                    await textChannel.delete()
                     await asyncio.sleep(3)
                     c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
                     c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
