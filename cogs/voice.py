@@ -493,7 +493,7 @@ class voice(commands.Cog):
         c.execute(
             "SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
         voiceGroup = c.fetchone()
-        if voice is None:
+        if voiceGroup is None:
             await self.sendEmbed(ctx, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
