@@ -497,8 +497,17 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
+            c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            textGroup = c.fetchone()
+            textChannel = None
             channel = self.bot.get_channel(channelID)
             if channel is not None:
+
+                if textGroup is not None:
+                    textChannel = self.bot.get_channel(textChannel[0])
+                if textChannel is not None:
+                    await textChannel.edit(name=name)
+
                 await channel.edit(name=name)
                 await self.sendEmbed(ctx, "Updated Channel Name", f'{ctx.author.mention} You have changed the channel name to {name}!', delete_after=5)
                 c.execute(
@@ -508,6 +517,7 @@ class voice(commands.Cog):
                     c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?)", (guildID, aid, name, 0))
                 else:
                     c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (name, aid, guildID,))
+
         await ctx.message.delete()
         conn.commit()
         conn.close()
