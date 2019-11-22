@@ -28,6 +28,7 @@ class voice(commands.Cog):
         c.execute("CREATE TABLE IF NOT EXISTS `guildCategorySettings` ( `guildID` INTEGER,  `voiceCategoryID` INTEGER, `channelLimit` INTEGER, `channelLocked` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `userSettings` ( `guildID` INTEGER, `userID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `guildID` INTEGER, `userID` INTEGER, `voiceID` INTEGER )")
+        c.execute("CREATE TABLE IF NOT EXISTS `textChannel` ( `guildID` INTEGER, `userID` INTEGER, `channelID` INTEGER, `voiceID` INTEGER )")
         conn.commit()
         c.close()
         conn.close()
@@ -62,6 +63,7 @@ class voice(commands.Cog):
                     chan = member.guild.get_channel(chanID)
                     if not chan:
                         c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                        c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
                 conn.commit()
 
                 if after.channel is not None and after.channel.id in voiceChannels:
@@ -96,6 +98,7 @@ class voice(commands.Cog):
                     category = self.bot.get_channel(category_id)
                     print(f"Creating channel {name} in {category}")
                     channel2 = await member.guild.create_voice_channel(name, category=category)
+                    textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = channel2.id
                     print(f"Moving {member} to {channel2}")
                     await member.move_to(channel2)
@@ -108,6 +111,7 @@ class voice(commands.Cog):
                     channel = self.bot.get_channel(channelID)
                     await channel.set_permissions(role, connect=(not locked), read_messages=True)
                     c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
+                    c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
                     conn.commit()
 
                     def check(a, b, c):
@@ -117,6 +121,7 @@ class voice(commands.Cog):
                     await channel2.delete()
                     await asyncio.sleep(3)
                     c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
+                    c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
