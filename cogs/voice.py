@@ -66,10 +66,10 @@ class voice(commands.Cog):
 
                 if after.channel is not None and after.channel.id in voiceChannels:
                     category_id = after.channel.category_id
-                    c.execute("SELECT channelName, channelLimit, FROM userSettings WHERE userID = ?", (member.id,))
+                    c.execute("SELECT channelName, channelLimit FROM userSettings WHERE userID = ?", (member.id,))
                     setting = c.fetchone()
                     c.execute(
-                        "SELECT channelLimit, channelLocked, FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+                        "SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
                     guildSetting = c.fetchone()
                     if setting is None:
                         name = f"{member.name}'s channel"
