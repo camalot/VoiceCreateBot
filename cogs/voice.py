@@ -44,6 +44,13 @@ class voice(commands.Cog):
         self.admin_ids = os.environ["ADMIN_USERS"].split(" ")
         self.initDB()
 
+    async def clean_up_channels(self, guild):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        guildID = member.guild.id
+        c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
+        voiceChannels = [item for clist in c.fetchall() for item in clist]
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         conn = sqlite3.connect(self.db_path)
@@ -61,7 +68,16 @@ class voice(commands.Cog):
                 known_channels = [item for chans in c.fetchall() for item in chans]
                 for chanID in known_channels:
                     chan = member.guild.get_channel(chanID)
-                    if not chan:
+                    if not chan or len(chan.members) == 0:
+                        if chan:
+                            await chan.delete()
+                            c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                            textGroup = c.fetchone()
+                            textChannel = None
+                            if textGroup is not None:
+                                textChannel = self.bot.get_channel(textGroup[0])
+                            if textChannel is not None:
+                                await textChannel.delete()
                         c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
                         c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
                 conn.commit()
@@ -282,7 +298,7 @@ class voice(commands.Cog):
         print(error)
         traceback.print_exc()
     @voice.command()
-    async def lock(self, ctx):
+    async def lock(self, ctx, roles=None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -296,7 +312,25 @@ class voice(commands.Cog):
             channelID = voiceGroup[0]
             role = discord.utils.get(ctx.guild.roles, name='@everyone')
             channel = self.bot.get_channel(channelID)
+
+
+            # c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            # textGroup = c.fetchone()
+            # textChannel = None
+            # if channel is not None:
+            #     if textGroup is not None:
+            #         textChannel = self.bot.get_channel(textGroup[0])
+            #     if textChannel is not None:
+            #         await textChannel.set_permissions(role, read_messages=False,send_messages=False)
+
             await channel.set_permissions(role, connect=False, read_messages=True)
+            if roles:
+
+            for r in roles.split(","):
+                rname = "@" + r.replace("@", "").trim()
+                role = discord.utils.get(ctx.guild.roles, name=rname)
+                await channel.set_permissions(role, connect=True, read_messages=True)
+                
             await self.sendEmbed(ctx, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         await ctx.message.delete()
         conn.commit()

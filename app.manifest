@@ -13,7 +13,7 @@
 		},
 		"lock": {
 			"help": "**Lock your channel by using the following command:**",
-			"usage": ".voice lock",
+			"usage": ".voice lock [allowed_roles]",
 			"example": ".voice lock",
 			"admin": false
 		},
