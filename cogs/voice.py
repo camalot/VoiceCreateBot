@@ -330,7 +330,7 @@ class voice(commands.Cog):
                 rname = "@" + r.replace("@", "").trim()
                 role = discord.utils.get(ctx.guild.roles, name=rname)
                 await channel.set_permissions(role, connect=True, read_messages=True)
-                
+
             await self.sendEmbed(ctx, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         await ctx.message.delete()
         conn.commit()
@@ -393,7 +393,7 @@ class voice(commands.Cog):
         conn.close()
 
     @voice.command(aliases=["allow"])
-    async def permit(self, ctx, member: discord.Member):
+    async def permit(self, ctx, member: discord.Member = None, role: discord.Role = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -404,14 +404,20 @@ class voice(commands.Cog):
         else:
             channelID = voiceGroup[0]
             channel = self.bot.get_channel(channelID)
-            await channel.set_permissions(member, connect=True)
-            await self.sendEmbed(ctx, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
+
+            if member:
+                await channel.set_permissions(member, connect=True)
+                await self.sendEmbed(ctx, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
+            if role:
+                await channel.set_permissions(role, connect=True)
+                await self.sendEmbed(ctx, "Grant User Access", f'{ctx.author.mention} You have permitted {role.name} to have access to the channel. ✅', delete_after=5)
+
         await ctx.message.delete()
         conn.commit()
         conn.close()
 
     @voice.command(aliases=["deny"])
-    async def reject(self, ctx, member: discord.Member):
+    async def reject(self, ctx, member: discord.Member = None, role: discord.Role = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -423,15 +429,20 @@ class voice(commands.Cog):
         else:
             channelID = voiceGroup[0]
             channel = self.bot.get_channel(channelID)
-            for members in channel.members:
-                if members.id == member.id:
-                    c.execute(
-                        "SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
-                    voiceGroup = c.fetchone()
-                    channel2 = self.bot.get_channel(voiceGroup[0])
-                    await member.move_to(channel2)
-            await channel.set_permissions(member, connect=False, read_messages=True)
-            await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
+            if member:
+                for members in channel.members:
+                    if members.id == member.id:
+                        member.disconnect()
+                await channel.set_permissions(member, connect=False, read_messages=True)
+                await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
+            if role:
+                for members in channel.members:
+                    for roles in members.roles:
+                        if roles.id == role.id:
+                            member.disconnect()
+                await channel.set_permissions(member, connect=False, read_messages=True)
+                await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
+
         await ctx.message.delete()
         conn.commit()
         conn.close()

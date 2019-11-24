@@ -30,7 +30,7 @@
 			"admin": false
 		},
 		"permit": {
-			"help": "**Give users permission to join by using the following command:**",
+			"help": "**Give users/roles permission to join by using the following command:**",
 			"usage": ".voice permit <@person>",
 			"example": ".voice permit @DarthMinos#1161",
 			"admin": false
