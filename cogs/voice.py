@@ -6,12 +6,38 @@ import json
 import datetime
 from discord.ext import commands
 import traceback
-import sqlite3
+import pymongo
 from urllib.parse import quote
 import validators
 from discord.ext.commands.cooldowns import BucketType
 from time import gmtime, strftime
 import os
+
+class GuildModel():
+    def __init__(self, guildId, ownerId, voiceChannelId, categoryId):
+        self.id = guildId
+        self.ownerId = ownerId
+        self.voiceChannelId = voiceChannelId
+        self.categoryId = categoryId
+class GuildSettingsModel():
+    def __init__(self, guildId, channelName, channelLimit):
+        self.guildId = guildId
+        self.channelName = channelName
+        self.channelLimit = channelLimit
+
+class GuildCategorySettingsModel():
+    def __init__(self, guildId, categoryId, channelLimit, channelLocked):
+        self.guildId = guildId
+        self.categoryId = categoryId
+        self.channelLimit = channelLimit
+        self.channelLocked = channelLocked
+
+class UserSettingsModel():
+    def __init__(self, guildId, userId, channelName, channelLimit):
+        self.guildId = guildId
+        self.channelName = channelName
+        self.channelLimit = channelLimit
+
 
 class EmbedField():
     def __init__(self, name, value):
@@ -39,8 +65,11 @@ class voice(commands.Cog):
             self.settings = json.load(json_file)
 
         self.bot = bot
-        self.db_path = os.environ['VCB_DB_PATH'] or 'voice.db'
-        print(f"DB Path: {self.db_path}")
+        # self.db_path = os.environ['VCB_DB_PATH'] or 'voice.db'
+        # print(f"DB Path: {self.db_path}")
+        self.db_connection = os.environ["VCB_DB_CONNECTION_STRING"]
+        self.db_database = os.environ["VCB_DATABASE_NAME"] or "voicedb"
+
         self.admin_ids = os.environ["ADMIN_USERS"].split(" ")
         self.initDB()
 
