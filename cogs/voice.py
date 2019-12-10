@@ -24,7 +24,7 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS `guild` ( `guildID` INTEGER, `ownerID` INTEGER, `voiceChannelID` INTEGER, `voiceCategoryID` INTEGER )")
-        c.execute("CREATE TABLE IF NOT EXISTS `guildSettings` ( `guildID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
+        c.execute("CREATE TABLE IF NOT EXISTS `guildSettings` ( `guildID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER, `prefix` TEXT DEFAULT '.' )")
         c.execute("CREATE TABLE IF NOT EXISTS `guildCategorySettings` ( `guildID` INTEGER,  `voiceCategoryID` INTEGER, `channelLimit` INTEGER, `channelLocked` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `userSettings` ( `guildID` INTEGER, `userID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
         c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `guildID` INTEGER, `userID` INTEGER, `voiceID` INTEGER )")
@@ -70,6 +70,7 @@ class voice(commands.Cog):
                     chan = member.guild.get_channel(chanID)
                     if not chan or len(chan.members) == 0:
                         if chan:
+                            print(f"Delete orphan voice channel '{chan.name}'")
                             await chan.delete()
                             c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
                             textGroup = c.fetchone()
@@ -77,6 +78,7 @@ class voice(commands.Cog):
                             if textGroup is not None:
                                 textChannel = self.bot.get_channel(textGroup[0])
                             if textChannel is not None:
+                                print(f"Delete orphan text channel '{textChannel.name}'")
                                 await textChannel.delete()
                         c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
                         c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
@@ -175,6 +177,18 @@ class voice(commands.Cog):
         conn.commit()
         conn.close()
         await ctx.message.delete()
+
+    @voice.command()
+    async def setprefix(self, ctx, prefix="."):
+        if self.isAdmin():
+            if prefix:
+                self.bot.command_prefix = prefix
+                embed_fields = list()
+                embed_fields.append({
+                    "name": "Example",
+                    "value": f"{prefix}voice name CoD:MW US"
+                })
+                await self.sendEmbed(ctx, "Voice Channel Prefix", f'Command prefix is now "{prefix}".' delete_after=60)
 
     @voice.command()
     async def help(self, ctx, command=""):
@@ -535,14 +549,13 @@ class voice(commands.Cog):
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
-        c.execute(
-            "SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
+        c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
             await self.sendEmbed(ctx, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
-            c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (aid, guildID, channelID))
             textGroup = c.fetchone()
             textChannel = None
             channel = self.bot.get_channel(channelID)
@@ -555,8 +568,7 @@ class voice(commands.Cog):
 
                 await channel.edit(name=name)
                 await self.sendEmbed(ctx, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
-                c.execute(
-                    "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
+                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is None:
                     c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?)", (guildID, aid, name, 0))
@@ -578,8 +590,7 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
         else:
             aid = ctx.author.id
-            c.execute(
-                "SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
                 await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} You can't own that channel!", delete_after=5)
@@ -590,9 +601,15 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
                         x = True
                 if x == False:
+                    c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                    textGroup = c.fetchone()
+                    if textGroup is not None:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel is not None:
+                        c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(aid, channel.id, guildID,))
+
                     await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
-                    c.execute(
-                        "UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
+                    c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
             await ctx.message.delete()
             conn.commit()
             conn.close()

@@ -41,19 +41,24 @@
 			"example": ".voice claim",
 			"admin": false
 		},
-		"owner": {
-			"help": "**Set the ownership of a channel:**",
-			"usage": ".voice owner <@person>",
-			"example": ".voice owner @DarthMinos#1161",
-			"admin": false
-		},
 		"reject": {
 			"help": "**Remove permission and the user from your channel using the following command:**",
 			"usage": ".voice reject <@person>",
 			"example": ".voice reject @DarthMinos#1161",
 			"admin": false
 		},
-
+		"setprefix": {
+			"help": "**Set the bot prefix:**",
+			"usage": ".voice setprefix <previx>",
+			"example": ".voice setprefix !",
+			"admin": true
+		},
+		"owner": {
+			"help": "**Set the ownership of a channel:**",
+			"usage": ".voice owner <@person>",
+			"example": ".voice owner @DarthMinos#1161",
+			"admin": true
+		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels (ADMIN):**",
 			"usage": ".voice settings \"<category name>\" <locked> <limit>",
