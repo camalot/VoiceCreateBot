@@ -581,6 +581,28 @@ class voice(commands.Cog):
         conn.close()
 
     @voice.command()
+    async def whoowns(self, ctx):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            guildID = ctx.guild.id
+            channel = ctx.author.voice.channel
+            if channel == None:
+                await self.sendEmbed(ctx, "Who Owns Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+            else:
+                c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
+                voiceGroup = c.fetchone()
+                if voiceGroup is not None:
+                    owner = ctx.guild.get_member(voiceGroup[0])
+                    await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=60)
+            conn.close()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            await ctx.message.delete()
+
+    @voice.command()
     async def claim(self, ctx):
         x = False
         conn = sqlite3.connect(self.db_path)
