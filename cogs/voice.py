@@ -338,10 +338,10 @@ class voice(commands.Cog):
             await channel.set_permissions(role, connect=False, read_messages=True)
             if roles:
 
-            for r in roles.split(","):
-                rname = "@" + r.replace("@", "").trim()
-                role = discord.utils.get(ctx.guild.roles, name=rname)
-                await channel.set_permissions(role, connect=True, read_messages=True)
+                for r in roles.split(","):
+                    rname = "@" + r.replace("@", "").trim()
+                    role = discord.utils.get(ctx.guild.roles, name=rname)
+                    await channel.set_permissions(role, connect=True, read_messages=True)
 
             await self.sendEmbed(ctx, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         await ctx.message.delete()
