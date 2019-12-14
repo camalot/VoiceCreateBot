@@ -59,7 +59,7 @@
 			"example": ".voice owner @DarthMinos#1161",
 			"admin": true
 		},
-		"whoowns" {
+		"whoowns": {
 			"help": "**Shows who is the owner of the channel:**",
 			"usage": ".voice whoowns",
 			"example": ".voice whoowns",
