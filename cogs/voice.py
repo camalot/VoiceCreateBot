@@ -54,7 +54,7 @@ class voice(commands.Cog):
             voiceChannels = [item for clist in c.fetchall() for item in clist]
             for chanID in voiceChannels:
                 chan = guild.get_channel(chanID)
-                if not chan or len(chan.members) == 0:
+                if chan is not None and len(chan.members) == 0:
                     print(f"Delete orphan voice channel '{chan.name}'")
                     await chan.delete()
                     c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
