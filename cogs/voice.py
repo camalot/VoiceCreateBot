@@ -84,7 +84,7 @@ class voice(commands.Cog):
             pass
         else:
             try:
-                await self.clean_up_channels(member.guild)
+                # await self.clean_up_channels(member.guild)
 
                 if after.channel is not None and after.channel.id in voiceChannels:
                     category_id = after.channel.category_id
