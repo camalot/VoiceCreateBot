@@ -46,28 +46,31 @@ class voice(commands.Cog):
 
     # Clean up empty channels
     async def clean_up_channels(self, guild):
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        guildID = guild.id
-        c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
-        voiceChannels = [item for clist in c.fetchall() for item in clist]
-        for chanID in known_channels:
-            chan = guild.get_channel(chanID)
-            if not chan or len(chan.members) == 0:
-                print(f"Delete orphan voice channel '{chan.name}'")
-                await chan.delete()
-                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
-                textGroup = c.fetchone()
-                textChannel = None
-                if textGroup is not None:
-                    textChannel = self.bot.get_channel(textGroup[0])
-                if textChannel is not None:
-                    print(f"Delete orphan text channel '{textChannel.name}'")
-                    await textChannel.delete()
-            c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-            c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-        conn.commit()
-
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            guildID = guild.id
+            c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
+            voiceChannels = [item for clist in c.fetchall() for item in clist]
+            for chanID in voiceChannels:
+                chan = guild.get_channel(chanID)
+                if not chan or len(chan.members) == 0:
+                    print(f"Delete orphan voice channel '{chan.name}'")
+                    await chan.delete()
+                    c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                    textGroup = c.fetchone()
+                    textChannel = None
+                    if textGroup is not None:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel is not None:
+                        print(f"Delete orphan text channel '{textChannel.name}'")
+                        await textChannel.delete()
+                c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+            conn.commit()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -553,7 +556,7 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
-            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
             textGroup = c.fetchone()
             textChannel = None
             channel = self.bot.get_channel(channelID)
