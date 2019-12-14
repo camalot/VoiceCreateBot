@@ -59,6 +59,12 @@
 			"example": ".voice owner @DarthMinos#1161",
 			"admin": true
 		},
+		"whoowns" {
+			"help": "**Shows who is the owner of the channel:**",
+			"usage": ".voice whoowns",
+			"example": ".voice whoowns",
+			"admin": false
+		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels (ADMIN):**",
 			"usage": ".voice settings \"<category name>\" <locked> <limit>",
