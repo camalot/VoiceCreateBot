@@ -57,7 +57,7 @@ class voice(commands.Cog):
                 if not chan or len(chan.members) == 0:
                     print(f"Delete orphan voice channel '{chan.name}'")
                     await chan.delete()
-                    c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
                     textGroup = c.fetchone()
                     textChannel = None
                     if textGroup is not None:
