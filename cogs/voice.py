@@ -50,13 +50,13 @@ class voice(commands.Cog):
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             guildID = guild.id
-            c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
+            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
             voiceChannels = [item for clist in c.fetchall() for item in clist]
             for chanID in voiceChannels:
                 chan = guild.get_channel(chanID)
                 if chan is not None and len(chan.members) == 0:
                     print(f"Delete orphan voice channel '{chan.name}'")
-                    await chan.delete()
+                    # await chan.delete()
                     c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
                     textGroup = c.fetchone()
                     textChannel = None
@@ -64,9 +64,9 @@ class voice(commands.Cog):
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel is not None:
                         print(f"Delete orphan text channel '{textChannel.name}'")
-                        await textChannel.delete()
-                c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-                c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                        # await textChannel.delete()
+                # c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
             conn.commit()
         except Exception as ex:
             print(ex)
@@ -84,7 +84,7 @@ class voice(commands.Cog):
             pass
         else:
             try:
-                # await self.clean_up_channels(member.guild)
+                await self.clean_up_channels(member.guild)
 
                 if after.channel is not None and after.channel.id in voiceChannels:
                     category_id = after.channel.category_id
