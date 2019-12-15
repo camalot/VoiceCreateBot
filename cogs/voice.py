@@ -174,7 +174,6 @@ class voice(commands.Cog):
                     c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
                 else:
                     await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
-
         conn.commit()
         conn.close()
         await ctx.message.delete()
@@ -245,6 +244,7 @@ class voice(commands.Cog):
                     return await ctx.guild.create_category_channel(category.content)
         else:
             return None
+
     @voice.command(pass_context=True)
     async def setup(self, ctx):
         conn = sqlite3.connect(self.db_path)
