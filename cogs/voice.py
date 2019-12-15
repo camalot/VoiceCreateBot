@@ -57,7 +57,7 @@ class voice(commands.Cog):
                 if chan is not None and len(chan.members) == 0:
                     print(f"Delete orphan voice channel '{chan.name}'")
                     # await chan.delete()
-                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
+                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID))
                     textGroup = c.fetchone()
                     textChannel = None
                     if textGroup is not None:
@@ -594,7 +594,7 @@ class voice(commands.Cog):
                 voiceGroup = c.fetchone()
                 if voiceGroup is not None:
                     owner = ctx.guild.get_member(voiceGroup[0])
-                    await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=60)
+                    await self.sendEmbed(ctx, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
             conn.close()
         except Exception as ex:
             print(ex)
