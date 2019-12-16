@@ -119,6 +119,11 @@ class voice(commands.Cog):
                     channel2 = await member.guild.create_voice_channel(name, category=category)
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = channel2.id
+                    print(f"Track Voice and Text Channels {name} in {category}")
+                    c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
+                    c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
+                    conn.commit()
+
                     print(f"Moving {member} to {channel2}")
                     await member.move_to(channel2)
                     print(f"Setting permissions on {channel2}")
@@ -129,9 +134,6 @@ class voice(commands.Cog):
                     role = discord.utils.get(member.guild.roles, name='@everyone')
                     channel = self.bot.get_channel(channelID)
                     await channel.set_permissions(role, connect=(not locked), read_messages=True)
-                    c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
-                    c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
-                    conn.commit()
 
                     def check(a, b, c):
                         return len(channel2.members) == 0
@@ -312,6 +314,8 @@ class voice(commands.Cog):
     async def info_error(self, ctx, error):
         print(error)
         traceback.print_exc()
+
+
     @voice.command()
     async def lock(self, ctx, roles=None):
         conn = sqlite3.connect(self.db_path)
