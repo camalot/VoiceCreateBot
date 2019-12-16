@@ -166,7 +166,7 @@ class voice(commands.Cog):
         try:
             if ctx.author.voice:
                 channel = ctx.author.voice.channel
-            if self.isAdmin():
+            if self.isAdmin(ctx):
                 if channel is None:
                     await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
                 else:
