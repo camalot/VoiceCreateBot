@@ -65,6 +65,12 @@
 			"example": ".voice whoowns",
 			"admin": false
 		},
+		"track": {
+			"help": "**Add the current voice channel to be tracked by the bot:**",
+			"usage": ".voice track",
+			"example": ".voice track",
+			"admin": true
+		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels (ADMIN):**",
 			"usage": ".voice settings \"<category name>\" <locked> <limit>",

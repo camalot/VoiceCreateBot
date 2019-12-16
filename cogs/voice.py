@@ -56,7 +56,7 @@ class voice(commands.Cog):
                 chan = guild.get_channel(chanID)
                 if chan is not None and len(chan.members) == 0:
                     print(f"Delete orphan voice channel '{chan.name}'")
-                    # await chan.delete()
+                    await chan.delete()
                     c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID))
                     textGroup = c.fetchone()
                     textChannel = None
@@ -64,9 +64,9 @@ class voice(commands.Cog):
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel is not None:
                         print(f"Delete orphan text channel '{textChannel.name}'")
-                        # await textChannel.delete()
-                # c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-                # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                        await textChannel.delete()
+                c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
+                c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
             conn.commit()
         except Exception as ex:
             print(ex)
@@ -155,6 +155,36 @@ class voice(commands.Cog):
     async def voice(self, ctx):
         pass
 
+    @voice.command()
+    async def track(self, ctx):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        mid = ctx.author.id
+        guildID = ctx.author.guild.id
+
+        channel = None
+        try:
+            if ctx.author.voice:
+                channel = ctx.author.voice.channel
+            if self.isAdmin():
+                if channel is None:
+                    await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+                else:
+                    c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
+                    voiceGroup = c.fetchone()
+                    if voiceGroup:
+                        await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
+                    else:
+                        c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
+                        conn.commit()
+                        await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.", delete_after=5)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.close()
+            await ctx.message.delete()
     @voice.command()
     async def owner(self, ctx, member: discord.Member):
         conn = sqlite3.connect(self.db_path)
