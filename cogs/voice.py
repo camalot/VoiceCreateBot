@@ -138,7 +138,12 @@ class voice(commands.Cog):
                     print(f"Track voiceChannel {mid},{channelID}")
                     role = discord.utils.get(member.guild.roles, name='@everyone')
                     channel = self.bot.get_channel(channelID)
-                    await channel.set_permissions(role, connect=(not locked), read_messages=True)
+                    try:
+                        print(f"Check if bot can set channel for @everyone {channel}")
+                        await channel.set_permissions(role, connect=(not locked), read_messages=True)
+                    except Exception as ex:
+                        print(ex)
+                        traceback.print_exc()
 
                     def check(a, b, c):
                         return len(channel2.members) == 0
