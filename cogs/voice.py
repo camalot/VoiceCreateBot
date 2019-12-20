@@ -126,8 +126,13 @@ class voice(commands.Cog):
 
                     print(f"Moving {member} to {channel2}")
                     await member.move_to(channel2)
-                    print(f"Setting permissions on {channel2}")
-                    await channel2.set_permissions(self.bot.user, connect=True, read_messages=True)
+                    # if the bot cant do this, dont fail...
+                    try:
+                        print(f"Setting permissions on {channel2}")
+                        await channel2.set_permissions(self.bot.user, connect=True, read_messages=True)
+                    except Exception as ex:
+                        print(ex)
+                        traceback.print_exc()
                     print(f"Set user limit to {limit} on {channel2}")
                     await channel2.edit(name=name, user_limit=limit)
                     print(f"Track voiceChannel {mid},{channelID}")
