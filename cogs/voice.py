@@ -120,10 +120,6 @@ class voice(commands.Cog):
                     channel2 = await member.guild.create_voice_channel(name, category=category)
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = channel2.id
-                    print(f"Track Voice and Text Channels {name} in {category}")
-                    c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
-                    c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
-                    conn.commit()
 
                     print(f"Moving {member} to {channel2}")
                     await member.move_to(channel2)
@@ -137,6 +133,11 @@ class voice(commands.Cog):
                     print(f"Set user limit to {limit} on {channel2}")
                     await channel2.edit(name=name, user_limit=limit)
                     print(f"Track voiceChannel {mid},{channelID}")
+                    print(f"Track Voice and Text Channels {name} in {category}")
+                    c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
+                    c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
+                    conn.commit()
+
                     role = discord.utils.get(member.guild.roles, name='@everyone')
                     channel = self.bot.get_channel(channelID)
                     try:
