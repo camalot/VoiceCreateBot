@@ -84,6 +84,7 @@ class voice(commands.Cog):
             pass
         else:
             try:
+                await asyncio.sleep(3)
                 await self.clean_up_channels(member.guild)
 
                 if after.channel is not None and after.channel.id in voiceChannels:
@@ -502,9 +503,9 @@ class voice(commands.Cog):
                 await channel.set_permissions(member, connect=False, read_messages=True)
                 await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
 
-        await ctx.message.delete()
         conn.commit()
         conn.close()
+        await ctx.message.delete()
 
     @voice.command()
     async def limit(self, ctx, limit):
