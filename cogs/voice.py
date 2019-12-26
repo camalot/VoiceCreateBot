@@ -404,7 +404,7 @@ class voice(commands.Cog):
             c = conn.cursor()
             found_category = next((x for x in ctx.guild.categories if x.name == category), None)
             if found_category:
-                c.execute("SELECT channelLimit, channelLocked, channelBitrate FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
+                c.execute("SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
                 catSettings = c.fetchone()
                 if catSettings:
                     print(f"UPDATE category settings")
