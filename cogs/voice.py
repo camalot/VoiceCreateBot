@@ -733,7 +733,7 @@ class voice(commands.Cog):
                         icon_url=self.settings['icon'])
         if fields is not None:
             for f in fields:
-                embed.add_field(name=f.name, value=f.value, inline='false')
+                embed.add_field(name=f['name'], value=f['value'], inline='false')
         if footer is None:
             embed.set_footer(text=f'Developed by {self.settings["author"]}')
         else:
