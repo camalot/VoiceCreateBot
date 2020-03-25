@@ -65,6 +65,12 @@
 			"example": ".voice whoowns",
 			"admin": false
 		},
+		"rename": {
+			"help": "**Allows an admin to rename a channel that they join:**",
+			"usage": ".voice rename <channel name>",
+			"example": ".voice rename New Channel Name",
+			"admin": true
+		},
 		"track": {
 			"help": "**Add the current voice channel to be tracked by the bot:**",
 			"usage": ".voice track",
