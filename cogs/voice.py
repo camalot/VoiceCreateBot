@@ -728,6 +728,7 @@ class voice(commands.Cog):
             conn.close()
 
     @voice.command()
+    # @commands.has_role("Admin")
     async def delete(self, ctx):
         if self.isAdmin(ctx):
             guildID = ctx.guild.id
