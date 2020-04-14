@@ -357,6 +357,24 @@ class voice(commands.Cog):
         print(error)
         traceback.print_exc()
 
+    @voice.command()
+    async def cleandb(self,ctx):
+        if self.isAdmin(ctx):
+            conn = sqlite3.connect(self.db_path)
+            guildID = ctx.guild.id
+            try:
+                c = conn.cursor()
+                c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildID, ))
+                c.execute("DELETE FROM `textChannel` WHERE guildID = ?", (guildID, ))
+                c.execute("DELETE FROM `voiceChannel` WHERE guildID = ?", (guildID, ))
+                conn.commit()
+                await self.sendEmbed(ctx, "Clean Database", "User & Channel Data has been purged from database.", delete_after=5)
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc()
+            finally:
+                conn.close()
+        await ctx.message.delete()
 
     @voice.command()
     async def lock(self, ctx, roles=None):

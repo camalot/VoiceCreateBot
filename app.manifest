@@ -71,6 +71,12 @@
 			"example": ".voice rename New Channel Name",
 			"admin": true
 		},
+		"cleandb": {
+			"help": "**Allows an admin to clean user and channel data from database:**",
+			"usage": ".voice cleandb",
+			"example": ".voice cleandb",
+			"admin": true
+		},
 		"track": {
 			"help": "**Add the current voice channel to be tracked by the bot:**",
 			"usage": ".voice track",
