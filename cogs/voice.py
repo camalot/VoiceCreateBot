@@ -92,7 +92,6 @@ class voice(commands.Cog):
             c = conn.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
             voiceChannelSet = c.fetchone()
-
             textChannelId = None
             voiceChannelId = None
             voiceChannel = None
@@ -125,11 +124,8 @@ class voice(commands.Cog):
             if textChannelId:
                 c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
             conn.commit()
-
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
+        except discord.errors.NotFound as nf:
+            print("Channel Not Found. Already Cleaned Up")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -223,6 +219,8 @@ class voice(commands.Cog):
                     c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
                     c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
                     conn.commit()
+            except discord.errors.NotFound as nf:
+                print(nf)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
