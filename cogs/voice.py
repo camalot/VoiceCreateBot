@@ -117,7 +117,8 @@ class voice(commands.Cog):
                     await voiceChannel.delete()
                     await asyncio.sleep(3)
             else:
-                print(f"Unable to find voice channel: {voiceChannelId}")
+                if voiceChannelId is not None:
+                    print(f"Unable to find voice channel: {voiceChannelId}")
 
             if voiceChannelId:
                 c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
