@@ -92,32 +92,39 @@ class voice(commands.Cog):
             c = conn.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
             voiceChannelSet = c.fetchone()
+            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannel.id,))
+            textChannelSet = c.fetchone()
+
+            textChannelId = None
             voiceChannelId = None
             voiceChannel = None
             if voiceChannelSet:
                 voiceChannelId = voiceChannelSet[0]
                 print(f"Start Tracked Cleanup: {voiceChannelId}")
                 voiceChannel = self.bot.get_channel(voiceChannelId)
+
+            textChannel = None
+            if textChannelSet:
+                textChannelId = textChannelSet[0]
+                textChannel = self.bot.get_channel(textChannelId)
+
             if voiceChannel:
                 print(f"Channel {voiceChannel} was found as a tracked channel")
                 if len(voiceChannel.members) == 0:
                     print(f"Deleting Channel {voiceChannel} because everyone left")
-                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannel.id,))
-                    textChannelSet = c.fetchone()
-                    textChannelId = None
-                    textChannel = None
-                    if textChannelSet:
-                        textChannelId = textChannelSet[0]
-                        textChannel = self.bot.get_channel(textChannelId)
                     if textChannel:
                         await textChannel.delete()
                     await voiceChannel.delete()
                     await asyncio.sleep(3)
-                    c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-                    c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
-                    conn.commit()
             else:
                 print(f"Unable to find voice channel: {voiceChannelId}")
+
+            if voiceChannelId:
+                c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
+            if textChannelId:
+                c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
+            conn.commit()
+
         except Exception as ex:
             print(ex)
             traceback.print_exc()
