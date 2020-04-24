@@ -42,7 +42,7 @@ class voice(commands.Cog):
         self.db_path = os.environ['VCB_DB_PATH'] or 'voice.db'
         print(f"DB Path: {self.db_path}")
         self.admin_ids = os.environ["ADMIN_USERS"].split(" ")
-        self.admin_role = os.environ['ADMIN_ROLES'] or 'Admin'
+        self.admin_role = os.environ['ADMIN_ROLE'] or 'Admin'
         self.initDB()
 
     # Clean up empty channels
@@ -796,7 +796,7 @@ class voice(commands.Cog):
 
     def isAdmin(self, ctx):
         is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids
-        admin_role = discord.utils.find(lambda r: r.name == self.admin_role, ctx.message.server.roles)
+        admin_role = discord.utils.find(lambda r: r.name == self.admin_role, ctx.message.guild.roles)
         return admin_role in ctx.author.roles or is_listed_admin
 
     async def sendEmbed(self, ctx, title, message, fields=None, delete_after=None, footer=None):
