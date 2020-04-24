@@ -92,8 +92,6 @@ class voice(commands.Cog):
             c = conn.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
             voiceChannelSet = c.fetchone()
-            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannel.id,))
-            textChannelSet = c.fetchone()
 
             textChannelId = None
             voiceChannelId = None
@@ -102,6 +100,9 @@ class voice(commands.Cog):
                 voiceChannelId = voiceChannelSet[0]
                 print(f"Start Tracked Cleanup: {voiceChannelId}")
                 voiceChannel = self.bot.get_channel(voiceChannelId)
+
+            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannelId))
+            textChannelSet = c.fetchone()
 
             textChannel = None
             if textChannelSet:
