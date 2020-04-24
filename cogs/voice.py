@@ -45,6 +45,18 @@ class voice(commands.Cog):
         self.admin_role = os.environ['ADMIN_ROLE'] or 'Admin'
         self.initDB()
 
+
+    async def retrack_channels(self, guild):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            # c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `guildID` INTEGER, `userID` INTEGER, `voiceID` INTEGER )")
+            # c.execute("CREATE TABLE IF NOT EXISTS `textChannel` ( `guildID` INTEGER, `userID` INTEGER, `channelID` INTEGER, `voiceID` INTEGER )")
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
     # Clean up empty channels
     async def clean_up_channels(self, guild):
         try:
@@ -72,6 +84,41 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
+
+    async def clean_up_tracked_channels(self, guildID):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
+            voiceChannelId = c.fetchone()
+            voiceChannel = None
+            if voiceChannelId:
+                voiceChannel = self.bot.get_channel(voiceChannelId)
+            if voiceChannel:
+                if len(voiceChannel.members) == 0:
+                    print(f"Deleting Channel {voiceChannel} because everyone left")
+                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannel.id,))
+                    textChannelId = c.fetchone()
+                    textChannel = None
+                    if textChannelId:
+                        textChannel = self.bot.get_channel(textChannelId)
+                    if textChannel:
+                        await textChannel.delete()
+                    await voiceChannel.delete()
+                    await asyncio.sleep(3)
+                    c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
+                    c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
+                    conn.commit()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for guild in self.bot.guilds:
+            await self.clean_up_tracked_channels(guild.id)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -148,6 +195,8 @@ class voice(commands.Cog):
                         print(ex)
                         traceback.print_exc()
 
+                    await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.')
+
                     def check(a, b, c):
                         return len(channel2.members) == 0
                     await self.bot.wait_for('voice_state_update', check=check)
@@ -162,7 +211,6 @@ class voice(commands.Cog):
                 traceback.print_exc()
         conn.commit()
         conn.close()
-
 
     @commands.group()
     async def voice(self, ctx):
@@ -181,16 +229,16 @@ class voice(commands.Cog):
                 channel = ctx.author.voice.channel
             if self.isAdmin(ctx):
                 if channel is None:
-                    await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
                 else:
                     c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
                     voiceGroup = c.fetchone()
                     if voiceGroup:
-                        await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
                     else:
                         c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
                         conn.commit()
-                        await self.sendEmbed(ctx, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.", delete_after=5)
 
         except Exception as ex:
             print(ex)
@@ -207,19 +255,19 @@ class voice(commands.Cog):
             if ctx.author.voice:
                 channel = ctx.author.voice.channel
             if channel is None:
-                await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
             else:
                 aid = ctx.author.id
                 c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is None:
-                    await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} That channel is not managed by me. I can't help you own that channel.", delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention} That channel is not managed by me. I can't help you own that channel.", delete_after=5)
                 else:
                     if self.isAdmin(ctx) or ctx.author.id == voiceGroup[0]:
-                        await self.sendEmbed(ctx, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
                         c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
                     else:
-                        await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -237,7 +285,7 @@ class voice(commands.Cog):
                     "name": "Example",
                     "value": f"{prefix}voice name CoD:MW US"
                 })
-                await self.sendEmbed(ctx, "Voice Channel Prefix", f'Command prefix is now "{prefix}".', delete_after=60)
+                await self.sendEmbed(ctx.channel, "Voice Channel Prefix", f'Command prefix is now "{prefix}".', delete_after=60)
 
     @voice.command()
     async def help(self, ctx, command=""):
@@ -268,7 +316,7 @@ class voice(commands.Cog):
                 return m.author.id == ctx.author.id
             def check_yes_no(m):
                 return str2bool(m.content)
-            await self.sendEmbed(ctx, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
+            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
             try:
                 category = await self.bot.wait_for('message', check=check, timeout=60.0)
             except asyncio.TimeoutError:
@@ -279,11 +327,11 @@ class voice(commands.Cog):
                     # found existing with that name.
                     # do you want to create a new one?
                     yes_or_no = False
-                    await self.sendEmbed(ctx, "Voice Channel Setup", f"**Found an existing channel called '{str(found_category.name.upper())}'. Use that channel? Reply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing channel called '{str(found_category.name.upper())}'. Use that channel? Reply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
                     try:
                         yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
                     except asyncio.TimeoutError:
-                        await self.sendEmbed(ctx, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
                     else:
                         if yes_or_no:
                             return found_category
@@ -311,11 +359,11 @@ class voice(commands.Cog):
                 return m.author.id == ctx.author.id
             # Ask them for the category name
             category = await self.ask_category(ctx)
-            await self.sendEmbed(ctx, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
+            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
             try:
                 channel = await self.bot.wait_for('message', check=check, timeout=60.0)
             except asyncio.TimeoutError:
-                await self.sendEmbed(ctx, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
             else:
                 try:
                     channel = await ctx.guild.create_voice_channel(channel.content, category=category)
@@ -329,9 +377,9 @@ class voice(commands.Cog):
                     await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                 except Exception as e:
                     traceback.print_exc()
-                    await self.sendEmbed(ctx, "Voice Channel Setup", "You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", "You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
         else:
-            await self.sendEmbed(ctx, "Voice Channel Setup", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
         conn.commit()
         conn.close()
@@ -350,12 +398,12 @@ class voice(commands.Cog):
                             (ctx.guild.id, f"{ctx.author.name}'s channel", num))
                 else:
                     c.execute("UPDATE guildSettings SET channelLimit = ? WHERE guildID = ?", (num, ctx.guild.id))
-                await self.sendEmbed(ctx, "Channel Set Limit", "You have changed the default channel limit for your server!", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Channel Set Limit", "You have changed the default channel limit for your server!", delete_after=5)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
         else:
-            await self.sendEmbed(ctx, "Channel Set Limit", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Set Limit", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
         conn.commit()
         conn.close()
@@ -376,7 +424,7 @@ class voice(commands.Cog):
                 c.execute("DELETE FROM `textChannel` WHERE guildID = ?", (guildID, ))
                 c.execute("DELETE FROM `voiceChannel` WHERE guildID = ?", (guildID, ))
                 conn.commit()
-                await self.sendEmbed(ctx, "Clean Database", "User & Channel Data has been purged from database.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Clean Database", "User & Channel Data has been purged from database.", delete_after=5)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
@@ -393,7 +441,7 @@ class voice(commands.Cog):
         c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id, ))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
-            await self.sendEmbed(ctx, "Channel Lock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Lock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
             role = discord.utils.get(ctx.guild.roles, name='@everyone')
@@ -417,7 +465,7 @@ class voice(commands.Cog):
                     role = discord.utils.get(ctx.guild.roles, name=rname)
                     await channel.set_permissions(role, connect=True, read_messages=True)
 
-            await self.sendEmbed(ctx, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         await ctx.message.delete()
         conn.commit()
         conn.close()
@@ -448,14 +496,14 @@ class voice(commands.Cog):
                     "value": str(limit)
                 })
 
-                await self.sendEmbed(ctx, "Channel Category Settings", f"Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
+                await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
 
             else:
                 print(f"No Category found for '{category}'")
             conn.commit()
             conn.close()
         else:
-            await self.sendEmbed(ctx, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
 
     @voice.command()
@@ -467,13 +515,13 @@ class voice(commands.Cog):
             "SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
-            await self.sendEmbed(ctx, "Channel Unlock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Unlock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
             role = discord.utils.get(ctx.guild.roles, name='@everyone')
             channel = self.bot.get_channel(channelID)
             await channel.set_permissions(role, connect=True, read_messages=True)
-            await self.sendEmbed(ctx, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
+            await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         await ctx.message.delete()
         conn.commit()
         conn.close()
@@ -486,17 +534,17 @@ class voice(commands.Cog):
         c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
-            await self.sendEmbed(ctx, "Grant User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Grant User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
             channel = self.bot.get_channel(channelID)
 
             if member:
                 await channel.set_permissions(member, connect=True)
-                await self.sendEmbed(ctx, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
             if role:
                 await channel.set_permissions(role, connect=True)
-                await self.sendEmbed(ctx, "Grant User Access", f'{ctx.author.mention} You have permitted {role.name} to have access to the channel. ✅', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {role.name} to have access to the channel. ✅', delete_after=5)
 
         await ctx.message.delete()
         conn.commit()
@@ -511,7 +559,7 @@ class voice(commands.Cog):
         c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
-            await self.sendEmbed(ctx, "Reject User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Reject User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
             channel = self.bot.get_channel(channelID)
@@ -520,14 +568,14 @@ class voice(commands.Cog):
                     if members.id == member.id:
                         member.disconnect()
                 await channel.set_permissions(member, connect=False, read_messages=True)
-                await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
             if role:
                 for members in channel.members:
                     for roles in members.roles:
                         if roles.id == role.id:
                             member.disconnect()
                 await channel.set_permissions(member, connect=False, read_messages=True)
-                await self.sendEmbed(ctx, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
 
         conn.commit()
         conn.close()
@@ -542,12 +590,12 @@ class voice(commands.Cog):
         c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
-            await self.sendEmbed(ctx, "Updated Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
         else:
             channelID = voiceGroup[0]
             channel = self.bot.get_channel(channelID)
             await channel.edit(user_limit=limit)
-            await self.sendEmbed(ctx, "Updated Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
+            await self.sendEmbed(ctx.channel, "Updated Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
             c.execute(
                 "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
@@ -595,13 +643,13 @@ class voice(commands.Cog):
     #         "SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
     #     voiceGroup = c.fetchone()
     #     if voiceGroup is None:
-    #         await self.sendEmbed(ctx, "Updated Channel Bitrate", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+    #         await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
     #     else:
     #         channelID = voiceGroup[0]
     #         channel = self.bot.get_channel(channelID)
     #         await channel.edit(bitrate=bitrate)
     #         br = bitrate
-    #         await self.sendEmbed(ctx, "Updated Channel Bitrate", f'{ctx.author.mention} You have set the channel bitrate to be ' + '{}!'.format(bitrate), delete_after=5)
+    #         await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention} You have set the channel bitrate to be ' + '{}!'.format(bitrate), delete_after=5)
     #         c.execute(
     #             "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
     #         voiceGroup = c.fetchone()
@@ -625,7 +673,7 @@ class voice(commands.Cog):
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
-                await self.sendEmbed(ctx, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Updated Channel Name", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
                 channelID = voiceGroup[0]
                 c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
@@ -640,7 +688,7 @@ class voice(commands.Cog):
                         await textChannel.edit(name=name)
 
                     await channel.edit(name=name)
-                    await self.sendEmbed(ctx, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
                     c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                     voiceGroup = c.fetchone()
                     if voiceGroup is None:
@@ -680,7 +728,7 @@ class voice(commands.Cog):
                         await textChannel.edit(name=name)
 
                     await channel.edit(name=name)
-                    await self.sendEmbed(ctx, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
                     c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwner, guildID,))
                     voiceGroup = c.fetchone()
                     if voiceGroup is None:
@@ -703,13 +751,13 @@ class voice(commands.Cog):
             guildID = ctx.guild.id
             channel = ctx.author.voice.channel
             if channel == None:
-                await self.sendEmbed(ctx, "Who Owns Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
             else:
                 c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is not None:
                     owner = ctx.guild.get_member(voiceGroup[0])
-                    await self.sendEmbed(ctx, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
+                    await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
             conn.close()
         except Exception as ex:
             print(ex)
@@ -725,18 +773,18 @@ class voice(commands.Cog):
         guildID = ctx.guild.id
         channel = ctx.author.voice.channel
         if channel == None:
-            await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
         else:
             aid = ctx.author.id
             c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
-                await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} You can't own that channel!", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You can't own that channel!", delete_after=5)
             else:
                 for data in channel.members:
                     if data.id == voiceGroup[0]:
                         owner = ctx.guild.get_member(voiceGroup[0])
-                        await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
                         x = True
                 if x == False:
                     c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
@@ -746,7 +794,7 @@ class voice(commands.Cog):
                     if textChannel is not None:
                         c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(aid, channel.id, guildID,))
 
-                    await self.sendEmbed(ctx, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
                     c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
             await ctx.message.delete()
             conn.commit()
@@ -781,7 +829,7 @@ class voice(commands.Cog):
                     return m.content.isnumeric() and idx >= 0 and idx < len(channel_array)
                 result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
             except asyncio.TimeoutError:
-                await self.sendEmbed(ctx, "Timeout", f'You took too long to answer.', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Timeout", f'You took too long to answer.', delete_after=5)
                 await ctx.channel.send('Took too long to answer!', delete_after=5)
             else:
                 selected_index = int(result_message.content)
@@ -789,7 +837,7 @@ class voice(commands.Cog):
                     chan = self.bot.get_channel(channel_array[selected_index - 1])
                     if chan:
                         await chan.delete()
-                        await self.sendEmbed(ctx, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
+                        await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
         else:
             print(f"{ctx.author} tried to run command 'delete'")
         await ctx.message.delete()
@@ -799,7 +847,7 @@ class voice(commands.Cog):
         admin_role = discord.utils.find(lambda r: r.name == self.admin_role, ctx.message.guild.roles)
         return admin_role in ctx.author.roles or is_listed_admin
 
-    async def sendEmbed(self, ctx, title, message, fields=None, delete_after=None, footer=None):
+    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
         embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
                         icon_url=self.settings['icon'])
@@ -810,7 +858,7 @@ class voice(commands.Cog):
             embed.set_footer(text=f'Developed by {self.settings["author"]}')
         else:
             embed.set_footer(text=footer)
-        await ctx.channel.send(embed=embed, delete_after=delete_after)
+        await channel.send(embed=embed, delete_after=delete_after)
 
 
 def setup(bot):

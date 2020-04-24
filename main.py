@@ -44,6 +44,12 @@ async def on_disconnect():
     print('------')
 
 @bot.event
+async def on_resumed():
+    print('------')
+    print('Bot Session Resumed')
+    print('------')
+
+@bot.event
 async def on_error(event, *args, **kwargs):
     print('------')
     print('On Error')
