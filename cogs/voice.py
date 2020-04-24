@@ -42,6 +42,7 @@ class voice(commands.Cog):
         self.db_path = os.environ['VCB_DB_PATH'] or 'voice.db'
         print(f"DB Path: {self.db_path}")
         self.admin_ids = os.environ["ADMIN_USERS"].split(" ")
+        self.admin_role = os.environ['ADMIN_ROLES'] or 'Admin'
         self.initDB()
 
     # Clean up empty channels
@@ -202,22 +203,26 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         channel = None
-        if ctx.author.voice:
-            channel = ctx.author.voice.channel
-        if channel is None:
-            await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
-        else:
-            aid = ctx.author.id
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} That channel is not managed by me. I can't help you own that channel.", delete_after=5)
+        try:
+            if ctx.author.voice:
+                channel = ctx.author.voice.channel
+            if channel is None:
+                await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
             else:
-                if self.isAdmin(ctx) or ctx.author.id == voiceGroup[0]:
-                    await self.sendEmbed(ctx, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
-                    c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
+                aid = ctx.author.id
+                c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
+                voiceGroup = c.fetchone()
+                if voiceGroup is None:
+                    await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention} That channel is not managed by me. I can't help you own that channel.", delete_after=5)
                 else:
-                    await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
+                    if self.isAdmin(ctx) or ctx.author.id == voiceGroup[0]:
+                        await self.sendEmbed(ctx, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
+                        c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
+                    else:
+                        await self.sendEmbed(ctx, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
         conn.commit()
         conn.close()
         await ctx.message.delete()
@@ -294,6 +299,7 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
+
         print(f"User id triggering setup: {ctx.author.id}")
         print(f"Owner id: {ctx.guild.owner.id}")
         print(self.admin_ids)
@@ -335,17 +341,19 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         # removed the specific user permission and checked for admin status instead.
-        if ctx.author.id == ctx.guild.owner.id or ctx.author.id in self.admin_ids:
-            c.execute("SELECT * FROM guildSettings WHERE guildID = ?",
-                      (ctx.guild.id,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                c.execute("INSERT INTO guildSettings VALUES (?, ?, ?)",
-                          (ctx.guild.id, f"{ctx.author.name}'s channel", num))
-            else:
-                c.execute(
-                    "UPDATE guildSettings SET channelLimit = ? WHERE guildID = ?", (num, ctx.guild.id))
-            await self.sendEmbed(ctx, "Channel Set Limit", "You have changed the default channel limit for your server!", delete_after=5)
+        if self.isAdmin(ctx):
+            try:
+                c.execute("SELECT * FROM guildSettings WHERE guildID = ?", (ctx.guild.id,))
+                voiceGroup = c.fetchone()
+                if voiceGroup is None:
+                    c.execute("INSERT INTO guildSettings VALUES (?, ?, ?)",
+                            (ctx.guild.id, f"{ctx.author.name}'s channel", num))
+                else:
+                    c.execute("UPDATE guildSettings SET channelLimit = ? WHERE guildID = ?", (num, ctx.guild.id))
+                await self.sendEmbed(ctx, "Channel Set Limit", "You have changed the default channel limit for your server!", delete_after=5)
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc()
         else:
             await self.sendEmbed(ctx, "Channel Set Limit", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
@@ -382,8 +390,7 @@ class voice(commands.Cog):
         c = conn.cursor()
         aid = ctx.author.id
         print(f"{ctx.author} triggered lock")
-        c.execute(
-            "SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id, ))
+        c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id, ))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
             await self.sendEmbed(ctx, "Channel Lock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
@@ -788,7 +795,9 @@ class voice(commands.Cog):
         await ctx.message.delete()
 
     def isAdmin(self, ctx):
-        return ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids
+        is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids
+        admin_role = discord.utils.find(lambda r: r.name == self.admin_role, ctx.message.server.roles)
+        return admin_role in ctx.author.roles or is_listed_admin
 
     async def sendEmbed(self, ctx, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)

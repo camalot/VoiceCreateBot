@@ -31,9 +31,24 @@ if __name__ == '__main__':
 
 @bot.event
 async def on_ready():
+    print('------')
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
+    print('------')
+
+@bot.event
+async def on_disconnect():
+    print('------')
+    print('Bot Disconnected')
+    print('------')
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    print('------')
+    print('On Error')
+    print(event)
+    traceback.print_exc()
     print('------')
 
 bot.run(DISCORD_TOKEN)
