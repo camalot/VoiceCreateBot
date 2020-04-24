@@ -133,6 +133,7 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         guildID = member.guild.id
+        await self.clean_up_tracked_channels(guildID)
         c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
         voiceChannels = [item for clist in c.fetchall() for item in clist]
         if voiceChannels is None:
