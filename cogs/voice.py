@@ -91,17 +91,23 @@ class voice(commands.Cog):
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
-            voiceChannelId = c.fetchone()
+            voiceChannelSet = c.fetchone()
+            voiceChannelId = None
             voiceChannel = None
-            if voiceChannelId:
+            if voiceChannelSet:
+                voiceChannelId = voiceChannelSet[0]
+                print(f"Start Tracked Cleanup: {voiceChannelId}")
                 voiceChannel = self.bot.get_channel(voiceChannelId)
             if voiceChannel:
+                print(f"Channel {voiceChannel} was found as a tracked channel")
                 if len(voiceChannel.members) == 0:
                     print(f"Deleting Channel {voiceChannel} because everyone left")
                     c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannel.id,))
-                    textChannelId = c.fetchone()
+                    textChannelSet = c.fetchone()
+                    textChannelId = None
                     textChannel = None
-                    if textChannelId:
+                    if textChannelSet:
+                        textChannelId = textChannelSet[0]
                         textChannel = self.bot.get_channel(textChannelId)
                     if textChannel:
                         await textChannel.delete()
@@ -110,6 +116,8 @@ class voice(commands.Cog):
                     c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
                     c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
                     conn.commit()
+            else:
+                print(f"Unable to find voice channel: {voiceChannelId}")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -196,7 +204,6 @@ class voice(commands.Cog):
                         traceback.print_exc()
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.')
-
                     def check(a, b, c):
                         return len(channel2.members) == 0
                     await self.bot.wait_for('voice_state_update', check=check)
@@ -206,10 +213,10 @@ class voice(commands.Cog):
                     await asyncio.sleep(3)
                     c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
                     c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
+                    conn.commit()
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
-        conn.commit()
         conn.close()
 
     @commands.group()
