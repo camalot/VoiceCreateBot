@@ -209,15 +209,15 @@ class voice(commands.Cog):
                         traceback.print_exc()
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.')
-                    def check(a, b, c):
-                        return len(channel2.members) == 0
-                    await self.bot.wait_for('voice_state_update', check=check)
-                    print(f"Deleting Channel {channel2} because everyone left")
-                    await channel2.delete()
-                    await textChannel.delete()
-                    await asyncio.sleep(3)
-                    c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
-                    c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
+                    # def check(a, b, c):
+                    #     return len(channel2.members) == 0
+                    # await self.bot.wait_for('voice_state_update', check=check)
+                    # print(f"Deleting Channel {channel2} because everyone left")
+                    # await channel2.delete()
+                    # await textChannel.delete()
+                    # await asyncio.sleep(3)
+                    # c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
+                    # c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
                     conn.commit()
             except discord.errors.NotFound as nf:
                 print(nf)
