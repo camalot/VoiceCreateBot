@@ -135,10 +135,11 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
         guildID = member.guild.id
         await self.clean_up_tracked_channels(guildID)
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
         c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
         voiceChannels = [item for clist in c.fetchall() for item in clist]
         if voiceChannels is None:
