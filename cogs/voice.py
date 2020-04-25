@@ -57,35 +57,6 @@ class voice(commands.Cog):
             print(ex)
             traceback.print_exc()
 
-    # Clean up empty channels
-    async def clean_up_channels(self, guild):
-        try:
-            conn = sqlite3.connect(self.db_path)
-            c = conn.cursor()
-            guildID = guild.id
-            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
-            voiceChannels = [item for clist in c.fetchall() for item in clist]
-            for chanID in voiceChannels:
-                chan = guild.get_channel(chanID)
-                if chan is not None and len(chan.members) == 0:
-                    print(f"Delete orphan voice channel '{chan.name}'")
-                    await chan.delete()
-                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID))
-                    textGroup = c.fetchone()
-                    textChannel = None
-                    if textGroup is not None:
-                        textChannel = self.bot.get_channel(textGroup[0])
-                    if textChannel is not None:
-                        print(f"Delete orphan text channel '{textChannel.name}'")
-                        await textChannel.delete()
-                c.execute("DELETE FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-                c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, chanID, ))
-            conn.commit()
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-
     async def clean_up_tracked_channels(self, guildID):
         try:
             conn = sqlite3.connect(self.db_path)
@@ -97,7 +68,6 @@ class voice(commands.Cog):
             voiceChannel = None
             if voiceChannelSet:
                 voiceChannelId = voiceChannelSet[0]
-                print(f"Start Tracked Cleanup: {voiceChannelId}")
                 voiceChannel = self.bot.get_channel(voiceChannelId)
 
             c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannelId))
@@ -109,8 +79,8 @@ class voice(commands.Cog):
                 textChannel = self.bot.get_channel(textChannelId)
 
             if voiceChannel:
-                print(f"Channel {voiceChannel} was found as a tracked channel")
                 if len(voiceChannel.members) == 0:
+                    print(f"Start Tracked Cleanup: {voiceChannelId}")
                     print(f"Deleting Channel {voiceChannel} because everyone left")
                     c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
                     c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
@@ -237,12 +207,12 @@ class voice(commands.Cog):
                 voiceSets = c.fetchall()
                 channelFields = list()
                 for v in voiceSets:
-                    channel = self.bot.get_channel(v[0])
-                    user = self.bot.get_user(v[1])
-                    chanName = f"Unknown Channel: {v[0]}"
+                    channel = self.bot.get_channel(int(v[0]))
+                    user = self.bot.get_user(int(v[1]))
+                    chanName = f"Unknown Channel: {str(v[0])}"
                     if channel:
                          channel.name
-                    userName = f"Unknown User: {v[1]}"
+                    userName = f"Unknown User: {str(v[1])}"
                     if user:
                         userName = f"{user.name}#{user.discriminator}"
                     channelFields.append({
@@ -259,6 +229,8 @@ class voice(commands.Cog):
         finally:
             conn.close()
             await ctx.message.delete()
+
+
     @voice.command()
     async def track(self, ctx):
         conn = sqlite3.connect(self.db_path)
@@ -909,6 +881,7 @@ class voice(commands.Cog):
         else:
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
+
 
 
 def setup(bot):
