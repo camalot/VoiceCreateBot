@@ -239,9 +239,15 @@ class voice(commands.Cog):
                 for v in voiceSets:
                     channel = self.bot.get_channel(v[0])
                     user = self.bot.get_user(v[1])
+                    chanName = f"Unknown Channel: {v[0]}"
+                    if channel:
+                         channel.name
+                    userName = f"Unknown User: {v[1]}"
+                    if user:
+                        userName = f"{user.name}#{user.discriminator}"
                     channelFields.append({
-                        "name": if channel channel.name else f"Unknown Channel: {v[0]}",
-                        "value": if user f"{user.name}#{user.discriminator}" else f"Unknown User: {v[1]}"
+                        "name": chanName,
+                        "value": userName
                     })
                 if len(channelFields) > 0:
                     await self.sendEmbed(ctx.channel, "Tracked Channels", "Here are the currently tracked channels", fields=channelFields, delete_after=60)
