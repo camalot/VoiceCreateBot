@@ -211,7 +211,7 @@ class voice(commands.Cog):
                     user = self.bot.get_user(int(v[1]))
                     chanName = f"Unknown Channel: {str(v[0])}"
                     if channel:
-                         channel.name
+                         chanName = channel.name
                     userName = f"Unknown User: {str(v[1])}"
                     if user:
                         userName = f"{user.name}#{user.discriminator}"
@@ -220,7 +220,7 @@ class voice(commands.Cog):
                         "value": userName
                     })
                 if len(channelFields) > 0:
-                    await self.sendEmbed(ctx.channel, "Tracked Channels", "Here are the currently tracked channels", fields=channelFields, delete_after=60)
+                    await self.sendEmbed(ctx.channel, "Tracked Channels", "Here are the currently tracked channels", fields=channelFields, delete_after=30)
                 else:
                     await self.sendEmbed(ctx.channel, "Tracked Channels", "There are currently no tracked channels", delete_after=5)
         except Exception as ex:
