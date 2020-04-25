@@ -208,19 +208,19 @@ class voice(commands.Cog):
                     textChannel = None
                     c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceID = ?", (guildID, channel.id,))
                     textSet = c.fetchone()
-                    tchanName = f"No Text Channel"
+                    tchanName = f"**[No Text Channel]**"
                     if textSet:
                         textChannel = self.bot.get_channel(int(textSet[0]))
                         if textChannel:
-                            tchanName = textChannel.name
-                    chanName = f"Unknown Channel: {str(v[0])}"
+                            tchanName = f"#{textChannel.name}"
+                    chanName = f"**[Unknown Channel: {str(v[0])}]**"
                     if channel:
                          chanName = channel.name
-                    userName = f"Unknown User: {str(v[1])}"
+                    userName = f"**[Unknown User: {str(v[1])}]**"
                     if user:
                         userName = f"{user.name}#{user.discriminator}"
                     channelFields.append({
-                        "name": f"{chanName} / #{tchanName}",
+                        "name": f"{chanName} / {tchanName}",
                         "value": userName
                     })
                 if len(channelFields) > 0:
