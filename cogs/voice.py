@@ -240,8 +240,8 @@ class voice(commands.Cog):
                     channel = self.bot.get_channel(v[0])
                     user = self.bot.get_user(v[1])
                     channelFields.append({
-                        "name": channel.name,
-                        "value": f"{user.name}#{user.discriminator}"
+                        "name": if channel channel.name else f"Unknown Channel: {v[0]}",
+                        "value": if user f"{user.name}#{user.discriminator}" else f"Unknown User: {v[1]}"
                     })
                 if len(channelFields) > 0:
                     await self.sendEmbed(ctx.channel, "Tracked Channels", "Here are the currently tracked channels", fields=channelFields, delete_after=60)
