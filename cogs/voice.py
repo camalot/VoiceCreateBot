@@ -205,6 +205,14 @@ class voice(commands.Cog):
                 for v in voiceSets:
                     channel = self.bot.get_channel(int(v[0]))
                     user = self.bot.get_user(int(v[1]))
+                    textChannel = None
+                    c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceID = ?", (guildID, channel.id,))
+                    textSet = c.fetchone()
+                    tchanName = f"No Text Channel"
+                    if textSet:
+                        textChannel = self.bot.get_channel(int(textSet[0]))
+                        if textChannel:
+                            tchanName = textChannel.name
                     chanName = f"Unknown Channel: {str(v[0])}"
                     if channel:
                          chanName = channel.name
@@ -212,7 +220,7 @@ class voice(commands.Cog):
                     if user:
                         userName = f"{user.name}#{user.discriminator}"
                     channelFields.append({
-                        "name": chanName,
+                        "name": f"{chanName} / #{tchanName}",
                         "value": userName
                     })
                 if len(channelFields) > 0:
@@ -226,6 +234,60 @@ class voice(commands.Cog):
             conn.close()
             await ctx.message.delete()
 
+    @voice.command(aliases=["track-text-channel", "ttc"])
+    async def track_text_channel(self, ctx, channel: discord.TextChannel = None):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        mid = ctx.author.id
+        guildID = ctx.author.guild.id
+
+        try:
+            if self.isAdmin(ctx):
+
+                voiceChannel = None
+                if ctx.author.voice:
+                    voiceChannel = ctx.author.voice.channel
+
+                if channel is None:
+                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You must specific a channel to track.", fields=None, delete_after=5)
+                    conn.close()
+                    await ctx.message.delete()
+                    return
+
+                if voiceChannel:
+                    # check if this voice channel is tracked.
+                    c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ? and guildID = ?", (voiceChannel.id, guildID,))
+                    voiceGroup = c.fetchone()
+                    if voiceGroup:
+                        c.execute("SELECT channelID FROM textChannel WHERE voiceID = ? and guildID = ?", (voiceChannel.id, guildID,))
+                        textGroup = c.fetchone()
+                        if not textGroup:
+                            # we can add this channel as it is not tracked.
+                            # if it lives in the same category (as a safety measure)
+                            if channel.category_id == voiceChannel.category_id:
+                                # `guildID` INTEGER, `userID` INTEGER, `channelID` INTEGER, `voiceID` INTEGER
+                                c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, channel.id, voiceChannel.id,))
+                                conn.commit()
+                                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, I am now tracking '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
+                            else:
+                                # not in the same category
+                                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, {channel} is in a different category than '{voiceChannel}'. Tracking this channel is not supported.", fields=None, delete_after=5)
+                        else:
+                            # channel already has a textChannel associated with it.
+                            await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, The voice channel '{voiceChannel}' already has a channel associated with it", fields=None, delete_after=5)
+                    else:
+                        # not tracked
+                        await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, The voice channel you are in is not currently tracked, so I can't track '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
+                else:
+                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}", f"You are not in a voice channel to link '{channel}' to.", fields=None, delete_after=5)
+            else:
+                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You do not have permission to add '{channel}' as a tracked channel", fields=None, delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.close()
+            await ctx.message.delete()
 
 
     @voice.command()
@@ -312,6 +374,8 @@ class voice(commands.Cog):
                 #                 icon_url=self.settings['icon'])
                 embed.add_field(name=f'**Usage**', value=cmd['usage'], inline='false')
                 embed.add_field(name=f'**Example**', value=cmd['example'], inline='false')
+                embed.add_field(name=f'**Aliases**', value=cmd['aliases'], inline='false')
+
                 embed.set_footer(text=f'Developed by {self.settings["author"]}')
                 await ctx.channel.send(embed=embed)
         else:
