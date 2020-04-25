@@ -112,20 +112,22 @@ class voice(commands.Cog):
                 print(f"Channel {voiceChannel} was found as a tracked channel")
                 if len(voiceChannel.members) == 0:
                     print(f"Deleting Channel {voiceChannel} because everyone left")
+                    c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
+                    c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
                     if textChannel:
                         await textChannel.delete()
                     await voiceChannel.delete()
-                    await asyncio.sleep(3)
             else:
                 if voiceChannelId is not None:
                     print(f"Unable to find voice channel: {voiceChannelId}")
-
-            if voiceChannelId:
-                c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-            if textChannelId:
-                c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
+                    if voiceChannelId:
+                        c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
+                    if textChannelId:
+                        c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
             conn.commit()
         except discord.errors.NotFound as nf:
+            print(nf)
+            traceback.print_exc()
             print("Channel Not Found. Already Cleaned Up")
 
     @commands.Cog.listener()
@@ -137,7 +139,7 @@ class voice(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         guildID = member.guild.id
         await self.clean_up_tracked_channels(guildID)
-
+        await asyncio.sleep(2)
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
@@ -147,9 +149,6 @@ class voice(commands.Cog):
             pass
         else:
             try:
-                # await asyncio.sleep(3)
-                # await self.clean_up_channels(member.guild)
-
                 if after.channel is not None and after.channel.id in voiceChannels:
                     category_id = after.channel.category_id
                     c.execute("SELECT channelName, channelLimit FROM userSettings WHERE userID = ?", (member.id,))
@@ -211,16 +210,10 @@ class voice(commands.Cog):
                         traceback.print_exc()
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.')
-                    # def check(a, b, c):
-                    #     return len(channel2.members) == 0
-                    # await self.bot.wait_for('voice_state_update', check=check)
-                    # print(f"Deleting Channel {channel2} because everyone left")
-                    # await channel2.delete()
-                    # await textChannel.delete()
-                    # await asyncio.sleep(3)
-                    # c.execute('DELETE FROM voiceChannel WHERE userID = ?', (mid,))
-                    # c.execute('DELETE FROM textChannel WHERE userID = ?', (mid,))
-                    conn.commit()
+                    initMessage = self.settings['init-message']
+                    if initMessage:
+                        # title, message, fields=None, delete_after=None, footer=None
+                        await self.sendEmbed(textChannel, initMessage['title'], initMessage['message'], initMessage['fields'], delete_after=None, footer='')
             except discord.errors.NotFound as nf:
                 print(nf)
             except Exception as ex:
@@ -232,6 +225,34 @@ class voice(commands.Cog):
     async def voice(self, ctx):
         pass
 
+    @voice.command()
+    async def channels(self, ctx):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        mid = ctx.author.id
+        guildID = ctx.author.guild.id
+        try:
+            if self.isAdmin(ctx):
+                c.execute("SELECT voiceID, userID FROM voiceChannel WHERE guildID = ?", (guildID,))
+                voiceSets = c.fetchall()
+                channelFields = list()
+                for v in voiceSets:
+                    channel = self.bot.get_channel(v[0])
+                    user = self.bot.get_user(v[1])
+                    channelFields.append({
+                        "name": channel.name,
+                        "value": f"{user.name}#{user.discriminator}"
+                    })
+                if len(channelFields) > 0:
+                    await self.sendEmbed(ctx.channel, "Tracked Channels", "Here are the currently tracked channels", fields=channelFields, delete_after=60)
+                else:
+                    await self.sendEmbed(ctx.channel, "Tracked Channels", "There are currently no tracked channels", delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.close()
+            await ctx.message.delete()
     @voice.command()
     async def track(self, ctx):
         conn = sqlite3.connect(self.db_path)
@@ -310,18 +331,25 @@ class voice(commands.Cog):
             cmd = command_list[command.lower()]
             if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
                 embed = discord.Embed(title=f"Help '{command.lower()}'", description=cmd['help'], color=0x7289da)
-                embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
-                                icon_url=self.settings['icon'])
+                # embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
+                #                 icon_url=self.settings['icon'])
                 embed.add_field(name=f'**Usage**', value=cmd['usage'], inline='false')
                 embed.add_field(name=f'**Example**', value=cmd['example'], inline='false')
                 embed.set_footer(text=f'Developed by {self.settings["author"]}')
                 await ctx.channel.send(embed=embed)
         else:
             embed = discord.Embed(title=f"Help Commands", description="List of available help commands", color=0x7289da)
-            embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
-                            icon_url=self.settings['icon'])
+            # embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
+            #                 icon_url=self.settings['icon'])
             for k in command_list:
-                embed.add_field(name=k, value=f".voice help {k}", inline='false')
+                cmd = command_list[k.lower()]
+                if cmd['admin']:
+                    if self.isAdmin(ctx) :
+                        embed.add_field(name=cmd['help'], value=f"`{cmd['usage']}`", inline='false')
+                        embed.add_field(name="More Help", value=f"`.voice help {k.lower()}`", inline='false')
+                else:
+                    embed.add_field(name=cmd['help'], value=f"`{cmd['usage']}`", inline='false')
+                    embed.add_field(name="More Help", value=f"`.voice help {k}`", inline='false')
             embed.set_footer(text=f'Developed by {self.settings["author"]}')
             await ctx.channel.send(embed=embed)
         await ctx.message.delete()
@@ -865,8 +893,8 @@ class voice(commands.Cog):
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
-        embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
-                        icon_url=self.settings['icon'])
+        # embed.set_author(name=f"{self.settings['name']}", url=self.settings['url'],
+        #                 icon_url=self.settings['icon'])
         if fields is not None:
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline='false')

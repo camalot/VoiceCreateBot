@@ -4,7 +4,23 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
+	"init-message": {
+		"title": "Customize the name of your channel by using the voice bot 'name' command",
+		"message": "Type in this channel `.voice name new channel name`",
+		"fields": [
+			{
+				"name": "More Help",
+				"value": "`.voice help`"
+			}
+		]
+	},
 	"commands": {
+		"name": {
+			"help": "**Change your channel name by using the following command:**",
+			"usage": ".voice name <name>",
+			"example": ".voice name EU 5kd+",
+			"admin": false
+		},
 		"unlock": {
 			"help": "**Unlock your channel by using the following command:**",
 			"usage": ".voice unlock",
@@ -15,12 +31,6 @@
 			"help": "**Lock your channel by using the following command:**",
 			"usage": ".voice lock [allowed_roles]",
 			"example": ".voice lock",
-			"admin": false
-		},
-		"name": {
-			"help": "**Change your channel name by using the following command:**",
-			"usage": ".voice name <name>",
-			"example": ".voice name EU 5kd+",
 			"admin": false
 		},
 		"limit": {
@@ -64,6 +74,12 @@
 			"usage": ".voice whoowns",
 			"example": ".voice whoowns",
 			"admin": false
+		},
+		"channels": {
+			"help": "**Get a list of all the currently tracked channels:**",
+			"usage": ".voice channels",
+			"example": ".voice channels",
+			"admin": true
 		},
 		"rename": {
 			"help": "**Allows an admin to rename a channel that they join:**",
