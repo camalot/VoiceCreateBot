@@ -231,6 +231,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
 
+
     @voice.command()
     async def track(self, ctx):
         conn = sqlite3.connect(self.db_path)
@@ -261,6 +262,7 @@ class voice(commands.Cog):
         finally:
             conn.close()
             await ctx.message.delete()
+
     @voice.command()
     async def owner(self, ctx, member: discord.Member):
         conn = sqlite3.connect(self.db_path)
@@ -406,6 +408,43 @@ class voice(commands.Cog):
         conn.commit()
         conn.close()
 
+
+    @voice.command()
+    async def settings(self, ctx, category, locked="False", limit="0"):
+        if self.isAdmin(ctx):
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            found_category = next((x for x in ctx.guild.categories if x.name == category), None)
+            if found_category:
+                c.execute("SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
+                catSettings = c.fetchone()
+                if catSettings:
+                    print(f"UPDATE category settings")
+                    c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ?",
+                        (int(limit), str2bool(locked), ctx.guild.id, found_category.id,))
+                else:
+                    print(f"INSERT category settings")
+                    c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), str2bool(locked)))
+                embed_fields = list()
+                embed_fields.append({
+                    "name": "Locked",
+                    "value": str(locked)
+                })
+                embed_fields.append({
+                    "name": "Limit",
+                    "value": str(limit)
+                })
+
+                await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
+
+            else:
+                print(f"No Category found for '{category}'")
+            conn.commit()
+            conn.close()
+        else:
+            await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
+        await ctx.message.delete()
+
     @voice.command(pass_context=True)
     async def setlimit(self, ctx, num):
         conn = sqlite3.connect(self.db_path)
@@ -470,22 +509,25 @@ class voice(commands.Cog):
             channel = self.bot.get_channel(channelID)
 
 
-            # c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
-            # textGroup = c.fetchone()
-            # textChannel = None
-            # if channel is not None:
-            #     if textGroup is not None:
-            #         textChannel = self.bot.get_channel(textGroup[0])
-            #     if textChannel is not None:
-            #         await textChannel.set_permissions(role, read_messages=False,send_messages=False)
+            c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            textGroup = c.fetchone()
+            textChannel = None
+            if channel:
+                if textGroup:
+                    textChannel = self.bot.get_channel(textGroup[0])
+                if textChannel:
+                    await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                    await textChannel.set_permissions(role, read_messages=False,send_messages=False)
 
-            await channel.set_permissions(role, connect=False, read_messages=True)
-            if roles:
-
-                for r in roles.split(","):
-                    rname = "@" + r.replace("@", "").trim()
-                    role = discord.utils.get(ctx.guild.roles, name=rname)
-                    await channel.set_permissions(role, connect=True, read_messages=True)
+                await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False)
+                if roles:
+                    for r in roles.split(","):
+                        rname = "@" + r.replace("@", "").trim()
+                        role = discord.utils.get(ctx.guild.roles, name=rname)
+                        await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True)
+                        if textChannel:
+                            await textChannel.set_permissions(role, read_messages=True,send_messages=True)
 
             await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         await ctx.message.delete()
@@ -493,48 +535,11 @@ class voice(commands.Cog):
         conn.close()
 
     @voice.command()
-    async def settings(self, ctx, category, locked="False", limit="0"):
-        if self.isAdmin(ctx):
-            conn = sqlite3.connect(self.db_path)
-            c = conn.cursor()
-            found_category = next((x for x in ctx.guild.categories if x.name == category), None)
-            if found_category:
-                c.execute("SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
-                catSettings = c.fetchone()
-                if catSettings:
-                    print(f"UPDATE category settings")
-                    c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ?",
-                        (int(limit), str2bool(locked), ctx.guild.id, found_category.id,))
-                else:
-                    print(f"INSERT category settings")
-                    c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), str2bool(locked)))
-                embed_fields = list()
-                embed_fields.append({
-                    "name": "Locked",
-                    "value": str(locked)
-                })
-                embed_fields.append({
-                    "name": "Limit",
-                    "value": str(limit)
-                })
-
-                await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
-
-            else:
-                print(f"No Category found for '{category}'")
-            conn.commit()
-            conn.close()
-        else:
-            await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
-        await ctx.message.delete()
-
-    @voice.command()
     async def unlock(self, ctx):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
-        c.execute(
-            "SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id,))
+        c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id,))
         voiceGroup = c.fetchone()
         if voiceGroup is None:
             await self.sendEmbed(ctx.channel, "Channel Unlock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
@@ -542,7 +547,20 @@ class voice(commands.Cog):
             channelID = voiceGroup[0]
             role = discord.utils.get(ctx.guild.roles, name='@everyone')
             channel = self.bot.get_channel(channelID)
-            await channel.set_permissions(role, connect=True, read_messages=True)
+
+            c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+            textGroup = c.fetchone()
+            textChannel = None
+            if channel:
+                if textGroup:
+                    textChannel = self.bot.get_channel(textGroup[0])
+                if textChannel:
+                    await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                    await textChannel.set_permissions(role, read_messages=True,send_messages=True)
+
+                await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True)
+
             await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         await ctx.message.delete()
         conn.commit()
