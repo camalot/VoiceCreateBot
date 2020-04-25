@@ -865,13 +865,13 @@ class voice(commands.Cog):
 
                         await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
                         c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
-            except Exception as ex:
-                print(ex)
-                traceback.print_exc()
-            finally:
-                conn.commit()
-                conn.close()
-                await ctx.message.delete()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.commit()
+            conn.close()
+            await ctx.message.delete()
 
     @voice.command()
     # @commands.has_role("Admin")
