@@ -55,38 +55,39 @@ class voice(commands.Cog):
         c = conn.cursor()
         try:
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
-            voiceChannelSet = c.fetchone()
-            textChannelId = None
-            voiceChannelId = None
-            voiceChannel = None
-            if voiceChannelSet:
-                voiceChannelId = voiceChannelSet[0]
-                voiceChannel = self.bot.get_channel(voiceChannelId)
+            voiceChannelSet = c.fetchall()
+            for vc in voiceChannelSet:
+                textChannelId = None
+                voiceChannelId = None
+                voiceChannel = None
+                if voiceChannelSet:
+                    voiceChannelId = vc[0]
+                    voiceChannel = self.bot.get_channel(voiceChannelId)
 
-            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannelId))
-            textChannelSet = c.fetchone()
+                c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannelId))
+                textChannelSet = c.fetchone()
 
-            textChannel = None
-            if textChannelSet:
-                textChannelId = textChannelSet[0]
-                textChannel = self.bot.get_channel(textChannelId)
+                textChannel = None
+                if textChannelSet:
+                    textChannelId = textChannelSet[0]
+                    textChannel = self.bot.get_channel(textChannelId)
 
-            if voiceChannel:
-                if len(voiceChannel.members) == 0:
-                    print(f"Start Tracked Cleanup: {voiceChannelId}")
-                    print(f"Deleting Channel {voiceChannel} because everyone left")
-                    c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-                    c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
-                    if textChannel:
-                        await textChannel.delete()
-                    await voiceChannel.delete()
-            else:
-                if voiceChannelId is not None:
-                    print(f"Unable to find voice channel: {voiceChannelId}")
-                    if voiceChannelId:
+                if voiceChannel:
+                    if len(voiceChannel.members) == 0:
+                        print(f"Start Tracked Cleanup: {voiceChannelId}")
+                        print(f"Deleting Channel {voiceChannel} because everyone left")
                         c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-                    if textChannelId:
                         c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
+                        if textChannel:
+                            await textChannel.delete()
+                        await voiceChannel.delete()
+                else:
+                    if voiceChannelId is not None:
+                        print(f"Unable to find voice channel: {voiceChannelId}")
+                        if voiceChannelId:
+                            c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
+                        if textChannelId:
+                            c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
         except discord.errors.NotFound as nf:
             print(nf)
             traceback.print_exc()
