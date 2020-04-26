@@ -369,30 +369,32 @@ class voice(commands.Cog):
         if command and command.lower() in command_list:
             cmd = command_list[command.lower()]
             if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
-                embed = discord.Embed(title=f"Help '{command.lower()}'", description=cmd['help'], color=0x7289da)
-                # embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
-                #                 icon_url=self.settings['icon'])
-                embed.add_field(name=f'**Usage**', value=cmd['usage'], inline='false')
-                embed.add_field(name=f'**Example**', value=cmd['example'], inline='false')
-                embed.add_field(name=f'**Aliases**', value=cmd['aliases'], inline='false')
+                fields = list()
+                fields.append({"name": "**Usage**", "value": f"`{cmd['usage']}`"})
+                fields.append({"name": "**Example**", "value": f"`{cmd['example']}`"})
+                fields.append({"name": "**Aliases**", "value": f"`{cmd['aliases']}`"})
 
-                embed.set_footer(text=f'Developed by {self.settings["author"]}')
-                await ctx.channel.send(embed=embed)
+                await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
+
         else:
-            embed = discord.Embed(title=f"Help Commands", description="List of available help commands", color=0x7289da)
-            # embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
-            #                 icon_url=self.settings['icon'])
-            for k in command_list:
-                cmd = command_list[k.lower()]
-                if cmd['admin']:
-                    if self.isAdmin(ctx) :
-                        embed.add_field(name=cmd['help'], value=f"`{cmd['usage']}`", inline='false')
-                        embed.add_field(name="More Help", value=f"`.voice help {k.lower()}`", inline='false')
-                else:
-                    embed.add_field(name=cmd['help'], value=f"`{cmd['usage']}`", inline='false')
-                    embed.add_field(name="More Help", value=f"`.voice help {k}`", inline='false')
-            embed.set_footer(text=f'Developed by {self.settings["author"]}')
-            await ctx.channel.send(embed=embed)
+            chunked = self.chunk_list(list(command_list.keys()), 10)
+            pages = math.ceil(len(command_list) / 10)
+            page = 1
+            for chunk in chunked:
+                fields = list()
+                for k in chunk:
+                    cmd = command_list[k.lower()]
+                    if cmd['admin']:
+                        if self.isAdmin(ctx) :
+                            fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
+                            fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
+                            fields.append({"name": "Admin Command", "value": f"Can only be ran by a server admin"})
+                    else:
+                        fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
+                        fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
+
+                await self.sendEmbed(ctx.channel, f"Voice Bot Command Help ({page}/{pages})", "List of Available Commands", fields=fields)
+                page += 1
         await ctx.message.delete()
 
     async def ask_category(self, ctx):
@@ -978,6 +980,11 @@ class voice(commands.Cog):
         else:
             print(f"{ctx.author} tried to run command 'delete'")
         await ctx.message.delete()
+
+    def chunk_list(self, lst, size):
+        # looping till length l
+        for i in range(0, len(lst), size):
+            yield lst[i:i + size]
 
     def isAdmin(self, ctx):
         is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids

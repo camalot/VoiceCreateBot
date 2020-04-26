@@ -121,14 +121,14 @@
 			"aliases": ["ttc"]
 		},
 		"settings": {
-			"help": "**Change the Group Settings for Channels (ADMIN):**",
+			"help": "**Change the Group Settings for Channels:**",
 			"usage": ".voice settings \"<category name>\" <locked> <limit>",
 			"example": ".voice settings \"Voice Channels\" no 5",
 			"admin": true,
 			"aliases": []
 		},
 		"setup": {
-			"help": "**Setup a Create Voice Channel (ADMIN):**",
+			"help": "**Setup a Create Voice Channel:**",
 			"usage": ".voice setup",
 			"example": ".voice setup",
 			"admin": true,
