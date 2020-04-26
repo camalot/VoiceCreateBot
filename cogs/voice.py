@@ -922,7 +922,7 @@ class voice(commands.Cog):
                             await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
                             x = True
                     if x == False:
-                        c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                        c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channel.id))
                         textGroup = c.fetchone()
                         if textGroup is not None:
                             textChannel = self.bot.get_channel(textGroup[0])
