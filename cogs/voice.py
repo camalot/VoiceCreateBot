@@ -96,6 +96,10 @@ class voice(commands.Cog):
              conn.commit()
              conn.close()
 
+    @commands.group()
+    async def voice(self, ctx):
+        pass
+
     @commands.Cog.listener()
     async def on_ready(self):
         for guild in self.bot.guilds:
@@ -145,21 +149,21 @@ class voice(commands.Cog):
                     mid = member.id
                     category = self.bot.get_channel(category_id)
                     print(f"Creating channel {name} in {category}")
-                    channel2 = await member.guild.create_voice_channel(name, category=category)
+                    voiceChannel = await member.guild.create_voice_channel(name, category=category)
                     textChannel = await member.guild.create_text_channel(name, category=category)
-                    channelID = channel2.id
+                    channelID = voiceChannel.id
 
-                    print(f"Moving {member} to {channel2}")
-                    await member.move_to(channel2)
+                    print(f"Moving {member} to {voiceChannel}")
+                    await member.move_to(voiceChannel)
                     # if the bot cant do this, dont fail...
                     try:
-                        print(f"Setting permissions on {channel2}")
-                        await channel2.set_permissions(self.bot.user, connect=True, read_messages=True)
+                        print(f"Setting permissions on {voiceChannel}")
+                        await voiceChannel.set_permissions(self.bot.user, priority_speaker=True, connect=True, read_messages=True)
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
-                    print(f"Set user limit to {limit} on {channel2}")
-                    await channel2.edit(name=name, user_limit=limit)
+                    print(f"Set user limit to {limit} on {voiceChannel}")
+                    await voiceChannel.edit(name=name, user_limit=limit)
                     print(f"Track voiceChannel {mid},{channelID}")
                     print(f"Track Voice and Text Channels {name} in {category}")
                     c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
@@ -167,15 +171,14 @@ class voice(commands.Cog):
                     conn.commit()
 
                     role = discord.utils.get(member.guild.roles, name='@everyone')
-                    channel = self.bot.get_channel(channelID)
                     try:
-                        print(f"Check if bot can set channel for @everyone {channel}")
-                        await channel.set_permissions(role, connect=(not locked), read_messages=True)
+                        print(f"Check if bot can set channel for @everyone {voiceChannel}")
+                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=True)
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
 
-                    await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.')
+                    await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
                     initMessage = self.settings['init-message']
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
@@ -187,10 +190,6 @@ class voice(commands.Cog):
                 traceback.print_exc()
             finally:
                 conn.close()
-
-    @commands.group()
-    async def voice(self, ctx):
-        pass
 
     @voice.command()
     async def channels(self, ctx):
@@ -290,7 +289,6 @@ class voice(commands.Cog):
             conn.close()
             await ctx.message.delete()
 
-
     @voice.command()
     async def track(self, ctx):
         conn = sqlite3.connect(self.db_path)
@@ -344,6 +342,94 @@ class voice(commands.Cog):
                         c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
                     else:
                         await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.commit()
+            conn.close()
+            await ctx.message.delete()
+
+    @voice.command()
+    async def mute(self, ctx, role: discord.Role = None, user: discord.Member = None):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        aid = ctx.author.id
+        try:
+            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id, ))
+            voiceGroup = c.fetchone()
+            if voiceGroup is None:
+                await self.sendEmbed(ctx.channel, "Channel Mute", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            else:
+                channelID = voiceGroup[0]
+                everyone = discord.utils.get(ctx.guild.roles, name='@everyone')
+                channel = self.bot.get_channel(channelID)
+
+
+                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                textGroup = c.fetchone()
+                textChannel = None
+                if channel:
+                    permRoles = [everyone]
+                    if role:
+                        permRoles.append(role)
+                    if user:
+                        permRoles.append(user)
+
+                    if textGroup:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel:
+                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                        await textChannel.set_permissions(permRoles, send_messages=False)
+
+                    await channel.set_permissions(ctx.message.author, speak=True, connect=True, read_messages=True, send_messages=True)
+                    await channel.set_permissions(permRoles, speak=False)
+
+                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} All users in the specified role are now muted 🔇', delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.commit()
+            conn.close()
+            await ctx.message.delete()
+
+    @voice.command()
+    async def unmute(self, ctx, role: discord.Role = None, user: discord.Member = None):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        aid = ctx.author.id
+        try:
+            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, ctx.guild.id, ))
+            voiceGroup = c.fetchone()
+            if voiceGroup is None:
+                await self.sendEmbed(ctx.channel, "Channel Unmute", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            else:
+                channelID = voiceGroup[0]
+                everyone = discord.utils.get(ctx.guild.roles, name='@everyone')
+                channel = self.bot.get_channel(channelID)
+
+                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                textGroup = c.fetchone()
+                textChannel = None
+                if channel:
+
+                    permRoles = [everyone]
+                    if role:
+                        permRoles.append(role)
+                    if user:
+                        permRoles.append(user)
+
+                    if textGroup:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel:
+                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True)
+                        await textChannel.set_permissions(permRoles, send_messages=True)
+
+                    await channel.set_permissions(ctx.message.author, speak=True, connect=True, read_messages=True, send_messages=True)
+                    await channel.set_permissions(permRoles, speak=True)
+
+                await self.sendEmbed(ctx.channel, "Channel Unmute", f'{ctx.author.mention} All users in the specified role are now unmuted 🔊', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -475,7 +561,6 @@ class voice(commands.Cog):
             conn.commit()
             conn.close()
             await ctx.message.delete()
-
 
     @voice.command()
     async def settings(self, ctx, category, locked="False", limit="0"):
@@ -746,30 +831,6 @@ class voice(commands.Cog):
     # async def bitrate(self, ctx, bitrate):
     #     conn = sqlite3.connect(self.db_path)
     #     c = conn.cursor()
-    #     guild = ctx.guild
-    #     aid = ctx.author.id
-    #     bitrate = int(''.join(i for i in bitrate if i.isdigit())) * 1000
-    #     c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
-    #     voice=c.fetchone()
-    #     if voice is None:
-    #         await ctx.channel.send(f"{ctx.author.mention} You don't own a channel.")
-    #     else:
-    #         if 8000 <= bitrate <= guild.bitrate_limit:
-    #             channelID = voice[0]
-    #             role = discord.utils.get(ctx.guild.roles, name='@everyone')
-    #             channel = self.bot.get_channel(channelID)
-    #             await channel.edit(bitrate=bitrate)
-    #             bitrate = int(bitrate / 1000)
-    #             await ctx.channel.send(f'{ctx.author.mention} Changed bitrate to {bitrate}kbps.')
-    #         else:
-    #             await ctx.channel.send(f"{ctx.author.mention} You gave an invalid bitrate.")
-    #     conn.commit()
-    #     conn.close()
-
-    # @voice.command()
-    # async def bitrate(self, ctx, bitrate):
-    #     conn = sqlite3.connect(self.db_path)
-    #     c = conn.cursor()
     #     aid = ctx.author.id
     #     guildID = ctx.guild.id
     #     c.execute(
@@ -1005,10 +1066,8 @@ class voice(commands.Cog):
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
 
-
+def str2bool(v):
+    return v.lower() in ("yes", "true", "yup", "1", "t", "y")
 
 def setup(bot):
     bot.add_cog(voice(bot))
-
-def str2bool(v):
-    return v.lower() in ("yes", "true", "yup", "1", "t", "y")

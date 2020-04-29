@@ -36,6 +36,20 @@
 			"admin": false,
 			"aliases": []
 		},
+		"mute": {
+			"help": "**Sets role or user to be muted in the channel**",
+			"usage": ".voice mute [@role|@user]",
+			"example": ".voice mute @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
+		"unmute": {
+			"help": "**Removes the specified role or user as being a 'muted' role in the channel**",
+			"usage": ".voice unmute [@role|@user]",
+			"example": ".voice unmute @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
 		"limit": {
 			"help": "**Change your channel limit by using the following command:**",
 			"usage": ".voice limit <number>",
