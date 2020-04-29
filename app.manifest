@@ -9,28 +9,28 @@
 		"message": "Type in this channel `.voice name new channel name`",
 		"fields": [
 			{
-				"name": "More Help",
+				"name": "View more commands to control your channel",
 				"value": "`.voice help`"
 			}
 		]
 	},
 	"commands": {
 		"name": {
-			"help": "**Change your channel name by using the following command:**",
+			"help": "**Change your channel name**",
 			"usage": ".voice name <name>",
 			"example": ".voice name EU 5kd+",
 			"admin": false,
 			"aliases": []
 		},
 		"unlock": {
-			"help": "**Unlock your channel by using the following command:**",
+			"help": "**Unlock your channel**",
 			"usage": ".voice unlock",
 			"example": ".voice unlock",
 			"admin": false,
 			"aliases": []
 		},
 		"lock": {
-			"help": "**Lock your channel by using the following command:**",
+			"help": "**Lock your channel**",
 			"usage": ".voice lock [allowed_roles]",
 			"example": ".voice lock",
 			"admin": false,
@@ -51,98 +51,98 @@
 			"aliases": []
 		},
 		"limit": {
-			"help": "**Change your channel limit by using the following command:**",
+			"help": "**Change your channel user limit**",
 			"usage": ".voice limit <number>",
 			"example": ".voice limit 3",
 			"admin": false,
 			"aliases": []
 		},
 		"permit": {
-			"help": "**Give users/roles permission to join by using the following command:**",
+			"help": "**Give users/roles permission to join**",
 			"usage": ".voice permit <@person>",
 			"example": ".voice permit @DarthMinos#1161",
 			"admin": false,
 			"aliases": ["allow"]
 		},
 		"claim": {
-			"help": "**Claim ownership of channel once the owner has left:**",
+			"help": "**Claim ownership of channel once the owner has left**",
 			"usage": ".voice claim",
 			"example": ".voice claim",
 			"admin": false,
 			"aliases": []
 		},
 		"reject": {
-			"help": "**Remove permission and the user from your channel using the following command:**",
+			"help": "**Remove permission and the user from your channel**",
 			"usage": ".voice reject <@person>",
 			"example": ".voice reject @DarthMinos#1161",
 			"admin": false,
 			"aliases": ["deny"]
 		},
 		"setprefix": {
-			"help": "**Set the bot prefix:**",
+			"help": "**Set the bot prefix**",
 			"usage": ".voice setprefix <previx>",
 			"example": ".voice setprefix !",
 			"admin": true,
 			"aliases": []
 		},
 		"owner": {
-			"help": "**Set the ownership of a channel:**",
+			"help": "**Set the ownership of a channel**",
 			"usage": ".voice owner <@person>",
 			"example": ".voice owner @DarthMinos#1161",
 			"admin": true,
 			"aliases": []
 		},
 		"whoowns": {
-			"help": "**Shows who is the owner of the channel:**",
+			"help": "**Shows who is the owner of the channel**",
 			"usage": ".voice whoowns",
 			"example": ".voice whoowns",
 			"admin": false,
 			"aliases": []
 		},
 		"channels": {
-			"help": "**Get a list of all the currently tracked channels:**",
+			"help": "**Get a list of all the currently tracked channels**",
 			"usage": ".voice channels",
 			"example": ".voice channels",
 			"admin": true,
 			"aliases": []
 		},
 		"rename": {
-			"help": "**Allows an admin to rename a channel that they join:**",
+			"help": "**Allows an admin to rename a channel that they join**",
 			"usage": ".voice rename <channel name>",
 			"example": ".voice rename New Channel Name",
 			"admin": true,
 			"aliases": []
 		},
 		"cleandb": {
-			"help": "**Allows an admin to clean user and channel data from database:**",
+			"help": "**Allows an admin to clean user and channel data from database**",
 			"usage": ".voice cleandb",
 			"example": ".voice cleandb",
 			"admin": true,
 			"aliases": []
 		},
 		"track": {
-			"help": "**Add the current voice channel to be tracked by the bot:**",
+			"help": "**Add the current voice channel to be tracked by the bot**",
 			"usage": ".voice track",
 			"example": ".voice track",
 			"admin": true,
 			"aliases": []
 		},
 		"track-text-channel": {
-			"help": "**Add the specified text channel as the tracked channel with your current voice channel:**",
+			"help": "**Add the specified text channel as the tracked channel with your current voice channel**",
 			"usage": ".voice track-text-channel <#text-channel>",
 			"example": ".voice track-text-channel #my-text-channel",
 			"admin": true,
 			"aliases": ["ttc"]
 		},
 		"settings": {
-			"help": "**Change the Group Settings for Channels:**",
+			"help": "**Change the Group Settings for Channels**",
 			"usage": ".voice settings \"<category name>\" <locked> <limit>",
 			"example": ".voice settings \"Voice Channels\" no 5",
 			"admin": true,
 			"aliases": []
 		},
 		"setup": {
-			"help": "**Setup a Create Voice Channel:**",
+			"help": "**Setup a Create Voice Channel**",
 			"usage": ".voice setup",
 			"example": ".voice setup",
 			"admin": true,
