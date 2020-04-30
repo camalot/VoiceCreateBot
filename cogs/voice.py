@@ -19,17 +19,33 @@ class EmbedField():
         self.value = value
 
 class voice(commands.Cog):
+    DBVERSION = 1
 
     def initDB(self):
+
         try:
             conn = sqlite3.connect(self.db_path)
+            dbversion = get_scalar_result(conn, "PRAGMA user_version")
             c = conn.cursor()
+
             c.execute("CREATE TABLE IF NOT EXISTS `guild` ( `guildID` INTEGER, `ownerID` INTEGER, `voiceChannelID` INTEGER, `voiceCategoryID` INTEGER )")
             c.execute("CREATE TABLE IF NOT EXISTS `guildSettings` ( `guildID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER, `prefix` TEXT DEFAULT '.' )")
             c.execute("CREATE TABLE IF NOT EXISTS `guildCategorySettings` ( `guildID` INTEGER,  `voiceCategoryID` INTEGER, `channelLimit` INTEGER, `channelLocked` INTEGER )")
             c.execute("CREATE TABLE IF NOT EXISTS `userSettings` ( `guildID` INTEGER, `userID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
             c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `guildID` INTEGER, `userID` INTEGER, `voiceID` INTEGER )")
             c.execute("CREATE TABLE IF NOT EXISTS `textChannel` ( `guildID` INTEGER, `userID` INTEGER, `channelID` INTEGER, `voiceID` INTEGER )")
+            conn.commit()
+            print(f"LOADED SCHEMA VERSION: {dbversion}")
+            print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
+
+            #DB.V1
+            if dbversion is not None and dbversion < 1:
+                print("RUN ALTER TABLE")
+                c.execute("ALTER TABLE `userSettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
+                c.execute("ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
+                conn.commit()
+            print(f"Updating SCHEMA Version to {self.DBVERSION}")
+            c.execute(f"PRAGMA user_version = ?", (self.DBVERSION,))
             conn.commit()
             c.close()
             conn.close()
@@ -121,35 +137,42 @@ class voice(commands.Cog):
             try:
                 if after.channel is not None and after.channel.id in voiceChannels:
                     category_id = after.channel.category_id
-                    c.execute("SELECT channelName, channelLimit FROM userSettings WHERE userID = ?", (member.id,))
+                    c.execute("SELECT channelName, channelLimit, bitrate FROM userSettings WHERE userID = ?", (member.id,))
                     setting = c.fetchone()
-                    c.execute("SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+                    c.execute("SELECT channelLimit, channelLocked, bitrate FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
                     guildSetting = c.fetchone()
+
+                    # CHANNEL SETTINGS START
+                    limit = 0
+                    locked = False
+                    bitrate = 64
+                    name = f"{member.name}'s Channel"
                     if setting is None:
-                        name = f"{member.name}'s channel"
-                        if guildSetting is None:
-                            limit = 0
-                            locked = False
-                        else:
+                        if guildSetting is not None:
                             limit = guildSetting[0]
                             locked = guildSetting[1]
+                            bitrate = guildSetting[2]
                     else:
+                        name = setting[0]
                         if guildSetting is None:
-                            name = setting[0]
                             limit = setting[1]
+                            bitrate = setting[2]
                             locked = False
-                        elif guildSetting is not None and setting[1] == 0:
-                            name = setting[0]
-                            limit = guildSetting[0]
+                        elif guildSetting is not None:
+                            limit = setting[1]
+                            if setting[1] == 0:
+                                limit =  guildSetting[0]
                             locked = guildSetting[1] or False
+                            bitrate = setting[2] or guildSetting[2]
                         else:
-                            name = setting[0]
                             limit = setting[1]
                             locked = guildSetting[1]
+                    # CHANNEL SETTINGS END
+
                     mid = member.id
                     category = self.bot.get_channel(category_id)
-                    print(f"Creating channel {name} in {category}")
-                    voiceChannel = await member.guild.create_voice_channel(name, category=category)
+                    print(f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
+                    voiceChannel = await member.guild.create_voice_channel(name, category=category, bitrate=(bitrate*1000))
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
@@ -492,38 +515,6 @@ class voice(commands.Cog):
                 page += 1
         await ctx.message.delete()
 
-    async def ask_category(self, ctx):
-        if self.isAdmin(ctx):
-            def check(m):
-                return m.author.id == ctx.author.id
-            def check_yes_no(m):
-                return str2bool(m.content)
-            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
-            try:
-                category = await self.bot.wait_for('message', check=check, timeout=60.0)
-            except asyncio.TimeoutError:
-                await ctx.channel.send('Took too long to answer!', delete_after=5)
-            else:
-                found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
-                if found_category:
-                    # found existing with that name.
-                    # do you want to create a new one?
-                    yes_or_no = False
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing channel called '{str(found_category.name.upper())}'. Use that channel? Reply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
-                    try:
-                        yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
-                    except asyncio.TimeoutError:
-                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                    else:
-                        if yes_or_no:
-                            return found_category
-                        else:
-                            return await ctx.guild.create_category_channel(category.content)
-                else:
-                    return await ctx.guild.create_category_channel(category.content)
-        else:
-            return None
-
     @voice.command(pass_context=True)
     async def setup(self, ctx):
         conn = sqlite3.connect(self.db_path)
@@ -571,22 +562,31 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command()
-    async def settings(self, ctx, category, locked="False", limit="0"):
+    async def settings(self, ctx, category: str, locked: str = "False", limit: int = 0, bitrate: int = 64):
         if self.isAdmin(ctx):
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             try:
                 found_category = next((x for x in ctx.guild.categories if x.name == category), None)
                 if found_category:
+                    bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+                    bitrate_min = 8
+                    br = int(bitrate)
+
+                    if br_set > bitrate_limit:
+                        br_set = bitrate_limit
+                    elif br_set < bitrate_min:
+                        br_set = bitrate_min
+
                     c.execute("SELECT channelLimit, channelLocked FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
                     catSettings = c.fetchone()
                     if catSettings:
                         print(f"UPDATE category settings")
-                        c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ?",
-                            (int(limit), str2bool(locked), ctx.guild.id, found_category.id,))
+                        c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ?",
+                            (int(limit), str2bool(locked), ctx.guild.id, found_category.id, int(bitrate)))
                     else:
                         print(f"INSERT category settings")
-                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), str2bool(locked)))
+                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), str2bool(locked), int(bitrate)))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -595,6 +595,10 @@ class voice(commands.Cog):
                     embed_fields.append({
                         "name": "Limit",
                         "value": str(limit)
+                    })
+                    embed_fields.append({
+                        "name": "Bitrate",
+                        "value": f"{str(bitrate)}kbps"
                     })
 
                     await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
@@ -609,30 +613,6 @@ class voice(commands.Cog):
                 conn.close()
         else:
             await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
-        await ctx.message.delete()
-
-    @voice.command(pass_context=True)
-    async def setlimit(self, ctx, num):
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        # removed the specific user permission and checked for admin status instead.
-        if self.isAdmin(ctx):
-            try:
-                c.execute("SELECT * FROM guildSettings WHERE guildID = ?", (ctx.guild.id,))
-                voiceGroup = c.fetchone()
-                if voiceGroup is None:
-                    c.execute("INSERT INTO guildSettings VALUES (?, ?, ?)",
-                            (ctx.guild.id, f"{ctx.author.name}'s channel", num))
-                else:
-                    c.execute("UPDATE guildSettings SET channelLimit = ? WHERE guildID = ?", (num, ctx.guild.id))
-                await self.sendEmbed(ctx.channel, "Channel Set Limit", "You have changed the default channel limit for your server!", delete_after=5)
-            except Exception as ex:
-                print(ex)
-                traceback.print_exc()
-        else:
-            await self.sendEmbed(ctx.channel, "Channel Set Limit", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
-        conn.commit()
-        conn.close()
         await ctx.message.delete()
 
     @setup.error
@@ -837,35 +817,45 @@ class voice(commands.Cog):
             conn.close()
             await ctx.message.delete()
 
-    # @voice.command()
-    # async def bitrate(self, ctx, bitrate):
-    #     conn = sqlite3.connect(self.db_path)
-    #     c = conn.cursor()
-    #     aid = ctx.author.id
-    #     guildID = ctx.guild.id
-    #     c.execute(
-    #         "SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
-    #     voiceGroup = c.fetchone()
-    #     if voiceGroup is None:
-    #         await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
-    #     else:
-    #         channelID = voiceGroup[0]
-    #         channel = self.bot.get_channel(channelID)
-    #         await channel.edit(bitrate=bitrate)
-    #         br = bitrate
-    #         await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention} You have set the channel bitrate to be ' + '{}!'.format(bitrate), delete_after=5)
-    #         c.execute(
-    #             "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-    #         voiceGroup = c.fetchone()
-    #         if voiceGroup is None:
-    #             c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?)",
-    #                       (ctx.guild.id, aid, f'{ctx.author.name}', 0, bitrate))
-    #         else:
-    #             c.execute(
-    #                 "UPDATE userSettings SET bitrate = ? WHERE userID = ? AND guildID = ?", (bitrate, aid, guildID,))
-    #     await ctx.message.delete()
-    #     conn.commit()
-    #     conn.close()
+    @voice.command()
+    async def bitrate(self, ctx, bitrate: int = 64):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        aid = ctx.author.id
+        guildID = ctx.guild.id
+        bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+        bitrate_min = 8
+
+        print(f"Bitrate Limit: {bitrate_limit}")
+        br_set = int(bitrate)
+
+        if br_set > bitrate_limit:
+            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, your bitrate is above the bitrate limit of {bitrate_limit}kbps. I will apply the the limit instead.", delete_after=5)
+            br_set = bitrate_limit
+        elif br_set < bitrate_min:
+            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, your bitrate is below the bitrate minimum of {bitrate_min}kbps. I will apply the the minimum instead.", delete_after=5)
+
+            br_set = bitrate_min
+
+        c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
+        voiceGroup = c.fetchone()
+        if voiceGroup is None:
+            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, you don't own a channel.", delete_after=5)
+        else:
+            channelID = voiceGroup[0]
+            channel = self.bot.get_channel(channelID)
+            br = br_set * 1000
+            await channel.edit(bitrate=br)
+            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
+            c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
+            voiceGroup = c.fetchone()
+            if voiceGroup is None:
+                c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)", (ctx.guild.id, aid, f"{ctx.author.name}'s Channel", 0, br_set))
+            else:
+                c.execute("UPDATE userSettings SET bitrate = ? WHERE userID = ? AND guildID = ?", (br_set, aid, guildID,))
+        await ctx.message.delete()
+        conn.commit()
+        conn.close()
 
     @voice.command()
     async def name(self, ctx, *, name):
@@ -906,7 +896,6 @@ class voice(commands.Cog):
             conn.commit()
             conn.close()
             await ctx.message.delete()
-
 
     @voice.command(aliases=["rename"])
     async def force_name(self, ctx, *, name):
@@ -970,6 +959,18 @@ class voice(commands.Cog):
             traceback.print_exc()
         finally:
             await ctx.message.delete()
+
+    ## TODO: WIP
+    #@voice.command()
+    async def give(self, ctx):
+        """Give ownership of the channel to another user in the channel"""
+        x = False
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        guildID = ctx.guild.id
+        channel = ctx.author.voice.channel
+
+        return
 
     @voice.command()
     async def claim(self, ctx):
@@ -1037,7 +1038,9 @@ class voice(commands.Cog):
             try:
                 def check_index(m):
                     idx = int(m.content)
-                    return m.content.isnumeric() and idx >= 0 and idx < len(channel_array)
+                    result = m.content.isnumeric() and idx >= 0 and idx < len(channel_array)
+                    m.delete()
+                    return result
                 result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
             except asyncio.TimeoutError:
                 await self.sendEmbed(ctx.channel, "Timeout", f'You took too long to answer.', delete_after=5)
@@ -1052,6 +1055,43 @@ class voice(commands.Cog):
         else:
             print(f"{ctx.author} tried to run command 'delete'")
         await ctx.message.delete()
+
+    async def ask_category(self, ctx):
+        if self.isAdmin(ctx):
+            def check(m):
+                same = m.author.id == ctx.author.id
+                m.delete()
+                return same
+            def check_yes_no(m):
+                msg = m.content
+                m.delete()
+                return str2bool(msg)
+            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
+            try:
+                category = await self.bot.wait_for('message', check=check, timeout=60.0)
+            except asyncio.TimeoutError:
+                await ctx.channel.send('Took too long to answer!', delete_after=5)
+            else:
+                found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
+                if found_category:
+                    # found existing with that name.
+                    # do you want to create a new one?
+                    yes_or_no = False
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing channel called '{str(found_category.name.upper())}'. Use that channel? Reply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    try:
+                        yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
+                    except asyncio.TimeoutError:
+                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                    else:
+                        if yes_or_no:
+                            return found_category
+                        else:
+                            return await ctx.guild.create_category_channel(category.content)
+                else:
+                    return await ctx.guild.create_category_channel(category.content)
+        else:
+            return None
+        ctx.message.delete()
 
     def chunk_list(self, lst, size):
         # looping till length l
@@ -1076,6 +1116,15 @@ class voice(commands.Cog):
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
 
+def get_scalar_result(conn, sql):
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql)
+        return cursor.fetchone()[0]
+    except Exception as ex:
+        print(ex)
+        traceback.print_exc()
+        return None
 def str2bool(v):
     return v.lower() in ("yes", "true", "yup", "1", "t", "y")
 

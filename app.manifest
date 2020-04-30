@@ -51,9 +51,16 @@
 			"aliases": []
 		},
 		"limit": {
-			"help": "**Change your channel user limit**",
+			"help": "**Change your channel's user limit**",
 			"usage": ".voice limit <number>",
 			"example": ".voice limit 3",
+			"admin": false,
+			"aliases": []
+		},
+		"bitrate": {
+			"help": "**Change your channel's voice bitrate. This vaule is between 8kbps and the server's max kbps. 64kbps is the default.**",
+			"usage": ".voice bitrate [number]",
+			"example": ".voice bitrate 64",
 			"admin": false,
 			"aliases": []
 		},

@@ -1,0 +1,2 @@
+ALTER TABLE `userSettings`
+	ADD COLUMN `bitrate` INTEGER DEFAULT 64;
