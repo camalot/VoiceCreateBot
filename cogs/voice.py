@@ -12,6 +12,7 @@ import validators
 from discord.ext.commands.cooldowns import BucketType
 from time import gmtime, strftime
 import os
+import glob
 
 class EmbedField():
     def __init__(self, name, value):
@@ -19,33 +20,30 @@ class EmbedField():
         self.value = value
 
 class voice(commands.Cog):
-    DBVERSION = 1
+    DBVERSION = 2 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    # 0 = NO SCHEMA APPLIED
 
     def initDB(self):
         conn = sqlite3.connect(self.db_path)
         try:
-            dbversion = get_scalar_result(conn, "PRAGMA user_version")
+            dbversion = get_scalar_result(conn, "PRAGMA user_version", 0)
             c = conn.cursor()
-
-            c.execute("CREATE TABLE IF NOT EXISTS `guild` ( `guildID` INTEGER, `ownerID` INTEGER, `voiceChannelID` INTEGER, `voiceCategoryID` INTEGER )")
-            c.execute("CREATE TABLE IF NOT EXISTS `guildSettings` ( `guildID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER, `prefix` TEXT DEFAULT '.' )")
-            c.execute("CREATE TABLE IF NOT EXISTS `guildCategorySettings` ( `guildID` INTEGER,  `voiceCategoryID` INTEGER, `channelLimit` INTEGER, `channelLocked` INTEGER )")
-            c.execute("CREATE TABLE IF NOT EXISTS `userSettings` ( `guildID` INTEGER, `userID` INTEGER, `channelName` TEXT, `channelLimit` INTEGER )")
-            c.execute("CREATE TABLE IF NOT EXISTS `voiceChannel` ( `guildID` INTEGER, `userID` INTEGER, `voiceID` INTEGER )")
-            c.execute("CREATE TABLE IF NOT EXISTS `textChannel` ( `guildID` INTEGER, `userID` INTEGER, `channelID` INTEGER, `voiceID` INTEGER )")
-            conn.commit()
             print(f"LOADED SCHEMA VERSION: {dbversion}")
             print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
-
-            #DB.V1
-            # if dbversion is not None and dbversion < 1:
-            #     print("RUN ALTER TABLE")
-            #     c.execute("ALTER TABLE `userSettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
-            #     c.execute("ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
-            #     conn.commit()
-            print(f"Updating SCHEMA Version to {self.DBVERSION}")
-            c.execute(f"PRAGMA user_version = {self.DBVERSION}")
-            conn.commit()
+            for x in range(0, self.DBVERSION+1):
+                files = glob.glob(f"sql/{x:04d}.*.sql")
+                for f in files:
+                    if dbversion == 0 or dbversion < x:
+                        print(f"Applying SQL: {f}")
+                        file = open(f, mode='r')
+                        contents = file.read()
+                        c.execute(contents)
+                        conn.commit()
+                        file.close()
+            if dbversion != self.DBVERSION:
+                print(f"Updating SCHEMA Version to {self.DBVERSION}")
+                c.execute(f"PRAGMA user_version = {self.DBVERSION}")
+                conn.commit()
             c.close()
         except Exception as ex:
             print(ex)
@@ -1116,7 +1114,7 @@ class voice(commands.Cog):
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
 
-def get_scalar_result(conn, sql):
+def get_scalar_result(conn, sql, default_value = None):
     cursor = conn.cursor()
     try:
         cursor.execute(sql)
@@ -1124,7 +1122,7 @@ def get_scalar_result(conn, sql):
     except Exception as ex:
         print(ex)
         traceback.print_exc()
-        return None
+        return default_value
 def str2bool(v):
     return v.lower() in ("yes", "true", "yup", "1", "t", "y")
 

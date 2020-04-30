@@ -1,2 +1,1 @@
-ALTER TABLE `userSettings`
-	ADD COLUMN `bitrate` INTEGER DEFAULT 64;
+ALTER TABLE `userSettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64;

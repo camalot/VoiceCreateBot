@@ -1,2 +1,1 @@
-ALTER TABLE `guildCategorySettings`
-	ADD COLUMN `bitrate` INTEGER DEFAULT 64;
+ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64;
