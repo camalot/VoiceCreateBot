@@ -22,9 +22,8 @@ class voice(commands.Cog):
     DBVERSION = 1
 
     def initDB(self):
-
+        conn = sqlite3.connect(self.db_path)
         try:
-            conn = sqlite3.connect(self.db_path)
             dbversion = get_scalar_result(conn, "PRAGMA user_version")
             c = conn.cursor()
 
@@ -45,13 +44,14 @@ class voice(commands.Cog):
                 c.execute("ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
                 conn.commit()
             print(f"Updating SCHEMA Version to {self.DBVERSION}")
-            c.execute(f"PRAGMA user_version = ?", (self.DBVERSION,))
+            c.execute(f"PRAGMA user_version = {self.DBVERSION}")
             conn.commit()
             c.close()
-            conn.close()
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+        finally:
+            conn.close()
 
 
     def __init__(self, bot):
