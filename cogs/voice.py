@@ -38,11 +38,11 @@ class voice(commands.Cog):
             print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
 
             #DB.V1
-            if dbversion is not None and dbversion < 1:
-                print("RUN ALTER TABLE")
-                c.execute("ALTER TABLE `userSettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
-                c.execute("ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
-                conn.commit()
+            # if dbversion is not None and dbversion < 1:
+            #     print("RUN ALTER TABLE")
+            #     c.execute("ALTER TABLE `userSettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
+            #     c.execute("ALTER TABLE `guildCategorySettings` ADD COLUMN `bitrate` INTEGER DEFAULT 64")
+            #     conn.commit()
             print(f"Updating SCHEMA Version to {self.DBVERSION}")
             c.execute(f"PRAGMA user_version = {self.DBVERSION}")
             conn.commit()
