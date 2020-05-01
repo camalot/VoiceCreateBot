@@ -22,6 +22,7 @@ class EmbedField():
 class voice(commands.Cog):
     DBVERSION = 1 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     BITRATE_DEFAULT = 64
+    APP_VERSION = "1.0.0-snapshot"
     # 0 = NO SCHEMA APPLIED
     # VERSION HISTORY:
     # v1: 04/30/2020
@@ -62,10 +63,12 @@ class voice(commands.Cog):
             self.settings = json.load(json_file)
 
         self.bot = bot
-        self.db_path = os.environ['VCB_DB_PATH'] or 'voice.db'
+        self.app_version = dict_get(os.environ, 'APP_VERSION', default_value = "1.0.0-snapshot")
+        print(f"APP VERSION: {self.app_version}")
+        self.db_path = dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
         print(f"DB Path: {self.db_path}")
-        self.admin_ids = os.environ["ADMIN_USERS"].split(" ")
-        self.admin_role = os.environ['ADMIN_ROLE'] or 'Admin'
+        self.admin_ids = dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
+        self.admin_role = dict_get(os.environ, 'ADMIN_ROLE', default_value = 'Admin')
         self.initDB()
 
     async def clean_up_tracked_channels(self, guildID):
@@ -217,6 +220,13 @@ class voice(commands.Cog):
                 traceback.print_exc()
             finally:
                 conn.close()
+
+    @voice.command()
+    async def version(self, ctx):
+        version = dict_get(os.environ, "APP_VERSION", "1.0.0-snapshot")
+
+        await self.sendEmbed(ctx.channel, "Version Information", f"Voice Bot Verison: {version}", delete_after=10)
+        await ctx.message.delete()
 
     @voice.command()
     async def channels(self, ctx):
@@ -841,14 +851,15 @@ class voice(commands.Cog):
 
         c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
         voiceGroup = c.fetchone()
-        if voiceGroup is None:
+        if voiceGroup is None and not self.isAdmin(ctx):
             await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, you don't own a channel.", delete_after=5)
         else:
-            channelID = voiceGroup[0]
+            channelID = ctx.author.voice.channel.id
             channel = self.bot.get_channel(channelID)
             br = br_set * 1000
             await channel.edit(bitrate=br)
             await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
+            # see if we have user settings
             c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
@@ -1151,7 +1162,11 @@ class voice(commands.Cog):
         else:
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
-
+def dict_get(dictionary, key, default_value = None):
+    if key in dictionary.keys():
+        return dictionary[key] or default_value
+    else:
+        return default_value
 def get_scalar_result(conn, sql, default_value = None):
     cursor = conn.cursor()
     try:
