@@ -63,8 +63,7 @@ class voice(commands.Cog):
             self.settings = json.load(json_file)
 
         self.bot = bot
-        self.app_version = dict_get(os.environ, 'APP_VERSION', default_value = "1.0.0-snapshot")
-        print(f"APP VERSION: {self.app_version}")
+        print(f"APP VERSION: {self.APP_VERSION}")
         self.db_path = dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
         print(f"DB Path: {self.db_path}")
         self.admin_ids = dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
@@ -223,9 +222,8 @@ class voice(commands.Cog):
 
     @voice.command()
     async def version(self, ctx):
-        version = dict_get(os.environ, "APP_VERSION", "1.0.0-snapshot")
-
-        await self.sendEmbed(ctx.channel, "Version Information", f"Voice Bot Verison: {version}", delete_after=10)
+        appName = dict_get(self.settings, "name", default_value = "Voice Create Bot")
+        await self.sendEmbed(ctx.channel, "Version Information", f"Voice Bot Verison: {self.APP_VERSION}", delete_after=10)
         await ctx.message.delete()
 
     @voice.command()
@@ -1070,7 +1068,7 @@ class voice(commands.Cog):
             vchans = [chan for chan in ctx.guild.channels if chan.id in chans]
 
             embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
-            embed.set_author(name=f"{self.settings['name']} v{self.settings['version']}", url=self.settings['url'],
+            embed.set_author(name=f"{self.settings['name']} v{self.APP_VERSION}", url=self.settings['url'],
                             icon_url=self.settings['icon'])
             channel_array = []
             index = 0
