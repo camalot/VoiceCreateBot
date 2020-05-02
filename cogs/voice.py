@@ -21,11 +21,11 @@ class EmbedField():
 
 class voice(commands.Cog):
     DBVERSION = 1 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
-    BITRATE_DEFAULT = 64
-    APP_VERSION = "1.0.0-snapshot"
     # 0 = NO SCHEMA APPLIED
     # VERSION HISTORY:
     # v1: 04/30/2020
+    BITRATE_DEFAULT = 64
+    APP_VERSION = "1.0.0-snapshot"
 
     def initDB(self):
         conn = sqlite3.connect(self.db_path)
@@ -335,10 +335,10 @@ class voice(commands.Cog):
         try:
             if ctx.author.voice:
                 channel = ctx.author.voice.channel
-            if self.isAdmin(ctx):
-                if channel is None:
-                    await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
-                else:
+            if channel is None:
+                await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+            else:
+                if self.isAdmin(ctx):
                     c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
                     voiceGroup = c.fetchone()
                     if voiceGroup:
@@ -346,8 +346,7 @@ class voice(commands.Cog):
                     else:
                         c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
                         conn.commit()
-                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.", delete_after=5)
-
+                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -571,6 +570,11 @@ class voice(commands.Cog):
             conn.close()
             await ctx.message.delete()
 
+    @setup.error
+    async def info_error(self, ctx, error):
+        print(error)
+        traceback.print_exc()
+
     @voice.command()
     async def settings(self, ctx, category: str, locked: str = "False", limit: int = 0, bitrate: int = 64):
         if self.isAdmin(ctx):
@@ -625,11 +629,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
 
-    @setup.error
-    async def info_error(self, ctx, error):
-        print(error)
-        traceback.print_exc()
-
     @voice.command()
     async def cleandb(self,ctx):
         if self.isAdmin(ctx):
@@ -638,15 +637,33 @@ class voice(commands.Cog):
             try:
                 c = conn.cursor()
                 c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildID, ))
-                c.execute("DELETE FROM `textChannel` WHERE guildID = ?", (guildID, ))
-                c.execute("DELETE FROM `voiceChannel` WHERE guildID = ?", (guildID, ))
                 conn.commit()
-                await self.sendEmbed(ctx.channel, "Clean Database", "User & Channel Data has been purged from database.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Clean Database", "All User Settings have been purged from database.", delete_after=5)
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
             finally:
                 conn.close()
+        await ctx.message.delete()
+
+    @voice.command()
+    async def reset(self,ctx, user: discord.Member = None):
+        dataUser = ctx.author
+        if user and self.isAdmin(ctx):
+            dataUser = user
+
+        conn = sqlite3.connect(self.db_path)
+        guildID = ctx.guild.id
+        try:
+            c = conn.cursor()
+            c.execute("DELETE FROM `userSettings` WHERE guildID = ? AND userID = ?", (guildID, dataUser.id,))
+            conn.commit()
+            await self.sendEmbed(ctx.channel, "Reset User Settings", f"User Settings for '{dataUser.mention}' has been purged from database.", delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.close()
         await ctx.message.delete()
 
     @voice.command()

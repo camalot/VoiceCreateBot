@@ -120,6 +120,13 @@
 			"admin": true,
 			"aliases": []
 		},
+		"reset": {
+			"help": "**Reset your user settings back to defaults**\n\nAdmins can mention a user as an argument to reset a specific user.",
+			"usage": ".voice reset",
+			"example": ".voice reset",
+			"admin": false,
+			"aliases": []
+		},
 		"cleandb": {
 			"help": "**Allows an admin to clean user and channel data from database**",
 			"usage": ".voice cleandb",
