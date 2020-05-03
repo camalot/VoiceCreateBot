@@ -764,6 +764,16 @@ class voice(commands.Cog):
                 channelID = voiceGroup[0]
                 channel = self.bot.get_channel(channelID)
 
+                c.execute("SELECT channelID from textChannel WHERE voiceID = ?", (channelID,))
+                textSet = c.fetchone()
+                if textSet:
+                    textChannelID = textSet[0]
+                    textChannel = self.bot.get_channel(textChannelID)
+                    if textChannel:
+                        if member:
+                            await textChannel.set_permissions(member, read_messages=True, send_messages=True)
+                        if role:
+                            await textChannel.set_permissions(role, read_messages=True, send_messages=True)
                 if member:
                     await channel.set_permissions(member, connect=True)
                     await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
@@ -792,18 +802,31 @@ class voice(commands.Cog):
             else:
                 channelID = voiceGroup[0]
                 channel = self.bot.get_channel(channelID)
+
+                c.execute("SELECT channelID from textChannel WHERE voiceID = ?", (channelID,))
+                textSet = c.fetchone()
+                if textSet:
+                    textChannelID = textSet[0]
+                    textChannel = self.bot.get_channel(textChannelID)
+                    if textChannel:
+                        if member:
+                            await textChannel.set_permissions(member, read_messages=False, send_messages=False)
+                        if role:
+                            await textChannel.set_permissions(role, read_messages=False, send_messages=False)
+
+
                 if member:
                     for members in channel.members:
                         if members.id == member.id:
                             member.disconnect()
-                    await channel.set_permissions(member, connect=False, read_messages=True)
+                    await channel.set_permissions(member, connect=False, read_messages=None)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
                 if role:
                     for members in channel.members:
                         for roles in members.roles:
                             if roles.id == role.id:
                                 member.disconnect()
-                    await channel.set_permissions(member, connect=False, read_messages=True)
+                    await channel.set_permissions(member, connect=False, read_messages=None)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             print(ex)
@@ -822,15 +845,26 @@ class voice(commands.Cog):
         try:
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
-            if voiceGroup is None:
+            if voiceGroup is None and not self.isAdmin(ctx):
                 await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
-                channelID = voiceGroup[0]
-                channel = self.bot.get_channel(channelID)
+                channel = None
+                channelID = None
+                if self.isAdmin(ctx):
+                    channel = ctx.author.voice.channel
+                    channelID = channel.id
+                    if channel:
+                        c.execute("SELECT userID FROM voiceChannel WHERE guidID = ? AND voiceID = ?", (guidID, channel.id))
+                    else:
+                        await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You are not in a voice channel.", delete_after=5)
+                        return
+                else:
+                    channelID = voiceGroup[0]
+                    channel = self.bot.get_channel(channelID)
+
                 await channel.edit(user_limit=limit)
                 await self.sendEmbed(ctx.channel, "Updated Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
-                c.execute(
-                    "SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
+                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is None:
                     c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)",(ctx.guild.id, aid, f'{ctx.author.name}', limit, self.BITRATE_DEFAULT))
