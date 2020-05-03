@@ -851,10 +851,18 @@ class voice(commands.Cog):
                 channel = None
                 channelID = None
                 if self.isAdmin(ctx):
+                    # allow admins to change the settings.
                     channel = ctx.author.voice.channel
                     channelID = channel.id
                     if channel:
                         c.execute("SELECT userID FROM voiceChannel WHERE guidID = ? AND voiceID = ?", (guidID, channel.id))
+                        aid = None
+                        channelSet = c.fetchone()
+                        if channelSet:
+                            aid = channelSet[0]
+                        else:
+                            # the channel the admin is in is not tracked.
+                            await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You are not in a voice channel that I control.", delete_after=5)
                     else:
                         await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You are not in a voice channel.", delete_after=5)
                         return
