@@ -855,7 +855,7 @@ class voice(commands.Cog):
                     channel = ctx.author.voice.channel
                     channelID = channel.id
                     if channel:
-                        c.execute("SELECT userID FROM voiceChannel WHERE guidID = ? AND voiceID = ?", (guidID, channel.id))
+                        c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, channel.id))
                         aid = None
                         channelSet = c.fetchone()
                         if channelSet:
@@ -875,7 +875,7 @@ class voice(commands.Cog):
                 c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is None:
-                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)",(ctx.guild.id, aid, f'{ctx.author.name}', limit, self.BITRATE_DEFAULT))
+                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)",(ctx.guild.id, aid, f"{ctx.author.name}'s Channel'", limit, self.BITRATE_DEFAULT))
                 else:
                     c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, aid, guildID,))
         except Exception as ex:
