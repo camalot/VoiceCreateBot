@@ -207,7 +207,7 @@ class voice(commands.Cog):
                         print(ex)
                         traceback.print_exc()
 
-                    await self.sendEmbed(textChannel, "Voice Text Channel", f'This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
+                    await self.sendEmbed(textChannel, "Voice Text Channel", f'{member.mention}, This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
                     initMessage = self.settings['init-message']
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
