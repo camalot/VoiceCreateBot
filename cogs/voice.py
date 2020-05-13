@@ -13,6 +13,7 @@ from discord.ext.commands.cooldowns import BucketType
 from time import gmtime, strftime
 import os
 import glob
+import typing
 
 class EmbedField():
     def __init__(self, name, value):
@@ -385,7 +386,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command()
-    async def mute(self, ctx, role: discord.Role = None, user: discord.Member = None):
+    async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -406,10 +407,8 @@ class voice(commands.Cog):
                 textChannel = None
                 if channel:
                     permRoles = [everyone]
-                    if role:
-                        permRoles.append(role)
-                    if user:
-                        permRoles.append(user)
+                    if userOrRole:
+                        permRoles.append(userOrRole)
 
                     if textGroup:
                         textChannel = self.bot.get_channel(textGroup[0])
@@ -432,7 +431,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command()
-    async def unmute(self, ctx, role: discord.Role = None, user: discord.Member = None):
+    async def unmute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -453,10 +452,8 @@ class voice(commands.Cog):
                 if channel:
 
                     permRoles = [everyone]
-                    if role:
-                        permRoles.append(role)
-                    if user:
-                        permRoles.append(user)
+                    if userOrRole:
+                        permRoles.append(userOrRole)
 
                     if textGroup:
                         textChannel = self.bot.get_channel(textGroup[0])
@@ -751,7 +748,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command(aliases=["allow"])
-    async def permit(self, ctx, member: discord.Member = None, role: discord.Role = None):
+    async def permit(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -770,16 +767,11 @@ class voice(commands.Cog):
                     textChannelID = textSet[0]
                     textChannel = self.bot.get_channel(textChannelID)
                     if textChannel:
-                        if member:
-                            await textChannel.set_permissions(member, read_messages=True, send_messages=True)
-                        if role:
-                            await textChannel.set_permissions(role, read_messages=True, send_messages=True)
-                if member:
-                    await channel.set_permissions(member, connect=True)
-                    await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {member.name} to have access to the channel. ✅', delete_after=5)
-                if role:
-                    await channel.set_permissions(role, connect=True)
-                    await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {role.name} to have access to the channel. ✅', delete_after=5)
+                        if userOrRole:
+                            await textChannel.set_permissions(userOrRole, read_messages=True, send_messages=True)
+                if userOrRole:
+                    await channel.set_permissions(userOrRole, connect=True)
+                    await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -789,7 +781,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command(aliases=["deny"])
-    async def reject(self, ctx, member: discord.Member = None, role: discord.Role = None):
+    async def reject(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         aid = ctx.author.id
@@ -809,17 +801,17 @@ class voice(commands.Cog):
                     textChannelID = textSet[0]
                     textChannel = self.bot.get_channel(textChannelID)
                     if textChannel:
-                        if member:
-                            await textChannel.set_permissions(member, read_messages=False, send_messages=False)
-                        if role:
-                            await textChannel.set_permissions(role, read_messages=False, send_messages=False)
+                        if userOrRole:
+                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False)
 
 
-                if member:
+                if userOrRole:
                     for members in channel.members:
                         if members.id == member.id:
                             member.disconnect()
-                    await channel.set_permissions(member, connect=False, read_messages=None)
+                        # TODO: need to check if userOrRole is a role, and if it is, boot anyone that is in the rejected role.
+
+                    await channel.set_permissions(userOrRole, connect=False, read_messages=None)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
                 if role:
                     for members in channel.members:
