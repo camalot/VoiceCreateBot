@@ -134,6 +134,7 @@ class voice(commands.Cog):
             if before and after:
                 if after.type == discord.ChannelType.voice:
                     if before.id == after.id:
+                        # This handles a manual channel rename. it changes the text channel name to match.
                         guildID = before.guild.id or after.guild.id
                         c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
                         trackedSet = c.fetchone()
@@ -255,8 +256,6 @@ class voice(commands.Cog):
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
                         await self.sendEmbed(textChannel, initMessage['title'], initMessage['message'], initMessage['fields'], delete_after=None, footer='')
-                else:
-                    print(f"NOT IN CREATE CHANNEL")
             except discord.errors.NotFound as nf:
                 print(nf)
             except Exception as ex:
