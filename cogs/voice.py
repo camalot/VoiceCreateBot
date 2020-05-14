@@ -127,12 +127,52 @@ class voice(commands.Cog):
             await self.clean_up_tracked_channels(guild.id)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        guildID = member.guild.id
-        await self.clean_up_tracked_channels(guildID)
-        await asyncio.sleep(2)
+    async def on_guild_channel_update(self, before, after):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
+        try:
+            if before and after:
+                if after.type == discord.ChannelType.voice:
+                    if before.id == after.id:
+                        guildID = before.guild.id or after.guild.id
+                        c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
+                        trackedSet = c.fetchone()
+                        if trackedSet:
+                            channelOwnerId = int(trackedSet[0])
+                            if before.name == after.name:
+                                # same name. ignore
+                                print(f"Channel Names are the same. Nothing to do")
+                                pass
+                            else:
+                                # new channel name
+                                c.execute("SELECT channelID from textChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id))
+                                textSet = c.fetchone()
+                                textChannel = None
+                                if textSet:
+                                    textChannel = self.bot.get_channel(int(textSet[0]))
+                                if textChannel:
+                                    print(f"Change Text Channel Name: {after.name}")
+                                    await textChannel.edit(name=after.name)
+                                    await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
+                                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
+                                voiceGroup = c.fetchone()
+                                if voiceGroup is None:
+                                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)", (guildID, channelOwnerId, after.name, 0, self.BITRATE_DEFAULT))
+                                else:
+                                    c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (after.name, channelOwnerId, guildID,))
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+        finally:
+            conn.commit()
+            conn.close()
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        guildID = member.guild.id
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        await self.clean_up_tracked_channels(guildID)
+        await asyncio.sleep(2)
         c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildID,))
         voiceChannels = [item for clist in c.fetchall() for item in clist]
         if voiceChannels is None:
@@ -141,6 +181,8 @@ class voice(commands.Cog):
         else:
             try:
                 if after.channel is not None and after.channel.id in voiceChannels:
+                    # User Joined the CREATE CHANNEL
+                    print(f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
                     c.execute("SELECT channelName, channelLimit, bitrate FROM userSettings WHERE userID = ?", (member.id,))
                     setting = c.fetchone()
@@ -213,6 +255,8 @@ class voice(commands.Cog):
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
                         await self.sendEmbed(textChannel, initMessage['title'], initMessage['message'], initMessage['fields'], delete_after=None, footer='')
+                else:
+                    print(f"NOT IN CREATE CHANNEL")
             except discord.errors.NotFound as nf:
                 print(nf)
             except Exception as ex:
@@ -947,6 +991,7 @@ class voice(commands.Cog):
                     if textGroup is not None:
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel is not None:
+                        print(f"Change Text Channel Name from Command")
                         await textChannel.edit(name=name)
 
                     await channel.edit(name=name)
