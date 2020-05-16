@@ -10,51 +10,98 @@ import sqlite3
 import sys
 import os
 from dotenv import load_dotenv, find_dotenv
+import glob
+import typing
 
-client = discord.Client()
+def dict_get(dictionary, key, default_value = None):
+    if key in dictionary.keys():
+        return dictionary[key] or default_value
+    else:
+        return default_value
 
-bot = commands.Bot(command_prefix=".")
-bot.remove_command("help")
-DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
+def get_scalar_result(conn, sql, default_value = None):
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql)
+        return cursor.fetchone()[0]
+    except Exception as ex:
+        print(ex)
+        traceback.print_exc()
+        return default_value
 
-initial_extensions = ['cogs.voice']
 
-if __name__ == '__main__':
-    load_dotenv(find_dotenv())
-    print(os.environ['VCB_DB_PATH'])
-    for extension in initial_extensions:
+class VoiceCreate():
+    DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
+    DBVERSION = 1 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    # 0 = NO SCHEMA APPLIED
+    # VERSION HISTORY:
+    # v1: 04/30/2020
+
+    def __init__(self):
+        load_dotenv(find_dotenv())
+        self.settings = {}
+        with open('app.manifest') as json_file:
+            self.settings = json.load(json_file)
+        self.db_path = dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
+        print(f"DB Path: {self.db_path}")
+        self.admin_ids = dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
+        self.admin_role = dict_get(os.environ, 'ADMIN_ROLE', default_value = 'Admin')
+        self.initDB()
+        self.client = discord.Client()
+
+        self.bot = commands.Bot(
+            command_prefix=self.get_prefix,
+            case_insensitive=True,
+            activity=discord.CustomActivity("Creating Voice Channels Like A Boss")
+        )
+
+        initial_extensions = ['cogs.events', 'cogs.voice']
+        for extension in initial_extensions:
+            try:
+                self.bot.load_extension(extension)
+            except Exception as e:
+                print(f'Failed to load extension {extension}.', file=sys.stderr)
+                traceback.print_exc()
+
+        self.bot.remove_command("help")
+        self.bot.run(self.DISCORD_TOKEN)
+
+    def initDB(self):
+        conn = sqlite3.connect(self.db_path)
         try:
-            bot.load_extension(extension)
-        except Exception as e:
-            print(f'Failed to load extension {extension}.', file=sys.stderr)
+            dbversion = get_scalar_result(conn, "PRAGMA user_version", 0)
+            c = conn.cursor()
+            print(f"LOADED SCHEMA VERSION: {dbversion}")
+            print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
+            for x in range(0, self.DBVERSION+1):
+                files = glob.glob(f"sql/{x:04d}.*.sql")
+                for f in files:
+                    if dbversion == 0 or dbversion < x:
+                        print(f"Applying SQL: {f}")
+                        file = open(f, mode='r')
+                        contents = file.read()
+                        c.executescript(contents)
+                        conn.commit()
+                        file.close()
+                    else:
+                        print(f"Skipping SQL: {f}")
+            if dbversion < self.DBVERSION:
+                print(f"Updating SCHEMA Version to {self.DBVERSION}")
+                c.execute(f"PRAGMA user_version = {self.DBVERSION}")
+                conn.commit()
+            c.close()
+        except Exception as ex:
+            print(ex)
             traceback.print_exc()
+        finally:
+            conn.close()
 
-@bot.event
-async def on_ready():
-    print('------')
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------')
+    def get_prefix(self, client, message):
+        prefixes = ['.']    # sets the prefixes, u can keep it as an array of only 1 item if you need only one prefix
+        if not message.guild:
+            prefixes = ['.']   # Only allow '==' as a prefix when in DMs, this is optional
+        # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
+        # Do `return prefixes` if u don't want to allow mentions instead of prefix.
+        return commands.when_mentioned_or(*prefixes)(client, message)
 
-@bot.event
-async def on_disconnect():
-    print('------')
-    print('Bot Disconnected')
-    print('------')
-
-@bot.event
-async def on_resumed():
-    print('------')
-    print('Bot Session Resumed')
-    print('------')
-
-@bot.event
-async def on_error(event, *args, **kwargs):
-    print('------')
-    print('On Error')
-    print(event)
-    traceback.print_exc()
-    print('------')
-
-bot.run(DISCORD_TOKEN)
+voiceCreate = VoiceCreate()

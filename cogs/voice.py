@@ -21,42 +21,8 @@ class EmbedField():
         self.value = value
 
 class voice(commands.Cog):
-    DBVERSION = 1 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
-    # 0 = NO SCHEMA APPLIED
-    # VERSION HISTORY:
-    # v1: 04/30/2020
     BITRATE_DEFAULT = 64
     APP_VERSION = "1.0.0-snapshot"
-
-    def initDB(self):
-        conn = sqlite3.connect(self.db_path)
-        try:
-            dbversion = get_scalar_result(conn, "PRAGMA user_version", 0)
-            c = conn.cursor()
-            print(f"LOADED SCHEMA VERSION: {dbversion}")
-            print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
-            for x in range(0, self.DBVERSION+1):
-                files = glob.glob(f"sql/{x:04d}.*.sql")
-                for f in files:
-                    if dbversion == 0 or dbversion < x:
-                        print(f"Applying SQL: {f}")
-                        file = open(f, mode='r')
-                        contents = file.read()
-                        c.execute(contents)
-                        conn.commit()
-                        file.close()
-                    else:
-                        print(f"Skipping SQL: {f}")
-            if dbversion < self.DBVERSION:
-                print(f"Updating SCHEMA Version to {self.DBVERSION}")
-                c.execute(f"PRAGMA user_version = {self.DBVERSION}")
-                conn.commit()
-            c.close()
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            conn.close()
 
     def __init__(self, bot):
         self.settings = {}
@@ -69,7 +35,6 @@ class voice(commands.Cog):
         print(f"DB Path: {self.db_path}")
         self.admin_ids = dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
         self.admin_role = dict_get(os.environ, 'ADMIN_ROLE', default_value = 'Admin')
-        self.initDB()
 
     async def clean_up_tracked_channels(self, guildID):
         conn = sqlite3.connect(self.db_path)
@@ -167,6 +132,7 @@ class voice(commands.Cog):
         finally:
             conn.commit()
             conn.close()
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         guildID = member.guild.id
@@ -263,6 +229,27 @@ class voice(commands.Cog):
                 traceback.print_exc()
             finally:
                 conn.close()
+
+    @voice.command(name="activity")
+    async def set_activity(self, *activity: str):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        mid = ctx.author.id
+        guildID = ctx.author.guild.id
+        try:
+            c.execute("SELECT activity FROM botSettings WHERE guildID = ?", (guildID,))
+            activitySet = c.fetchone()
+            if activitySet:
+                c.execute("UPDATE botSettings SET activity = ? WHERE guildID = ?", (activty, guildID,))
+            else:
+                print(f"botSettings table does not have a row for this guild.")
+            conn.commit()
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+        finally:
+            conn.close()
+            await ctx.message.delete()
 
     @voice.command()
     async def version(self, ctx):
@@ -1255,6 +1242,7 @@ class voice(commands.Cog):
         else:
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
+
 def dict_get(dictionary, key, default_value = None):
     if key in dictionary.keys():
         return dictionary[key] or default_value
