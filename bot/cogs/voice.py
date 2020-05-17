@@ -14,6 +14,8 @@ from time import gmtime, strftime
 import os
 import glob
 import typing
+from .lib import utils
+from .lib import settings
 
 class EmbedField():
     def __init__(self, name, value):
@@ -25,16 +27,16 @@ class voice(commands.Cog):
     APP_VERSION = "1.0.0-snapshot"
 
     def __init__(self, bot):
-        self.settings = {}
-        with open('app.manifest') as json_file:
-            self.settings = json.load(json_file)
+        self.settings = settings.Settings()
+        # with open('app.manifest') as json_file:
+        #     self.settings = json.load(json_file)
 
         self.bot = bot
         print(f"APP VERSION: {self.APP_VERSION}")
-        self.db_path = dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
+        self.db_path = self.settings.db_path
         print(f"DB Path: {self.db_path}")
-        self.admin_ids = dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
-        self.admin_role = dict_get(os.environ, 'ADMIN_ROLE', default_value = 'Admin')
+        self.admin_ids = self.settings.admin_ids
+        self.admin_role = self.settings.admin_role
 
     async def clean_up_tracked_channels(self, guildID):
         conn = sqlite3.connect(self.db_path)
@@ -253,7 +255,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def version(self, ctx):
-        appName = dict_get(self.settings, "name", default_value = "Voice Create Bot")
+        appName = utils.dict_get(self.settings, "name", default_value = "Voice Create Bot")
         await self.sendEmbed(ctx.channel, "Version Information", f"Voice Bot Verison: {self.APP_VERSION}", delete_after=10)
         await ctx.message.delete()
 
@@ -624,10 +626,10 @@ class voice(commands.Cog):
                     if catSettings:
                         print(f"UPDATE category settings")
                         c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ?",
-                            (int(limit), str2bool(locked), ctx.guild.id, found_category.id, int(bitrate)))
+                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(bitrate)))
                     else:
                         print(f"INSERT category settings")
-                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), str2bool(locked), int(bitrate)))
+                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(bitrate)))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -1190,7 +1192,7 @@ class voice(commands.Cog):
                 return same
             def check_yes_no(m):
                 msg = m.content
-                return str2bool(msg)
+                return utils.str2bool(msg)
             await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
             try:
                 category = await self.bot.wait_for('message', check=check, timeout=60.0)
@@ -1243,22 +1245,6 @@ class voice(commands.Cog):
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
 
-def dict_get(dictionary, key, default_value = None):
-    if key in dictionary.keys():
-        return dictionary[key] or default_value
-    else:
-        return default_value
-def get_scalar_result(conn, sql, default_value = None):
-    cursor = conn.cursor()
-    try:
-        cursor.execute(sql)
-        return cursor.fetchone()[0]
-    except Exception as ex:
-        print(ex)
-        traceback.print_exc()
-        return default_value
-def str2bool(v):
-    return v.lower() in ("yes", "true", "yup", "1", "t", "y")
 
 def setup(bot):
     bot.add_cog(voice(bot))
