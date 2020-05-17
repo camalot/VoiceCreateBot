@@ -15,10 +15,7 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        self.db_path = self.settings.db_path
-        print(f"DB Path: {self.db_path}")
-        self.admin_ids = self.settings.admin_ids
-        self.admin_role = self.settings.admin_role
+        print(f"DB Path: {self.settings.db_path}")
 
 
     @commands.Cog.listener()

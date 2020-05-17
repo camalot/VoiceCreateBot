@@ -27,12 +27,8 @@ class VoiceCreate():
     def __init__(self):
         load_dotenv(find_dotenv())
         self.settings = settings.Settings()
-        # with open('app.manifest') as json_file:
-        #     self.settings = json.load(json_file)
-        self.db_path = self.settings.db_path
-        print(f"DB Path: {self.db_path}")
-        self.admin_ids = self.settings.admin_ids
-        self.admin_role = self.settings.admin_role
+        print(f"APP VERSION: {self.settings.APP_VERSION}")
+        print(f"DBPath: {self.settings.db_path}")
         self.initDB()
         self.client = discord.Client()
 
@@ -53,7 +49,7 @@ class VoiceCreate():
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         try:
             dbversion = utils.get_scalar_result(conn, "PRAGMA user_version", 0)
             c = conn.cursor()
@@ -85,7 +81,7 @@ class VoiceCreate():
     def get_prefix(self, client, message):
         prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         if not message.guild:
-            prefixes = ['.']   # Only allow '==' as a prefix when in DMs, this is optional
+            prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
         # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
         # Do `return prefixes` if you don't want to allow mentions instead of prefix.
         return commands.when_mentioned_or(*prefixes)(client, message)

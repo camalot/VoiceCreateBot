@@ -24,22 +24,13 @@ class EmbedField():
 
 class voice(commands.Cog):
     BITRATE_DEFAULT = 64
-    APP_VERSION = "1.0.0-snapshot"
 
     def __init__(self, bot):
         self.settings = settings.Settings()
-        # with open('app.manifest') as json_file:
-        #     self.settings = json.load(json_file)
-
         self.bot = bot
-        print(f"APP VERSION: {self.APP_VERSION}")
-        self.db_path = self.settings.db_path
-        print(f"DB Path: {self.db_path}")
-        self.admin_ids = self.settings.admin_ids
-        self.admin_role = self.settings.admin_role
 
     async def clean_up_tracked_channels(self, guildID):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         try:
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
@@ -95,7 +86,7 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         try:
             if before and after:
@@ -138,7 +129,7 @@ class voice(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         guildID = member.guild.id
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         await self.clean_up_tracked_channels(guildID)
         await asyncio.sleep(2)
@@ -234,7 +225,7 @@ class voice(commands.Cog):
 
     @voice.command(name="activity")
     async def set_activity(self, *activity: str):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         mid = ctx.author.id
         guildID = ctx.author.guild.id
@@ -261,7 +252,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def channels(self, ctx):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         mid = ctx.author.id
         guildID = ctx.author.guild.id
@@ -304,7 +295,7 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["track-text-channel", "ttc"])
     async def track_text_channel(self, ctx, channel: discord.TextChannel = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         mid = ctx.author.id
         guildID = ctx.author.guild.id
@@ -359,7 +350,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def track(self, ctx):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         mid = ctx.author.id
         guildID = ctx.author.guild.id
@@ -389,7 +380,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def owner(self, ctx, member: discord.Member):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         channel = None
         try:
@@ -419,7 +410,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -464,7 +455,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def unmute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -555,14 +546,14 @@ class voice(commands.Cog):
 
     @voice.command(pass_context=True)
     async def setup(self, ctx):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
         try:
             print(f"User id triggering setup: {ctx.author.id}")
             print(f"Owner id: {ctx.guild.owner.id}")
-            print(self.admin_ids)
-            print(str(ctx.author.id) in self.admin_ids)
+            print(self.settings.admin_ids)
+            print(str(ctx.author.id) in self.settings.admin_ids)
             aid = ctx.author.id
             # If the person is the OWNER or an ADMIN
             if self.isAdmin(ctx):
@@ -607,7 +598,7 @@ class voice(commands.Cog):
     @voice.command()
     async def settings(self, ctx, category: str, locked: str = "False", limit: int = 0, bitrate: int = 64):
         if self.isAdmin(ctx):
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             try:
                 found_category = next((x for x in ctx.guild.categories if x.name == category), None)
@@ -661,7 +652,7 @@ class voice(commands.Cog):
     @voice.command()
     async def cleandb(self,ctx):
         if self.isAdmin(ctx):
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.settings.db_path)
             guildID = ctx.guild.id
             try:
                 c = conn.cursor()
@@ -681,7 +672,7 @@ class voice(commands.Cog):
         if user and self.isAdmin(ctx):
             dataUser = user
 
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         guildID = ctx.guild.id
         try:
             c = conn.cursor()
@@ -697,7 +688,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def lock(self, ctx, role: discord.Role = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -739,7 +730,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def unlock(self, ctx, role: discord.Role = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -781,7 +772,7 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["allow"])
     async def permit(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         try:
@@ -814,7 +805,7 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["deny"])
     async def reject(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -862,7 +853,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def limit(self, ctx, limit):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -912,7 +903,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def bitrate(self, ctx, bitrate: int = 64):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -953,7 +944,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def name(self, ctx, *, name):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         voiceChannel = ctx.author.voice.channel
@@ -1000,7 +991,7 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["rename"])
     async def force_name(self, ctx, *, name):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
@@ -1042,7 +1033,7 @@ class voice(commands.Cog):
     @voice.command()
     async def whoowns(self, ctx):
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             guildID = ctx.guild.id
             channel = ctx.author.voice.channel
@@ -1064,7 +1055,7 @@ class voice(commands.Cog):
     @voice.command()
     async def give(self, ctx, newOwner: discord.Member):
         """Give ownership of the channel to another user in the channel"""
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
         channel = ctx.author.voice.channel
@@ -1103,7 +1094,7 @@ class voice(commands.Cog):
     @voice.command()
     async def claim(self, ctx):
         x = False
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
         channel = ctx.author.voice.channel
@@ -1145,7 +1136,7 @@ class voice(commands.Cog):
     async def delete(self, ctx):
         if self.isAdmin(ctx):
             guildID = ctx.guild.id
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID, ))
             chans = [item for clist in c.fetchall() for item in clist]
@@ -1228,8 +1219,8 @@ class voice(commands.Cog):
             yield lst[i:i + size]
 
     def isAdmin(self, ctx):
-        is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.admin_ids
-        admin_role = discord.utils.find(lambda r: r.name == self.admin_role, ctx.message.guild.roles)
+        is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids
+        admin_role = discord.utils.find(lambda r: r.name == self.settings.admin_role, ctx.message.guild.roles)
         return admin_role in ctx.author.roles or is_listed_admin
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
