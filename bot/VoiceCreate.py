@@ -9,7 +9,6 @@ import traceback
 import sqlite3
 import sys
 import os
-from dotenv import load_dotenv, find_dotenv
 import glob
 import typing
 from .cogs.lib import utils
@@ -25,7 +24,6 @@ class VoiceCreate():
     # v2: 5/16/2020
 
     def __init__(self):
-        load_dotenv(find_dotenv())
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
         print(f"DBPath: {self.settings.db_path}")

@@ -13,10 +13,10 @@ def dict_get(dictionary, key, default_value = None):
     else:
         return default_value
 
-def get_scalar_result(conn, sql, default_value = None):
+def get_scalar_result(conn, sql, default_value = None, *args):
     cursor = conn.cursor()
     try:
-        cursor.execute(sql)
+        cursor.execute(sql, args)
         return cursor.fetchone()[0]
     except Exception as ex:
         print(ex)
