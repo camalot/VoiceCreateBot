@@ -4,7 +4,7 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
-	"init-message": {
+	"initMessage": {
 		"title": "Customize the name of your channel by using the voice bot 'name' command",
 		"message": "Type in this channel `.voice name new channel name`",
 		"fields": [

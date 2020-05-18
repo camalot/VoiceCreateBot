@@ -30,6 +30,7 @@ class voice(commands.Cog):
         self.bot = bot
 
     async def clean_up_tracked_channels(self, guildID):
+        print("Clean up tracked channels")
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         try:
@@ -128,6 +129,7 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
+        print("On Voice State Update")
         guildID = member.guild.id
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
@@ -140,6 +142,7 @@ class voice(commands.Cog):
             pass
         else:
             try:
+                print("Check for user in Create Channel")
                 if after.channel is not None and after.channel.id in voiceChannels:
                     # User Joined the CREATE CHANNEL
                     print(f"User requested to CREATE CHANNEL")
@@ -211,7 +214,7 @@ class voice(commands.Cog):
                         traceback.print_exc()
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'{member.mention}, This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
-                    initMessage = self.settings['init-message']
+                    initMessage = self.settings.initMessage
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
                         await self.sendEmbed(textChannel, initMessage['title'], initMessage['message'], initMessage['fields'], delete_after=None, footer='')
