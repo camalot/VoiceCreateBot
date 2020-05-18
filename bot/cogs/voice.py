@@ -223,31 +223,10 @@ class voice(commands.Cog):
             finally:
                 conn.close()
 
-    @voice.command(name="activity")
-    async def set_activity(self, *activity: str):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        mid = ctx.author.id
-        guildID = ctx.author.guild.id
-        try:
-            c.execute("SELECT activity FROM botSettings WHERE guildID = ?", (guildID,))
-            activitySet = c.fetchone()
-            if activitySet:
-                c.execute("UPDATE botSettings SET activity = ? WHERE guildID = ?", (activty, guildID,))
-            else:
-                print(f"botSettings table does not have a row for this guild.")
-            conn.commit()
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
-        finally:
-            conn.close()
-            await ctx.message.delete()
-
     @voice.command()
     async def version(self, ctx):
         appName = utils.dict_get(self.settings, "name", default_value = "Voice Create Bot")
-        await self.sendEmbed(ctx.channel, "Version Information", f"Voice Bot Verison: {self.APP_VERSION}", delete_after=10)
+        await self.sendEmbed(ctx.channel, "Version Information", f"Voice Create Bot Version: {self.settings.APP_VERSION}", delete_after=10)
         await ctx.message.delete()
 
     @voice.command()
@@ -524,7 +503,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
 
         else:
-            chunked = self.chunk_list(list(command_list.keys()), 10)
+            chunked = utils.chunk_list(list(command_list.keys()), 10)
             pages = math.ceil(len(command_list) / 10)
             page = 1
             for chunk in chunked:
@@ -1143,7 +1122,7 @@ class voice(commands.Cog):
             vchans = [chan for chan in ctx.guild.channels if chan.id in chans]
 
             embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
-            embed.set_author(name=f"{self.settings['name']} v{self.APP_VERSION}", url=self.settings['url'],
+            embed.set_author(name=f"{self.settings['name']} v{self.settings.APP_VERSION}", url=self.settings['url'],
                             icon_url=self.settings['icon'])
             channel_array = []
             index = 0
@@ -1212,11 +1191,6 @@ class voice(commands.Cog):
         else:
             return None
         await ctx.message.delete()
-
-    def chunk_list(self, lst, size):
-        # looping till length l
-        for i in range(0, len(lst), size):
-            yield lst[i:i + size]
 
     def isAdmin(self, ctx):
         is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids

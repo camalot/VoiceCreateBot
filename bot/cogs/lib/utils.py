@@ -25,3 +25,8 @@ def get_scalar_result(conn, sql, default_value = None, *args):
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "yup", "1", "t", "y")
+
+def chunk_list(lst, size):
+    # looping till length l
+    for i in range(0, len(lst), size):
+        yield lst[i:i + size]
