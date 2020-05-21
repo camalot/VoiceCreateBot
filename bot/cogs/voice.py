@@ -494,7 +494,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def help(self, ctx, command=""):
-        command_list = self.settings['commands']
+        command_list = self.settings.commands
         if command and command.lower() in command_list:
             cmd = command_list[command.lower()]
             if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
@@ -1125,8 +1125,8 @@ class voice(commands.Cog):
             vchans = [chan for chan in ctx.guild.channels if chan.id in chans]
 
             embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
-            embed.set_author(name=f"{self.settings['name']} v{self.settings.APP_VERSION}", url=self.settings['url'],
-                            icon_url=self.settings['icon'])
+            embed.set_author(name=f"{self.settings.name} v{self.settings.APP_VERSION}", url=self.settings.url,
+                            icon_url=self.settings.icon)
             channel_array = []
             index = 0
             for c in vchans:
@@ -1208,7 +1208,7 @@ class voice(commands.Cog):
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline='false')
         if footer is None:
-            embed.set_footer(text=f'Developed by {self.settings["author"]}')
+            embed.set_footer(text=f'Developed by {self.settings.author}')
         else:
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
