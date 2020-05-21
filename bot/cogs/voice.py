@@ -494,7 +494,7 @@ class voice(commands.Cog):
 
     @voice.command()
     async def help(self, ctx, command=""):
-        command_list = self.settings['commands']
+        command_list = self.settings.commands
         if command and command.lower() in command_list:
             cmd = command_list[command.lower()]
             if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
