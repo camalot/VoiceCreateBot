@@ -209,10 +209,11 @@ class voice(commands.Cog):
                     c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildID, mid, textChannel.id, channelID,))
                     conn.commit()
 
-                    role = discord.utils.get(member.guild.roles, name=default_role)
+                    sec_role = default_role or '@everyone'
+                    role = discord.utils.get(member.guild.roles, name=sec_role)
                     try:
-                        print(f"Check if bot can set channel for {default_role} {voiceChannel}")
-                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked))
+                        print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
+                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked))
                         await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked))
                     except Exception as ex:
                         print(ex)
