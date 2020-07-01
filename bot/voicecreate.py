@@ -16,12 +16,13 @@ from .cogs.lib import settings
 
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
-    DBVERSION = 1 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    DBVERSION = 2 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     # 0 = NO SCHEMA APPLIED
 
     # VERSION HISTORY:
     # v1: 04/30/2020
-    # v2: 5/16/2020
+    # v2: 07/01/2020
+    #
 
     def __init__(self):
         self.settings = settings.Settings()
