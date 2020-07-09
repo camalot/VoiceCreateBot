@@ -182,7 +182,7 @@ class voice(commands.Cog):
                     mid = member.id
                     category = self.bot.get_channel(category_id)
                     print(f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
-                    voiceChannel = await member.guild.create_voice_channel(name, category=category, bitrate=(bitrate*1000))
+                    # voiceChannel = await member.guild.create_voice_channel(name, category=category, bitrate=(bitrate*1000))
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
