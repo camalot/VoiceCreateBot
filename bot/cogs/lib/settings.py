@@ -18,3 +18,4 @@ class Settings:
         self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
         self.admin_ids = utils.dict_get(os.environ,"ADMIN_USERS", default_value = "").split(" ")
         self.admin_role = utils.dict_get(os.environ, 'ADMIN_ROLE', default_value = 'Admin')
+        self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
