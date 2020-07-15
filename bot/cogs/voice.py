@@ -187,7 +187,7 @@ class voice(commands.Cog):
                     mid = member.id
                     category = self.bot.get_channel(category_id)
                     print(f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
-                    voiceChannel = await member.guild.create_voice_channel(name, category=category, bitrate=(bitrate*1000))
+                    voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
@@ -202,7 +202,7 @@ class voice(commands.Cog):
                         print(ex)
                         traceback.print_exc()
                     print(f"Set user limit to {limit} on {voiceChannel}")
-                    await voiceChannel.edit(name=name, user_limit=limit)
+                    await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000))
                     print(f"Track voiceChannel {mid},{channelID}")
                     print(f"Track Voice and Text Channels {name} in {category}")
                     c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channelID,))
