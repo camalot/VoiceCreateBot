@@ -150,10 +150,17 @@
 		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels**",
-			"usage": ".voice settings \"<category name>\" <locked> <limit>",
-			"example": ".voice settings \"Voice Channels\" no 5",
+			"usage": ".voice settings \"<category name>\" <locked> <limit> \"<default role = @everyone>\"",
+			"example": ".voice settings \"Voice Channels\" no 5 \"Role Name\"",
 			"admin": true,
 			"aliases": []
+		},
+		"set-default-role": {
+			"help": "**Change the Default Role for a specific category**",
+			"usage": ".voice set-default-role \"<role name>\"",
+			"example": ".voice set-default-role \"Role Name\"",
+			"admin": true,
+			"aliases": ["sdr"]
 		},
 		"setup": {
 			"help": "**Setup a Create Voice Channel**",

@@ -197,7 +197,7 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         print(f"Setting permissions on {voiceChannel}")
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True)
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         print(ex)
@@ -215,7 +215,7 @@ class voice(commands.Cog):
                     try:
                         print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
                         await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
-                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), speak=(not locked), view_channel=(not locked))
+                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), speak=(not locked), view_channel=(not locked), stream=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -610,7 +610,7 @@ class voice(commands.Cog):
         print(error)
         traceback.print_exc()
 
-    @voice.command()
+    @voice.command(aliases=['set-default-role', 'sdr'])
     async def set_default_role(self, ctx, default_role: discord.Role):
         if self.isAdmin(ctx):
             guildID = ctx.guild.id
@@ -628,10 +628,6 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
                 else:
                     print("no category found")
-                # TODO:
-                # - Ask what category
-                # - Ask for the role if not provided
-                # - set the default role for the guildCategorySettings
             except Exception as e:
                 print(ex)
                 trackback.print_exc()
@@ -739,7 +735,7 @@ class voice(commands.Cog):
         finally:
             conn.close()
         await ctx.message.delete()
-
+        
     @voice.command()
     async def lock(self, ctx, role: discord.Role = None):
         conn = sqlite3.connect(self.settings.db_path)
@@ -780,9 +776,9 @@ class voice(commands.Cog):
                         await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=False, read_message_history=False)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=False, speak=False)
+                    await channel.set_permissions(everyone, connect=False, speak=False, stream=False)
                     if role:
-                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=False, speak=False)
+                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=False, speak=False, stream=False)
                         if textChannel:
                             await textChannel.set_permissions(role, read_messages=False,send_messages=False, view_channel=False, read_message_history=False)
 
@@ -836,10 +832,10 @@ class voice(commands.Cog):
                         if role:
                             await textChannel.set_permissions(role, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
 
-                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
+                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, stream=True)
+                    await channel.set_permissions(everyone, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None, stream=None)
                     if role:
-                        await channel.set_permissions(role, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
+                        await channel.set_permissions(role, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None, stream=None)
 
                 await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         except Exception as ex:
@@ -873,7 +869,7 @@ class voice(commands.Cog):
                         if userOrRole:
                             await textChannel.set_permissions(userOrRole, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, )
                 if userOrRole:
-                    await channel.set_permissions(userOrRole, connect=True, view_channel=True, )
+                    await channel.set_permissions(userOrRole, connect=True, view_channel=True, speak=True, stream=True)
                     await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
         except Exception as ex:
             print(ex)
@@ -905,7 +901,7 @@ class voice(commands.Cog):
                     textChannel = self.bot.get_channel(textChannelID)
                     if textChannel:
                         if userOrRole:
-                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False)
+                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False, view_channel=False, read_message_history=False)
 
 
                 if userOrRole:
@@ -916,14 +912,14 @@ class voice(commands.Cog):
                             if m.has_role(userOrRole):
                                 m.disconnect()
 
-                    await channel.set_permissions(userOrRole, connect=False, read_messages=None)
+                    await channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=False, speak=False, stream=False, read_message_history=False)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
                 if role:
                     for members in channel.members:
                         for roles in members.roles:
                             if roles.id == role.id:
                                 member.disconnect()
-                    await channel.set_permissions(member, connect=False, read_messages=None)
+                    await channel.set_permissions(member, connect=False, read_messages=False, view_channel=False, speak=False, stream=False, read_message_history=False)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {member.name} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             print(ex)
