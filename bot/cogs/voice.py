@@ -150,7 +150,7 @@ class voice(commands.Cog):
                     c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (member.id, guildID))
                     userSettings = c.fetchone()
                     c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-                    guildSetting = c.fetchone()
+                    guildSettings = c.fetchone()
 
                     # CHANNEL SETTINGS START
                     limit = 0
@@ -159,30 +159,30 @@ class voice(commands.Cog):
                     name = f"{member.name}'s Channel"
                     default_role = self.settings.default_role
                     if userSettings is None:
-                        if guildSetting is not None:
-                            limit = guildSetting[0]
-                            locked = guildSetting[1]
-                            bitrate = guildSetting[2]
+                        if guildSettings is not None:
+                            limit = guildSettings[0]
+                            locked = guildSettings[1]
+                            bitrate = guildSettings[2]
                             default_role = guildSettings[3] or self.settings.default_role
                     else:
                         name = userSettings[0]
-                        if guildSetting is None:
+                        if guildSettings is None:
                             limit = userSettings[1]
                             bitrate = userSettings[2]
                             default_role = userSettings[3] or self.settings.default_role
                             locked = False
-                        elif guildSetting is not None:
+                        elif guildSettings is not None:
                             limit = userSettings[1]
                             if userSettings[1] == 0:
-                                limit =  guildSetting[0]
-                            locked = guildSetting[1] or False
-                            bitrate = userSettings[2] or guildSetting[2]
-                            default_role = userSettings[3] or guildSetting[3] or self.settings.default_role
+                                limit =  guildSettings[0]
+                            locked = guildSettings[1] or False
+                            bitrate = userSettings[2] or guildSettings[2]
+                            default_role = userSettings[3] or guildSettings[3] or self.settings.default_role
                         else:
                             limit = userSettings[1]
-                            locked = guildSetting[1]
-                            bitrate = guildSetting[2]
-                            default_role = guildSetting[3] or self.settings.default_role
+                            locked = guildSettings[1]
+                            bitrate = guildSettings[2]
+                            default_role = guildSettings[3] or self.settings.default_role
                     # CHANNEL SETTINGS END
 
                     mid = member.id
@@ -197,8 +197,8 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         print(f"Setting permissions on {voiceChannel}")
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True)
-                        await textChannel.set_permissions(member, read_messages=True, send_messages=True)
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True)
+                        await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -214,8 +214,8 @@ class voice(commands.Cog):
                     role = discord.utils.get(member.guild.roles, name=sec_role)
                     try:
                         print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
-                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked))
-                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked))
+                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
+                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), speak=(not locked), view_channel=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -613,10 +613,21 @@ class voice(commands.Cog):
     @voice.command()
     async def set_default_role(self, ctx, default_role: discord.Role):
         if self.isAdmin(ctx):
+            guildID = ctx.guild.id
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             try:
-                pass
+                category = await self.set_role_ask_category(ctx)
+                if category:
+                    print(category)
+                    c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category.id,))
+                    guildSettings = c.fetchone()
+                    if guildSettings:
+                        c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (default_role, guildID, category.id))
+                    else:
+                        await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
+                else:
+                    print("no category found")
                 # TODO:
                 # - Ask what category
                 # - Ask for the role if not provided
@@ -627,7 +638,7 @@ class voice(commands.Cog):
             finally:
                 conn.commit()
                 conn.close()
-                await ctx.message.delete()
+                # await ctx.message.delete()
 
 
 
@@ -643,10 +654,10 @@ class voice(commands.Cog):
                     bitrate_min = 8
                     br = int(bitrate)
 
-                    if br_set > bitrate_limit:
-                        br_set = bitrate_limit
-                    elif br_set < bitrate_min:
-                        br_set = bitrate_min
+                    if br > bitrate_limit:
+                        br = bitrate_limit
+                    elif br < bitrate_min:
+                        br = bitrate_min
                     new_default_role = default_role
                     if not new_default_role:
                         new_default_role = self.settings.default_role
@@ -656,10 +667,10 @@ class voice(commands.Cog):
                         new_default_role = catSettings[3] or self.settings.default_role
                         print(f"UPDATE category settings")
                         c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ? AND defaultRole = ?",
-                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(bitrate), new_default_role,))
+                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role.name,))
                     else:
                         print(f"INSERT category settings")
-                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(bitrate), new_default_role,))
+                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role.name,))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -1277,6 +1288,49 @@ class voice(commands.Cog):
             print(f"{ctx.author} tried to run command 'delete'")
         await ctx.message.delete()
 
+    async def set_role_ask_category(self, ctx):
+        try:
+            found_category = None
+            if self.isAdmin(ctx):
+                def check(m):
+                    same = m.author.id == ctx.author.id
+                    return same
+                def check_yes_no(m):
+                    msg = m.content
+                    return utils.str2bool(msg)
+                await self.sendEmbed(ctx.channel, "Set Default Role", f"**Enter the name of the category you wish to set the default role for**", delete_after=60, footer="**You have 60 seconds to answer**")
+                try:
+                    category = await self.bot.wait_for('message', check=check, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await ctx.channel.send('Took too long to answer!', delete_after=5)
+                else:
+                    found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
+                    await category.delete()
+                    if found_category:
+                        # found existing with that name.
+                        # do you want to create a new one?
+                        yes_or_no = False
+                        await self.sendEmbed(ctx.channel, "Set Default Role", f"**Is this the correct category? '{str(found_category.name.upper())}'.\n\nReply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
+                        try:
+                            yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
+                        except asyncio.TimeoutError:
+                            await self.sendEmbed(ctx.channel, "Set Default Role", 'Took too long to answer!', delete_after=5)
+                        else:
+                            if yes_or_no:
+                                await yes_or_no.delete()
+                                return found_category
+                            else:
+                                return None
+                    else:
+                        return None
+            else:
+                return None
+        except Exception as e:
+            print(e)
+            traceback.print_exc(e)
+        finally:
+            await ctx.message.delete()
+
     async def ask_category(self, ctx):
         if self.isAdmin(ctx):
             def check(m):
@@ -1297,7 +1351,7 @@ class voice(commands.Cog):
                     # found existing with that name.
                     # do you want to create a new one?
                     yes_or_no = False
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing channel called '{str(found_category.name.upper())}'. Use that channel? Reply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing category called '{str(found_category.name.upper())}'. Use that category?\n\nReply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
                     try:
                         yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
                     except asyncio.TimeoutError:
