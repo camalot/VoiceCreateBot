@@ -914,13 +914,6 @@ class voice(commands.Cog):
 
                     await channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=False, speak=False, stream=False, read_message_history=False)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
-                if role:
-                    for members in channel.members:
-                        for roles in members.roles:
-                            if roles.id == role.id:
-                                member.disconnect()
-                    await channel.set_permissions(member, connect=False, read_messages=False, view_channel=False, speak=False, stream=False, read_message_history=False)
-                    await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
