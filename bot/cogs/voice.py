@@ -616,6 +616,7 @@ class voice(commands.Cog):
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             try:
+                pass
                 # TODO:
                 # - Ask what category
                 # - Ask for the role if not provided
