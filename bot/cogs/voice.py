@@ -197,8 +197,8 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         print(f"Setting permissions on {voiceChannel}")
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True)
-                        await textChannel.set_permissions(member, read_messages=True, send_messages=True)
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_chanel=True)
+                        await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -214,8 +214,8 @@ class voice(commands.Cog):
                     role = discord.utils.get(member.guild.roles, name=sec_role)
                     try:
                         print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
-                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked))
-                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked))
+                        await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
+                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), speak=(not locked), view_channel=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
