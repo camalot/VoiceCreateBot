@@ -498,11 +498,11 @@ class voice(commands.Cog):
                     if textChannel:
                         await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, read_message_history=True, view_channel=True)
                         for r in permRoles:
-                            await textChannel.set_permissions(r, send_messages=None)
+                            await textChannel.set_permissions(r, send_messages=True)
 
                     await channel.set_permissions(ctx.message.author, speak=True, connect=True, read_messages=True, send_messages=True, view_channel=True)
                     for r in permRoles:
-                        await channel.set_permissions(r, speak=None)
+                        await channel.set_permissions(r, speak=True)
 
                 await self.sendEmbed(ctx.channel, "Channel Unmute", f'{ctx.author.mention} All users in the specified role are now unmuted 🔊', delete_after=5)
         except Exception as ex:
@@ -828,14 +828,14 @@ class voice(commands.Cog):
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel:
                         await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
-                        await textChannel.set_permissions(everyone, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
+                        await textChannel.set_permissions(everyone, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=None, view_channel=None, stream=None)
+                    await channel.set_permissions(everyone, connect=True, view_channel=True, stream=True)
                     if role:
-                        await channel.set_permissions(role, connect=None, read_messages=None, send_messages=None, view_channel=None, stream=None)
+                        await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=None, stream=True)
                         if textChannel:
-                            await textChannel.set_permissions(role, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
+                            await textChannel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
                 await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         except Exception as ex:
