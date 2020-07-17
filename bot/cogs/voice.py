@@ -97,6 +97,7 @@ class voice(commands.Cog):
                         guildID = before.guild.id or after.guild.id
                         c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
                         trackedSet = c.fetchone()
+                        category_id = after.category.id
                         if trackedSet:
                             channelOwnerId = int(trackedSet[0])
                             if before.name == after.name:
@@ -104,6 +105,20 @@ class voice(commands.Cog):
                                 print(f"Channel Names are the same. Nothing to do")
                                 pass
                             else:
+
+                                c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
+                                userSettings = c.fetchone()
+                                c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+                                guildSetting = c.fetchone()
+                                if userSettings:
+                                    default_role = userSettings[3]
+                                else:
+                                    if guildSetting:
+                                        default_role = guildSettings[3] or self.settings.default_role
+                                    else:
+                                        default_role = self.settings.default_role
+
+
                                 # new channel name
                                 c.execute("SELECT channelID from textChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id))
                                 textSet = c.fetchone()
@@ -117,7 +132,7 @@ class voice(commands.Cog):
                                 c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
                                 voiceGroup = c.fetchone()
                                 if voiceGroup is None:
-                                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?)", (guildID, channelOwnerId, after.name, 0, self.BITRATE_DEFAULT))
+                                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (guildID, channelOwnerId, after.name, 0, self.BITRATE_DEFAULT, default_role))
                                 else:
                                     c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (after.name, channelOwnerId, guildID,))
         except Exception as e:
