@@ -215,7 +215,7 @@ class voice(commands.Cog):
                     try:
                         print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
                         await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
-                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), speak=(not locked), view_channel=(not locked), stream=(not locked))
+                        await voiceChannel.set_permissions(role, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=(not locked), stream=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -735,7 +735,7 @@ class voice(commands.Cog):
         finally:
             conn.close()
         await ctx.message.delete()
-        
+
     @voice.command()
     async def lock(self, ctx, role: discord.Role = None):
         conn = sqlite3.connect(self.settings.db_path)
@@ -776,9 +776,9 @@ class voice(commands.Cog):
                         await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=False, read_message_history=False)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=False, speak=False, stream=False)
+                    await channel.set_permissions(everyone, connect=False, view_channel=False, stream=False)
                     if role:
-                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=False, speak=False, stream=False)
+                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=False, stream=False)
                         if textChannel:
                             await textChannel.set_permissions(role, read_messages=False,send_messages=False, view_channel=False, read_message_history=False)
 
@@ -828,9 +828,9 @@ class voice(commands.Cog):
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel:
                         await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                        await textChannel.set_permissions(everyone, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
+                        await textChannel.set_permissions(everyone, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
                         if role:
-                            await textChannel.set_permissions(role, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
+                            await textChannel.set_permissions(role, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, stream=True)
                     await channel.set_permissions(everyone, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None, stream=None)
