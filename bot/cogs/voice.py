@@ -772,7 +772,7 @@ class voice(commands.Cog):
                     if textGroup:
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel:
-                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=False, read_message_history=False)
+                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
                         await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=False, read_message_history=False)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
@@ -827,15 +827,15 @@ class voice(commands.Cog):
                     if textGroup:
                         textChannel = self.bot.get_channel(textGroup[0])
                     if textChannel:
-                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                        await textChannel.set_permissions(everyone, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
-                        if role:
-                            await textChannel.set_permissions(role, read_messages=None, send_messages=None, view_channel=None, read_message_history=None)
+                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
+                        await textChannel.set_permissions(everyone, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
 
-                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, stream=True)
-                    await channel.set_permissions(everyone, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None, stream=None)
+                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await channel.set_permissions(everyone, connect=None, view_channel=None, stream=None)
                     if role:
-                        await channel.set_permissions(role, connect=None, read_messages=None, send_messages=None, view_channel=None, read_message_history=None, stream=None)
+                        await channel.set_permissions(role, connect=None, read_messages=None, send_messages=None, view_channel=None, stream=None)
+                        if textChannel:
+                            await textChannel.set_permissions(role, read_messages=None,send_messages=None, view_channel=None, read_message_history=None)
 
                 await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         except Exception as ex:
