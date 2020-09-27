@@ -413,6 +413,55 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command()
+    async def resync(self, ctx):
+        conn = sqlite3.connect(self.settings.db_path)
+        c = conn.cursor()
+        aid = ctx.author.id
+        guildID = ctx.guild.id
+        category_id = ctx.channel.category.id
+        channel_id = ctx.channel.id
+        try:
+            c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
+            userSettings = c.fetchone()
+            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+            guildSettings = c.fetchone()
+            if userSettings:
+                default_role = userSettings[3]
+            else:
+                if guildSettings:
+                    default_role = guildSettings[3] or self.settings.default_role
+                else:
+                    default_role = self.settings.default_role
+            everyone = discord.utils.get(ctx.guild.roles, name=default_role)
+
+            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
+            voiceGroup = c.fetchone()
+            if voiceGroup is None and not self.isAdmin(ctx) and not channel_id:
+                await self.sendEmbed(ctx.channel, "Channel Sync", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            else:
+                channelID = voiceGroup[0]
+                channel = self.bot.get_channel(channelID)
+
+                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
+                textGroup = c.fetchone()
+                textChannel = None
+                if channel:
+                    if textGroup:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                        await textChannel.edit(sync_permissions=True)
+                        await textChannel.set_permissions(ctx.author, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await channel.edit(sync_permissions=True)
+                    await channel.set_permissions(ctx.author, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+                await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} The permissions of this channel have been resync\'d with the defaults.', delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            conn.commit()
+            conn.close()
+            await ctx.message.delete()
+
+    @voice.command()
     async def private(self, ctx):
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
@@ -437,7 +486,7 @@ class voice(commands.Cog):
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
             if voiceGroup is None and not self.isAdmin(ctx) and not channel_id:
-                await self.sendEmbed(ctx.channel, "Channel Mute", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Channel Private", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
                 channelID = voiceGroup[0]
                 channel = self.bot.get_channel(channelID)
@@ -446,6 +495,8 @@ class voice(commands.Cog):
                 textGroup = c.fetchone()
                 textChannel = None
                 if channel:
+
+                    await self.sendEmbed(ctx.channel, "Channel Private", f'{ctx.author.mention}, I am assigning permissions. This may take a moment.', delete_after=5)
                     permRoles = []
                     for m in channel.members:
                         if m.id != aid:

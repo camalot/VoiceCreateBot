@@ -36,6 +36,20 @@
 			"admin": false,
 			"aliases": []
 		},
+		"private": {
+			"help": "**Lock your channel for only those in it. Requires Push to Talk**",
+			"usage": ".voice private",
+			"example": ".voice private",
+			"admin": false,
+			"aliases": []
+		},
+		"resync": {
+			"help": "**Resync permissions of the channel with the defaults set for the category**",
+			"usage": ".voice resync",
+			"example": ".voice resync",
+			"admin": false,
+			"aliases": []
+		},
 		"mute": {
 			"help": "**Sets role or user to be muted in the channel**",
 			"usage": ".voice mute [@role|@user]",
