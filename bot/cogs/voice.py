@@ -419,7 +419,12 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
-        channel_id = ctx.channel.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
             c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
             channelOwnerGroup = c.fetchone()
@@ -476,7 +481,12 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
-        channel_id = ctx.channel.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
             c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
             channelOwnerGroup = c.fetchone()
@@ -556,7 +566,22 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to mute it.', delete_after=5)
+                return
+
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
@@ -614,7 +639,22 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Unmute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to unmute it.', delete_after=5)
+                return
+
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
@@ -895,13 +935,28 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to lock it.', delete_after=5)
+                return
 
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
             guildSettings = c.fetchone()
-            if settings:
+            if userSettings:
                 default_role = userSettings[3]
             else:
                 if guildSettings:
@@ -950,12 +1005,28 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to unlock it.', delete_after=5)
+                return
+
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
             guildSettings = c.fetchone()
-            if settings:
+            if userSettings:
                 default_role = userSettings[3]
             else:
                 if guildSettings:
@@ -1003,7 +1074,23 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         aid = ctx.author.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You do not own this channel, and do not have permissions to allow access.', delete_after=5)
+                return
+
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
@@ -1037,7 +1124,23 @@ class voice(commands.Cog):
         c = conn.cursor()
         aid = ctx.author.id
         guildID = ctx.guild.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You do not own this channel, and do not have permissions to deny access.', delete_after=5)
+                return
+
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
@@ -1081,7 +1184,23 @@ class voice(commands.Cog):
         aid = ctx.author.id
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                return
+
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
             guildSettings = c.fetchone()
             default_role = self.settings.default_role
@@ -1091,32 +1210,13 @@ class voice(commands.Cog):
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
             if voiceGroup is None and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Set Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
-                channel = None
-                channelID = None
-                if self.isAdmin(ctx):
-                    # allow admins to change the settings.
-                    channel = ctx.author.voice.channel
-                    channelID = channel.id
-                    if channel:
-                        c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, channel.id))
-                        aid = None
-                        channelSet = c.fetchone()
-                        if channelSet:
-                            aid = channelSet[0]
-                        else:
-                            # the channel the admin is in is not tracked.
-                            await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You are not in a voice channel that I control.", delete_after=5)
-                    else:
-                        await self.sendEmbed(ctx.channel, "Updated Channel Limit", f"{ctx.author.mention} You are not in a voice channel.", delete_after=5)
-                        return
-                else:
-                    channelID = voiceGroup[0]
-                    channel = self.bot.get_channel(channelID)
+                channelID = voiceGroup[0]
+                channel = self.bot.get_channel(channelID)
 
                 await channel.edit(user_limit=limit)
-                await self.sendEmbed(ctx.channel, "Updated Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
+                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
                 c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
                 voiceGroup = c.fetchone()
                 if voiceGroup is None:
@@ -1140,7 +1240,22 @@ class voice(commands.Cog):
         category_id = ctx.channel.category.id
         bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
         bitrate_min = 8
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                return
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
             guildSettings = c.fetchone()
             default_role = self.settings.default_role
@@ -1190,7 +1305,23 @@ class voice(commands.Cog):
         voiceChannel = ctx.author.voice.channel
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
+        channel_id = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
+            # get the channel owner, in case this is an admin running the command.
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                return
+
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
             guildSettings = c.fetchone()
             default_role = self.settings.default_role
@@ -1311,31 +1442,32 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
-        channel = ctx.author.voice.channel
+        if not self.isInVoiceChannel(ctx):
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
-            if channel == None:
-                await self.sendEmbed(ctx.channel, "Change Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+            channel = ctx.author.voice.channel
+            channel_id = ctx.author.voice.channel.id
+            aid = ctx.author.id
+            noID = newOwner.id
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel_id, guildID,))
+            ownerID = c.fetchone()
+            if ownerID is None and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, "Change Channel Owner", f"{ctx.author.mention} You don't own the channel you are in.", delete_after=5)
             else:
-                aid = ctx.author.id
-                noID = newOwner.id
-                c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
-                ownerID = c.fetchone()
-                if ownerID is None and not self.isAdmin(ctx):
-                    await self.sendEmbed(ctx.channel, "Change Channel Owner", f"{ctx.author.mention} You don't own the channel you are in.", delete_after=5)
+                if noID == ownerID:
+                    # Can't grant to self
+                    await self.sendEmbed(ctx.channel, "Change Channel Owner", f"{ctx.author.mention} You already own this channel.", delete_after=5)
                 else:
-                    if noID == ownerID:
-                        # Can't grant to self
-                        await self.sendEmbed(ctx.channel, "Change Channel Owner", f"{ctx.author.mention} You already own this channel.", delete_after=5)
-                    else:
-                        c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (ownerID[0], guildID, channel.id))
-                        textGroup = c.fetchone()
-                        if textGroup is not None:
-                            textChannel = self.bot.get_channel(textGroup[0])
-                        if textChannel is not None:
-                            c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(noID, channel.id, guildID,))
+                    c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (ownerID[0], guildID, channel_id))
+                    textGroup = c.fetchone()
+                    if textGroup is not None:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel is not None:
+                        c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(noID, channel_id, guildID,))
 
-                        await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, {newOwner.mention} is now the owner of '{channel.name}'!", delete_after=5)
-                        c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (noID, channel.id, guildID,))
+                    await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, {newOwner.mention} is now the owner of '{channel.name}'!", delete_after=5)
+                    c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (noID, channel_id, guildID,))
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1350,32 +1482,32 @@ class voice(commands.Cog):
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
         guildID = ctx.guild.id
-        channel = ctx.author.voice.channel
+        if not self.isInVoiceChannel(ctx):
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
         try:
-            if channel == None:
-                await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+            channel = ctx.author.voice.channel
+            aid = ctx.author.id
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
+            voiceGroup = c.fetchone()
+            if voiceGroup is None and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You can't own that channel!", delete_after=5)
             else:
-                aid = ctx.author.id
-                c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channel.id, guildID,))
-                voiceGroup = c.fetchone()
-                if voiceGroup is None and not self.isAdmin(ctx):
-                    await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You can't own that channel!", delete_after=5)
-                else:
-                    for data in channel.members:
-                        if data.id == voiceGroup[0]:
-                            owner = ctx.guild.get_member(voiceGroup[0])
-                            await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
-                            x = True
-                    if x == False:
-                        c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channel.id))
-                        textGroup = c.fetchone()
-                        if textGroup is not None:
-                            textChannel = self.bot.get_channel(textGroup[0])
-                        if textChannel is not None:
-                            c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(aid, channel.id, guildID,))
+                for data in channel.members:
+                    if data.id == voiceGroup[0]:
+                        owner = ctx.guild.get_member(voiceGroup[0])
+                        await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
+                        x = True
+                if x == False:
+                    c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channel.id))
+                    textGroup = c.fetchone()
+                    if textGroup is not None:
+                        textChannel = self.bot.get_channel(textGroup[0])
+                    if textChannel is not None:
+                        c.execute("UPDATE textChannel SET userID = ? WHERE voiceID = ? AND guildID = ?",(aid, channel.id, guildID,))
 
-                        await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
-                        c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
+                    await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
+                    c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ? AND guildID = ?", (aid, channel.id, guildID,))
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1508,7 +1640,8 @@ class voice(commands.Cog):
         else:
             return None
         await ctx.message.delete()
-
+    def isInVoiceChannel(self, ctx):
+        return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
         is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids
         admin_role = discord.utils.find(lambda r: r.name == self.settings.admin_role, ctx.message.guild.roles)
