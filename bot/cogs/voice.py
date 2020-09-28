@@ -421,6 +421,14 @@ class voice(commands.Cog):
         category_id = ctx.channel.category.id
         channel_id = ctx.channel.id
         try:
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} You do not own this channel, and do not have permissions to resync it.', delete_after=5)
+                return
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
@@ -470,6 +478,15 @@ class voice(commands.Cog):
         category_id = ctx.channel.category.id
         channel_id = ctx.channel.id
         try:
+            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+            channelOwnerGroup = c.fetchone()
+            if channelOwnerGroup:
+                if channelOwnerGroup[0] != aid:
+                    aid = channelOwnerGroup[0]
+            if not self.isAdmin(ctx) and ctx.author.id != aid:
+                await self.sendEmbed(ctx.channel, "Channel Private", f'{ctx.author.mention} You do not own this channel, and do not have permissions to make it private.', delete_after=5)
+                return
+
             c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
             userSettings = c.fetchone()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
