@@ -436,7 +436,7 @@ class voice(commands.Cog):
 
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
-            if voiceGroup is None and not self.isAdmin(ctx) and not channel_id:
+            if voiceGroup is None or not channel_id:
                 await self.sendEmbed(ctx.channel, "Channel Sync", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
                 channelID = voiceGroup[0]
@@ -485,7 +485,7 @@ class voice(commands.Cog):
 
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
-            if voiceGroup is None and not self.isAdmin(ctx) and not channel_id:
+            if voiceGroup is None or not channel_id:
                 await self.sendEmbed(ctx.channel, "Channel Private", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
             else:
                 channelID = voiceGroup[0]
@@ -513,7 +513,7 @@ class voice(commands.Cog):
                             await textChannel.set_permissions(r, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                         # deny everyone else
                         for r in denyRoles:
-                            await textChannel.set_permissions(r, connect=False, view_channel=False, read_message_history=False, send_messages=False)
+                            await textChannel.set_permissions(r, connect=False, read_messages=False, view_channel=False, read_message_history=False, send_messages=False)
 
                     await channel.edit(sync_permissions=True)
                     await channel.set_permissions(ctx.message.author, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False )
