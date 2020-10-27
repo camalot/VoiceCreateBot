@@ -53,7 +53,7 @@ class voice(commands.Cog):
                     textChannel = self.bot.get_channel(textChannelId)
 
                 if voiceChannel:
-                    if len(voiceChannel.members) == 0:
+                    if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
                         print(f"Start Tracked Cleanup: {voiceChannelId}")
                         print(f"Deleting Channel {voiceChannel} because everyone left")
                         c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
