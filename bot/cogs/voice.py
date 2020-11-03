@@ -1299,18 +1299,19 @@ class voice(commands.Cog):
 
     @voice.command()
     async def name(self, ctx, *, name):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        voiceChannel = ctx.author.voice.channel
-        guildID = ctx.guild.id
-        category_id = ctx.channel.category.id
         channel_id = None
         if self.isInVoiceChannel(ctx):
             channel_id = ctx.author.voice.channel.id
         else:
             await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
             return
+
+        conn = sqlite3.connect(self.settings.db_path)
+        c = conn.cursor()
+        aid = ctx.author.id
+        voiceChannel = ctx.author.voice.channel
+        guildID = ctx.guild.id
+        category_id = ctx.channel.category.id
         try:
             # get the channel owner, in case this is an admin running the command.
             c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
@@ -1643,9 +1644,9 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
-        is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids
+        # is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids
         admin_role = discord.utils.find(lambda r: r.name == self.settings.admin_role, ctx.message.guild.roles)
-        return admin_role in ctx.author.roles or is_listed_admin
+        return admin_role in ctx.author.roles # or is_listed_admin
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
