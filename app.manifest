@@ -164,7 +164,7 @@
 		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels**",
-			"usage": ".voice settings \"<category name>\" <locked> <limit> \"<default role = @everyone>\"",
+			"usage": ".voice settings \"<category name>\" <locked = False> <limit = 0> \"<default role = @everyone>\"",
 			"example": ".voice settings \"Voice Channels\" no 5 \"Role Name\"",
 			"admin": true,
 			"aliases": []
