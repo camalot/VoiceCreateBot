@@ -758,9 +758,6 @@ class voice(commands.Cog):
         guildID = ctx.guild.id
         try:
             print(f"User id triggering setup: {ctx.author.id}")
-            print(f"Owner id: {ctx.guild.owner.id}")
-            print(self.settings.admin_ids)
-            print(str(ctx.author.id) in self.settings.admin_ids)
             aid = ctx.author.id
             # If the person is the OWNER or an ADMIN
             if self.isAdmin(ctx):
@@ -1644,9 +1641,8 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
-        # is_listed_admin = ctx.author.id == ctx.guild.owner.id or str(ctx.author.id) in self.settings.admin_ids
         admin_role = discord.utils.find(lambda r: r.name == self.settings.admin_role, ctx.message.guild.roles)
-        return admin_role in ctx.author.roles # or is_listed_admin
+        return admin_role in ctx.author.roles
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
