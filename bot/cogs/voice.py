@@ -822,7 +822,8 @@ class voice(commands.Cog):
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             try:
-
+                #TODO:
+                pass
             except Exception as e:
                 print(ex)
                 trackback.print_exc()
