@@ -1348,59 +1348,59 @@ class voice(commands.Cog):
             conn.close()
             await ctx.message.delete()
 
-    @voice.command()
-    async def game(self, ctx):
-        channel_id = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        voiceChannel = ctx.author.voice.channel
-        guildID = ctx.guild.id
-        category_id = ctx.channel.category.id
-        try:
-            # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Set Channel to Game", f'{ctx.author.mention} You do not own this channel, and do not have permissions to change the name of this channel.', delete_after=5)
-                return
+    # @voice.command()
+    # async def game(self, ctx):
+    #     channel_id = None
+    #     if self.isInVoiceChannel(ctx):
+    #         channel_id = ctx.author.voice.channel.id
+    #     else:
+    #         await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+    #         return
+    #     conn = sqlite3.connect(self.settings.db_path)
+    #     c = conn.cursor()
+    #     aid = ctx.author.id
+    #     voiceChannel = ctx.author.voice.channel
+    #     guildID = ctx.guild.id
+    #     category_id = ctx.channel.category.id
+    #     try:
+    #         # get the channel owner, in case this is an admin running the command.
+    #         c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+    #         channelOwnerGroup = c.fetchone()
+    #         if channelOwnerGroup:
+    #             if channelOwnerGroup[0] != aid:
+    #                 aid = channelOwnerGroup[0]
+    #         if not self.isAdmin(ctx) and ctx.author.id != aid:
+    #             await self.sendEmbed(ctx.channel, "Set Channel to Game", f'{ctx.author.mention} You do not own this channel, and do not have permissions to change the name of this channel.', delete_after=5)
+    #             return
 
 
-            name =
-            channelID = voiceChannel.id
-            c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
-            textGroup = c.fetchone()
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channelID, guildID,))
-            voiceSet = c.fetchone()
-            channelOwnerID = aid
-            if voiceSet is not None:
-                channelOwnerID = voiceSet[0] or aid
-            textChannel = None
-            channel = self.bot.get_channel(channelID)
-            if channel is not None:
-                if textGroup is not None:
-                    textChannel = self.bot.get_channel(textGroup[0])
-                if textChannel is not None:
-                    print(f"Change Text Channel Name from Command")
-                    await textChannel.edit(name=name)
+    #         name =
+    #         channelID = voiceChannel.id
+    #         c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
+    #         textGroup = c.fetchone()
+    #         c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channelID, guildID,))
+    #         voiceSet = c.fetchone()
+    #         channelOwnerID = aid
+    #         if voiceSet is not None:
+    #             channelOwnerID = voiceSet[0] or aid
+    #         textChannel = None
+    #         channel = self.bot.get_channel(channelID)
+    #         if channel is not None:
+    #             if textGroup is not None:
+    #                 textChannel = self.bot.get_channel(textGroup[0])
+    #             if textChannel is not None:
+    #                 print(f"Change Text Channel Name from Command")
+    #                 await textChannel.edit(name=name)
 
-                await channel.edit(name=name)
-                await self.sendEmbed(ctx.channel, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            conn.commit()
-            conn.close()
-            await ctx.message.delete()
+    #             await channel.edit(name=name)
+    #             await self.sendEmbed(ctx.channel, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         conn.commit()
+    #         conn.close()
+    #         await ctx.message.delete()
     @voice.command()
     async def name(self, ctx, *, name):
         channel_id = None
