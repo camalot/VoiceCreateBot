@@ -800,8 +800,12 @@ class voice(commands.Cog):
         traceback.print_exc()
 
     @voice.command(aliases=['set-default-role', 'sdr'])
-    async def set_default_role(self, ctx, default_role: discord.Role):
+    async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, string]):
         if self.isAdmin(ctx):
+            temp_default_role = default_role
+            if not isinstance(temp_default_role, discord.Role):
+                temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
+
             guildID = ctx.guild.id
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
@@ -812,7 +816,7 @@ class voice(commands.Cog):
                     c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category.id,))
                     guildSettings = c.fetchone()
                     if guildSettings:
-                        c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (default_role, guildID, category.id))
+                        c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (temp_default_role, guildID, category.id))
                     else:
                         await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
                 else:
@@ -824,8 +828,6 @@ class voice(commands.Cog):
                 conn.commit()
                 conn.close()
                 # await ctx.message.delete()
-
-
 
     @voice.command()
     async def settings(self, ctx, category: str, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: discord.Role = None):
@@ -960,6 +962,13 @@ class voice(commands.Cog):
                     default_role = guildSettings[3] or self.settings.default_role
                 else:
                     default_role = self.settings.default_role
+
+            validRole = len([ x for x in ctx.guild.roles if x.name == default_role ]) == 1
+            if not validRole:
+                default_role = ctx.guild.default_role.name
+
+            print(f"Lock: default role: {default_role}")
+
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
             if voiceGroup is None:
@@ -1030,6 +1039,12 @@ class voice(commands.Cog):
                     default_role = guildSettings[3] or self.settings.default_role
                 else:
                     default_role = self.settings.default_role
+
+            validRole = len([ x for x in ctx.guild.roles if x.name == default_role ]) == 1
+            if not validRole:
+                default_role = ctx.guild.default_role.name
+
+            print(f"Unlock: default role: {default_role}")
 
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID,))
             voiceGroup = c.fetchone()
