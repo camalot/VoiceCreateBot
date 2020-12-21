@@ -228,7 +228,7 @@ class voice(commands.Cog):
                     sec_role = default_role or self.settings.default_role
                     role = discord.utils.get(member.guild.roles, name=sec_role)
                     if not role:
-                        role = discord.utils.get(member.guild.roles, name="everyone")
+                        role = discord.utils.get(member.guild.roles, name="@everyone")
                     try:
                         print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
                         await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
@@ -449,7 +449,7 @@ class voice(commands.Cog):
                     default_role = self.settings.default_role
             everyone = discord.utils.get(ctx.guild.roles, name=default_role)
             if not everyone:
-                everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
 
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
@@ -514,7 +514,7 @@ class voice(commands.Cog):
                     default_role = self.settings.default_role
             everyone = discord.utils.get(ctx.guild.roles, name=default_role)
             if not everyone:
-                everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
 
             c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
             voiceGroup = c.fetchone()
@@ -608,7 +608,7 @@ class voice(commands.Cog):
                 channelID = voiceGroup[0]
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 if not everyone:
-                    everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                    everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
                 channel = self.bot.get_channel(channelID)
 
 
@@ -683,7 +683,7 @@ class voice(commands.Cog):
                 channelID = voiceGroup[0]
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 if not everyone:
-                    everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                    everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
                 channel = self.bot.get_channel(channelID)
 
                 c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
@@ -790,6 +790,13 @@ class voice(commands.Cog):
                         else:
                             c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ? WHERE guildID = ?", (
                                 guildID, aid, channel.id, category.id, guildID))
+
+
+                        ## SET DEFAULT ROLE
+                        ## TODO:
+                        # Update Schema?
+                        # Add column for Guild Level Default Role
+
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                     except Exception as e:
                         traceback.print_exc()
@@ -809,6 +816,20 @@ class voice(commands.Cog):
         print(error)
         traceback.print_exc()
 
+    async def get_default_role(self, ctx):
+        if self.isAdmin(ctx):
+            guildID = ctx.guild.id
+            conn = sqlite3.connect(self.settings.db_path)
+            c = conn.cursor()
+            try:
+
+            except Exception as e:
+                print(ex)
+                trackback.print_exc()
+            finally:
+                conn.commit()
+                conn.close()
+                await ctx.message.delete()
     @voice.command(aliases=['set-default-role', 'sdr'])
     async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, str]):
         if self.isAdmin(ctx):
@@ -817,7 +838,7 @@ class voice(commands.Cog):
                 temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
 
             if not temp_default_role:
-                temp_default_role = discord.utils.get(ctx.guild.roles, name="everyone")
+                temp_default_role = discord.utils.get(ctx.guild.roles, name="@everyone")
             guildID = ctx.guild.id
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
@@ -839,7 +860,7 @@ class voice(commands.Cog):
             finally:
                 conn.commit()
                 conn.close()
-                # await ctx.message.delete()
+                await ctx.message.delete()
 
     @voice.command()
     async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
@@ -865,7 +886,7 @@ class voice(commands.Cog):
                         temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
                     else:
                         temp_default_role = default_role.name
-                    new_default_role = temp_default_role or "everyone"
+                    new_default_role = temp_default_role or "@everyone"
                     if not new_default_role:
                         new_default_role = self.settings.default_role
                     c.execute("SELECT channelLimit, channelLocked, defaultRole FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
@@ -997,7 +1018,7 @@ class voice(commands.Cog):
                 channelID = voiceGroup[0]
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 if not everyone:
-                    everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                    everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
                 channel = self.bot.get_channel(channelID)
 
                 c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
@@ -1076,7 +1097,7 @@ class voice(commands.Cog):
                 channelID = voiceGroup[0]
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 if not everyone:
-                    everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+                    everyone = discord.utils.get(ctx.guild.roles, name="@everyone")
                 channel = self.bot.get_channel(channelID)
 
                 c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
