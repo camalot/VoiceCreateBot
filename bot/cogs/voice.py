@@ -830,11 +830,13 @@ class voice(commands.Cog):
                 # await ctx.message.delete()
 
     @voice.command()
-    async def settings(self, ctx, category: str, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: discord.Role = None):
+    async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
         if self.isAdmin(ctx):
             conn = sqlite3.connect(self.settings.db_path)
             c = conn.cursor()
             try:
+                if category is None:
+                    category = await self.set_role_ask_category(ctx)
                 found_category = next((x for x in ctx.guild.categories if x.name == category), None)
                 if found_category:
                     bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
@@ -845,7 +847,11 @@ class voice(commands.Cog):
                         br = bitrate_limit
                     elif br < bitrate_min:
                         br = bitrate_min
-                    new_default_role = default_role
+
+                    temp_default_role = default_role
+                    if not isinstance(temp_default_role, discord.Role):
+                        temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
+                    new_default_role = temp_default_role
                     if not new_default_role:
                         new_default_role = self.settings.default_role
                     c.execute("SELECT channelLimit, channelLocked, defaultRole FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
