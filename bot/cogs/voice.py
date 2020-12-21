@@ -800,7 +800,7 @@ class voice(commands.Cog):
         traceback.print_exc()
 
     @voice.command(aliases=['set-default-role', 'sdr'])
-    async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, string]):
+    async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, str]):
         if self.isAdmin(ctx):
             temp_default_role = default_role
             if not isinstance(temp_default_role, discord.Role):
