@@ -851,6 +851,8 @@ class voice(commands.Cog):
                     temp_default_role = default_role
                     if not isinstance(temp_default_role, discord.Role):
                         temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
+                    else:
+                        temp_default_role = default_role.name
                     new_default_role = temp_default_role
                     if not new_default_role:
                         new_default_role = self.settings.default_role
@@ -860,10 +862,10 @@ class voice(commands.Cog):
                         new_default_role = catSettings[3] or self.settings.default_role
                         print(f"UPDATE category settings")
                         c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ? AND defaultRole = ?",
-                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role.name,))
+                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role,))
                     else:
                         print(f"INSERT category settings")
-                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role.name,))
+                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role,))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
