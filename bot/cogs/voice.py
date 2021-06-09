@@ -230,8 +230,8 @@ class voice(commands.Cog):
                     try:
                         if role:
                             print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
-                            await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked))
-                            await voiceChannel.set_permissions(role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), stream=(not locked))
+                            await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
+                            await voiceChannel.set_permissions(role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
