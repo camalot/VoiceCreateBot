@@ -544,7 +544,7 @@ class voice(commands.Cog):
                             await textChannel.set_permissions(r, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                         # deny everyone else
                         for r in denyRoles:
-                            await textChannel.set_permissions(r, connect=False, read_messages=False, view_channel=None, read_message_history=False, send_messages=False)
+                            await textChannel.set_permissions(r, connect=False, read_messages=False, view_channel=True, read_message_history=False, send_messages=False)
 
                     await channel.edit(sync_permissions=True)
                     await channel.set_permissions(ctx.message.author, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False )
@@ -552,7 +552,7 @@ class voice(commands.Cog):
                         await channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False)
                     # deny everyone else
                     for r in denyRoles:
-                        await channel.set_permissions(r, speak=False, view_channel=None, connect=False)
+                        await channel.set_permissions(r, speak=False, view_channel=True, connect=False)
 
                 await self.sendEmbed(ctx.channel, "Channel Private", f'{ctx.author.mention} This channel is locked for just the people in this channel.', delete_after=5)
         except Exception as ex:
@@ -1027,14 +1027,14 @@ class voice(commands.Cog):
                     if textChannel:
                         await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
                         if everyone:
-                            await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=None, read_message_history=False)
+                            await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
 
                     await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=False, view_channel=None, stream=False)
+                    await channel.set_permissions(everyone, connect=False, view_channel=True, stream=False)
                     if role:
-                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=None, stream=False)
+                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=True, stream=False)
                         if textChannel:
-                            await textChannel.set_permissions(role, read_messages=False,send_messages=False, view_channel=None, read_message_history=False)
+                            await textChannel.set_permissions(role, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
 
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         except Exception as ex:
@@ -1111,7 +1111,7 @@ class voice(commands.Cog):
                     if everyone:
                         await channel.set_permissions(everyone, connect=True, view_channel=True, stream=True)
                     if role:
-                        await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=None, stream=True)
+                        await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
                         if textChannel:
                             await textChannel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
@@ -1211,7 +1211,7 @@ class voice(commands.Cog):
                     textChannel = self.bot.get_channel(textChannelID)
                     if textChannel:
                         if userOrRole:
-                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False, view_channel=None, read_message_history=False)
+                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False, view_channel=True, read_message_history=False)
 
 
                 if userOrRole:
@@ -1222,7 +1222,7 @@ class voice(commands.Cog):
                             if m.has_role(userOrRole):
                                 m.disconnect()
 
-                    await channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=None, speak=False, stream=False, read_message_history=False)
+                    await channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=True, speak=False, stream=False, read_message_history=False)
                     await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             print(ex)
