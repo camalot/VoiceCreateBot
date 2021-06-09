@@ -230,8 +230,8 @@ class voice(commands.Cog):
                     try:
                         if role:
                             print(f"Check if bot can set channel for {sec_role} {voiceChannel}")
-                            await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=(not locked))
-                            await voiceChannel.set_permissions(role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=(not locked), stream=(not locked))
+                            await textChannel.set_permissions(role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked))
+                            await voiceChannel.set_permissions(role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), stream=(not locked))
                     except Exception as ex:
                         print(ex)
                         traceback.print_exc()
@@ -544,7 +544,7 @@ class voice(commands.Cog):
                             await textChannel.set_permissions(r, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                         # deny everyone else
                         for r in denyRoles:
-                            await textChannel.set_permissions(r, connect=False, read_messages=False, view_channel=False, read_message_history=False, send_messages=False)
+                            await textChannel.set_permissions(r, connect=False, read_messages=False, view_channel=None, read_message_history=False, send_messages=False)
 
                     await channel.edit(sync_permissions=True)
                     await channel.set_permissions(ctx.message.author, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False )
@@ -552,7 +552,7 @@ class voice(commands.Cog):
                         await channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False)
                     # deny everyone else
                     for r in denyRoles:
-                        await channel.set_permissions(r, speak=False, view_channel=False, connect=False)
+                        await channel.set_permissions(r, speak=False, view_channel=None, connect=False)
 
                 await self.sendEmbed(ctx.channel, "Channel Private", f'{ctx.author.mention} This channel is locked for just the people in this channel.', delete_after=5)
         except Exception as ex:
@@ -562,6 +562,10 @@ class voice(commands.Cog):
             conn.commit()
             conn.close()
             await ctx.message.delete()
+
+    # TODO: implement command to make view_channel = false
+    # async def hide(self, ctx):
+    #     pass
 
     @voice.command()
     async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
