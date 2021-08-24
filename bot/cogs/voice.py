@@ -790,6 +790,8 @@ class voice(commands.Cog):
 
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
+                if category is None:
+                    return
                 useStage = False
                 is_community = ctx.guild.features.count("COMMUNITY") > 0
                 if is_community:
@@ -1779,8 +1781,9 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
-        admin_role = discord.utils.find(lambda r: r.name == self.settings.admin_role, ctx.message.guild.roles)
-        return admin_role in ctx.author.roles
+        admin_role = discord.utils.find(lambda r: r.name in self.settings.admin_roles, ctx.message.guild.roles)
+        admin_user = ctx.author.id in self.settings.admin_users
+        return admin_role in ctx.author.roles or admin_user
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
