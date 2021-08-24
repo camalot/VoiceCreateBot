@@ -782,56 +782,59 @@ class voice(commands.Cog):
             print(f"User id triggering setup: {ctx.author.id}")
             aid = ctx.author.id
             # If the person is the OWNER or an ADMIN
-            def check(m):
-                return m.author.id == ctx.author.id
-            def check_yes_no(m):
-                if(check(m)):
-                    msg = m.content
-                    return utils.str2bool(msg)
+            if self.isAdmin(ctx):
+                def check(m):
+                    return m.author.id == ctx.author.id
+                def check_yes_no(m):
+                    if(check(m)):
+                        msg = m.content
+                        return utils.str2bool(msg)
 
-            # Ask them for the category name
-            category = await self.ask_category(ctx)
-            if category is None:
-                return
-            useStage = False
-            is_community = ctx.guild.features.count("COMMUNITY") > 0
-            if is_community:
-                await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like to use a Stage Channel?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                # Ask them for the category name
+                category = await self.ask_category(ctx)
+                if category is None:
+                    return
+                useStage = False
+                is_community = ctx.guild.features.count("COMMUNITY") > 0
+                if is_community:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like to use a Stage Channel?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                    try:
+                        useStage = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                    except asyncio.TimeoutError:
+                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                        return
+
+                await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
-                    useStage = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                    channel = await self.bot.wait_for('message', check=check, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                    return
+                else:
+                    try:
+                        channel = await ctx.guild.create_voice_channel(channel.content, category=category)
+                        c.execute("SELECT * FROM guild WHERE guildID = ? AND ownerID=? AND voiceChannelID=?", (guildID, aid, channel.id))
+                        voiceGroup = c.fetchone()
+                        stageToInt = 0
+                        if useStage:
+                            stageToInt = 1
+                        if voiceGroup is None:
+                            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildID, aid, channel.id, category.id, stageToInt))
+                        else:
+                            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
+                                guildID, aid, channel.id, category.id, guildID, stageToInt))
 
-            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
-            try:
-                channel = await self.bot.wait_for('message', check=check, timeout=60.0)
-            except asyncio.TimeoutError:
-                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+
+                        ## SET DEFAULT ROLE
+                        ## TODO:
+                        # Update Schema?
+                        # Add column for Guild Level Default Role
+
+                        await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
+                    except Exception as e:
+                        traceback.print_exc()
+                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", "You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
             else:
-                try:
-                    channel = await ctx.guild.create_voice_channel(channel.content, category=category)
-                    c.execute("SELECT * FROM guild WHERE guildID = ? AND ownerID=? AND voiceChannelID=?", (guildID, aid, channel.id))
-                    voiceGroup = c.fetchone()
-                    stageToInt = 0
-                    if useStage:
-                        stageToInt = 1
-                    if voiceGroup is None:
-                        c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildID, aid, channel.id, category.id, stageToInt))
-                    else:
-                        c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
-                            guildID, aid, channel.id, category.id, guildID, stageToInt))
-
-
-                    ## SET DEFAULT ROLE
-                    ## TODO:
-                    # Update Schema?
-                    # Add column for Guild Level Default Role
-
-                    await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
-                except Exception as e:
-                    traceback.print_exc()
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", "You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
+                await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=10)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -842,8 +845,6 @@ class voice(commands.Cog):
 
     @setup.error
     async def info_error(self, ctx, error):
-        if isinstance(error, CheckFailure):
-            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=10)
         print(error)
         traceback.print_exc()
 
@@ -862,7 +863,6 @@ class voice(commands.Cog):
                 conn.commit()
                 conn.close()
                 await ctx.message.delete()
-
     @voice.command(aliases=['set-default-role', 'sdr'])
     async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, str]):
         if self.isAdmin(ctx):
@@ -1783,9 +1783,11 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
-        admin_role = discord.utils.find(lambda r: r.name in self.settings.admin_roles, ctx.message.guild.roles)
-        admin_user = ctx.author.id in self.settings.admin_users
-        return admin_role in ctx.author.roles or admin_user
+        admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower() for s in self.settings.admin_roles), ctx.message.guild.roles)
+        is_in_admin_role = admin_role in ctx.author.roles
+        admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
+        is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
+        return is_in_admin_role or admin_user or is_bot_owner
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)

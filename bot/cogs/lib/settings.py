@@ -19,3 +19,4 @@ class Settings:
         self.admin_roles = utils.dict_get(os.environ, 'ADMIN_ROLES', default_value = 'Admin').split(',')
         self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = 'Admin').split(' ')
         self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
+        self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
