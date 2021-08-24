@@ -6,6 +6,7 @@ import sys
 import os
 import glob
 import typing
+import requests
 
 def dict_get(dictionary, key, default_value = None):
     if key in dictionary.keys():
@@ -30,3 +31,9 @@ def chunk_list(lst, size):
     # looping till length l
     for i in range(0, len(lst), size):
         yield lst[i:i + size]
+
+def get_random_name():
+    nouns = requests.get("https://random-word-form.herokuapp.com/random/noun?count=1").json()
+    adjectives = requests.get("https://random-word-form.herokuapp.com/random/adjective?count=1").json()
+    results = adjectives + nouns
+    return " ".join(w.title() for w in results)

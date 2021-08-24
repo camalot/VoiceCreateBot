@@ -175,7 +175,7 @@ class voice(commands.Cog):
                     locked = False
                     bitrate = self.BITRATE_DEFAULT
                     stage = guildRoot[0] >= 1
-                    name = f"{member.name}'s Channel"
+                    name = utils.get_random_name()
                     default_role = self.settings.default_role
                     if userSettings is None:
                         if guildSettings is not None:
