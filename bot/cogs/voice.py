@@ -1783,7 +1783,7 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
-        admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower() for s in self.settings.admin_roles), ctx.message.guild.roles)
+        admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower().strip() for s in self.settings.admin_roles), ctx.message.guild.roles)
         is_in_admin_role = admin_role in ctx.author.roles
         admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
         is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
