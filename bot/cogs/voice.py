@@ -162,15 +162,18 @@ class voice(commands.Cog):
                     # User Joined the CREATE CHANNEL
                     print(f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
+                    source_channel_id = after.channel.id
                     c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (member.id, guildID))
                     userSettings = c.fetchone()
                     c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
                     guildSettings = c.fetchone()
-
+                    c.execute("SELECT useStage FROM guild WHERE guildID = ? AND voiceCategoryID = ? AND voiceChannelID = ?", (guildID, category_id, source_channel_id))
+                    guildRoot = c.fetchone()
                     # CHANNEL SETTINGS START
                     limit = 0
                     locked = False
                     bitrate = self.BITRATE_DEFAULT
+                    stage = guildRoot[0] >= 1
                     name = f"{member.name}'s Channel"
                     default_role = self.settings.default_role
                     if userSettings is None:
@@ -203,7 +206,13 @@ class voice(commands.Cog):
                     mid = member.id
                     category = self.bot.get_channel(category_id)
                     print(f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
-                    voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
+                    is_community = member.guild.features.count("COMMUNITY") > 0
+                    if(stage and is_community):
+                        print(f"Creating Stage Channel")
+                        voiceChannel = await member.guild.create_stage_channel(name, topic=None, category=category, reason="Create Channel Request by {member}")
+                    else:
+                        print(f"Created Voice Channel")
+                        voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
@@ -774,8 +783,23 @@ class voice(commands.Cog):
             if self.isAdmin(ctx):
                 def check(m):
                     return m.author.id == ctx.author.id
+                def check_yes_no(m):
+                    if(check(m)):
+                        msg = m.content
+                        return utils.str2bool(msg)
+
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
+                useStage = False
+                is_community = ctx.guild.features.count("COMMUNITY") > 0
+                if is_community:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like to use a Stage Channel?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                    try:
+                        useStage = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                    except asyncio.TimeoutError:
+                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                        return
+
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     channel = await self.bot.wait_for('message', check=check, timeout=60.0)
@@ -786,11 +810,14 @@ class voice(commands.Cog):
                         channel = await ctx.guild.create_voice_channel(channel.content, category=category)
                         c.execute("SELECT * FROM guild WHERE guildID = ? AND ownerID=? AND voiceChannelID=?", (guildID, aid, channel.id))
                         voiceGroup = c.fetchone()
+                        stageToInt = 0
+                        if useStage:
+                            stageToInt = 1
                         if voiceGroup is None:
-                            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?)", (guildID, aid, channel.id, category.id))
+                            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildID, aid, channel.id, category.id, stageToInt))
                         else:
-                            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ? WHERE guildID = ?", (
-                                guildID, aid, channel.id, category.id, guildID))
+                            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
+                                guildID, aid, channel.id, category.id, guildID, stageToInt))
 
 
                         ## SET DEFAULT ROLE

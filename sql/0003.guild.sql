@@ -1,0 +1,1 @@
+ALTER TABLE `guild` ADD COLUMN `useStage` INTEGER DEFAULT 0;
