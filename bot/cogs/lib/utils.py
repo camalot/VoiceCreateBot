@@ -32,8 +32,8 @@ def chunk_list(lst, size):
     for i in range(0, len(lst), size):
         yield lst[i:i + size]
 
-def get_random_name():
-    nouns = requests.get("https://random-word-form.herokuapp.com/random/noun?count=1").json()
-    adjectives = requests.get("https://random-word-form.herokuapp.com/random/adjective?count=1").json()
+def get_random_name(noun_count = 1, adjective_count = 1):
+    nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
+    adjectives = requests.get(f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}").json()
     results = adjectives + nouns
     return " ".join(w.title() for w in results)

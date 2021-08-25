@@ -176,6 +176,7 @@ class voice(commands.Cog):
                     bitrate = self.BITRATE_DEFAULT
                     stage = guildRoot[0] >= 1
                     name = utils.get_random_name()
+
                     default_role = self.settings.default_role
                     if userSettings is None:
                         if guildSettings is not None:
@@ -210,7 +211,8 @@ class voice(commands.Cog):
                     is_community = member.guild.features.count("COMMUNITY") > 0
                     if(stage and is_community):
                         print(f"Creating Stage Channel")
-                        voiceChannel = await member.guild.create_stage_channel(name, topic=None, category=category, reason="Create Channel Request by {member}")
+                        stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
+                        voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
                     else:
                         print(f"Created Voice Channel")
                         voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
