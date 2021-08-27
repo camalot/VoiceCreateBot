@@ -33,7 +33,14 @@ def chunk_list(lst, size):
         yield lst[i:i + size]
 
 def get_random_name(noun_count = 1, adjective_count = 1):
-    nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
-    adjectives = requests.get(f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}").json()
-    results = adjectives + nouns
-    return " ".join(w.title() for w in results)
+    try:
+        nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
+        adjectives = requests.get(f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}").json()
+        results = adjectives + nouns
+        return " ".join(w.title() for w in results)
+    except:
+        try:
+            results = requests.get(f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0").json()
+            return " ".join(w.title() for w in results)
+        except:
+            return "New Voice Channel"
