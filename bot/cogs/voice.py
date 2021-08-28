@@ -17,6 +17,7 @@ import glob
 import typing
 from .lib import utils
 from .lib import settings
+from .lib import sqlite
 
 class EmbedField():
     def __init__(self, name, value):
@@ -29,53 +30,42 @@ class voice(commands.Cog):
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
+        self.db = sqlite.SqliteDatabase()
 
     async def clean_up_tracked_channels(self, guildID):
+
+
         print("Clean up tracked channels")
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
+        self.db.open()
+
         try:
-            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID,))
-            voiceChannelSet = c.fetchall()
-            for vc in voiceChannelSet:
-                textChannelId = None
-                voiceChannelId = None
-                voiceChannel = None
-                if voiceChannelSet:
-                    voiceChannelId = vc[0]
+            trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
+            for vc in trackedChannels:
+                voiceChannelId = vc[0]
+                if voiceChannelId:
                     voiceChannel = self.bot.get_channel(voiceChannelId)
 
-                c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildID, voiceChannelId))
-                textChannelSet = c.fetchone()
+                    textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
+                    if textChannelId:
+                        textChannel = self.bot.get_channel(textChannelId)
 
-                textChannel = None
-                if textChannelSet:
-                    textChannelId = textChannelSet[0]
-                    textChannel = self.bot.get_channel(textChannelId)
-
-                if voiceChannel:
-                    if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
-                        print(f"Start Tracked Cleanup: {voiceChannelId}")
-                        print(f"Deleting Channel {voiceChannel} because everyone left")
-                        c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-                        c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
-                        if textChannel:
-                            await textChannel.delete()
-                        await voiceChannel.delete()
-                else:
-                    if voiceChannelId is not None:
+                    if voiceChannel:
+                        if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
+                            print(f"Start Tracked Cleanup: {voiceChannelId}")
+                            print(f"Deleting Channel {voiceChannel} because everyone left")
+                            self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
+                            if textChannel:
+                                await textChannel.delete()
+                            await voiceChannel.delete()
+                    else:
                         print(f"Unable to find voice channel: {voiceChannelId}")
-                        if voiceChannelId:
-                            c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
-                        if textChannelId:
-                            c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
+                        self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
         except discord.errors.NotFound as nf:
             print(nf)
             traceback.print_exc()
             print("Channel Not Found. Already Cleaned Up")
         finally:
-             conn.commit()
-             conn.close()
+             self.db.close()
 
     @commands.group()
     async def voice(self, ctx):
