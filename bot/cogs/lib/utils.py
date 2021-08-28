@@ -71,7 +71,7 @@ def load_from_gist(type, count):
         count = 1
     elif count > 10:
         count = 10
-    data = requests.get(f"https://gist.githubusercontent.com/ijmacdowell/8325491/raw/b39de3a6ba03205380caf5d58e0cae8a869ac36d/{type}.js").text
+    data = requests.get(f"https://gist.githubusercontent.com/camalot/8d2af3796ac86083e873995eab98190d/raw/b39de3a6ba03205380caf5d58e0cae8a869ac36d/{type}.js").text
     data = re.sub(r"(var\s(adjectives|nouns|verbs)\s=\s)|;$","", data)
     jdata = json.loads(data)
     return random.sample(jdata, count)
