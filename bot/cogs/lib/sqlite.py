@@ -47,7 +47,19 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-
+    def get_voice_channel_id_from_text_channel(self, guildId, textChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT voiceID FROM textChannel WHERE guildID = ? and channelID = ?", (guildId, textChannelId))
+            item = c.fetchone()
+            if item:
+                return item[0]
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def clean_tracked_channels(self, guildId, voiceChannelId, textChannelId):
         try:
             if self.connection is None:
@@ -61,15 +73,20 @@ class SqliteDatabase(database.Database):
             traceback.print_exc()
         pass
 
-    def get_channel_owner_id(self, guildId, voiceChannelId):
+    def get_channel_owner_id(self, guildId, channelId):
         try:
             if self.connection is None:
                 self.open()
             c = self.connection.cursor()
-            c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
+            c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, channelId,))
             item = c.fetchone()
             if item:
                 return int(item[0])
+            c.execute("SELECT userID FROM textChannel WHERE guildID = ? AND channelID = ?", (guildId, channelId,))
+            item = c.fetchone()
+            if item:
+                return int(item[0])
+
             return None
 
         except Exception as ex:
@@ -103,7 +120,6 @@ class SqliteDatabase(database.Database):
                 result = settings.GuildSettings(guildId=guildId)
                 for r in rows:
                     result.channels.append(settings.GuildCategoryChannel(ownerId=int(r[0]), categoryId=r[2], channelId=r[1], useStage=int(r[3])))
-                print(json.dumps(result))
                 return result
             print("NO GUILD SETTINGS FOUND")
             return None
@@ -113,15 +129,15 @@ class SqliteDatabase(database.Database):
         pass
     def get_guild_category_settings(self, guildId, categoryId):
         try:
+            print(f"category: {categoryId}")
+            print(f"guild: {guildId}")
             if self.connection is None:
                 self.open()
             c = self.connection.cursor()
             c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildId, categoryId,))
             row = c.fetchone()
-            print(json.dumps(row))
             if row:
                 result = settings.GuildCategorySettings(guildId=guildId, categoryId=categoryId, channelLimit=int(row[0]), channelLocked=int(row[1]), bitrate=row[2], defaultRole=row[3])
-                print(json.dumps(result))
                 return result
             print("NO GUILD CATEGORY SETTINGS FOUND")
             return None
