@@ -20,3 +20,33 @@ class Settings:
         self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = 'Admin').split(' ')
         self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
+
+class UserSettings:
+    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+        self.guild_id = guildId
+        self.user_id = userId
+        self.channel_name = channelName
+        self.channel_limit = channelLimit
+        self.bitrate = bitrate
+        self.default_role = defaultRole
+        pass
+
+class GuildSettings:
+    def __init__(self, guildId):
+        self.guild_id = guildId
+        self.channels = []
+        pass
+class GuildCategoryChannel:
+    def __init__(self, ownerId, categoryId, channelId, useStage):
+        self.owner_id = ownerId
+        self.category_id = categoryId
+        self.channel_id = channelId
+        self.use_stage = useStage >= 1
+class GuildCategorySettings:
+    def __init__(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
+        self.guild_id = guildId
+        self.category_id = categoryId
+        self.channel_limit = channelLimit
+        self.channel_locked = channelLocked >= 1
+        self.bitrate = bitrate
+        self.default_role = defaultRole

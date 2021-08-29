@@ -19,3 +19,17 @@ class Database():
         # c.execute('DELETE FROM voiceChannel WHERE guildID = ? and voiceId = ?', (guildID, voiceChannelId,))
         # c.execute('DELETE FROM textChannel WHERE guildID = ? and channelID = ?', (guildID, textChannelId,))
         pass
+
+    def get_channel_owner_id(self, guildId, voiceChannelId):
+        # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
+        pass
+    def get_user_settings(self, guildId, userId):
+        pass
+    def get_guild_settings(self, guildId):
+        pass
+    def get_guild_category_settings(self, guildId, categoryId):
+        pass
+    def update_user_channel_name(self, guildId, userId, channelName):
+        pass
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+        pass

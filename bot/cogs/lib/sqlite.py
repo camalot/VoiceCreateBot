@@ -1,5 +1,6 @@
 import sqlite3
 import traceback
+import json
 from . import database
 from . import settings
 class SqliteDatabase(database.Database):
@@ -10,9 +11,15 @@ class SqliteDatabase(database.Database):
         self.connection = sqlite3.connect(self.settings.db_path)
         pass
     def close(self):
-        if self.connection:
-            self.connection.commit()
-            self.connection.close()
+        try:
+            if self.connection:
+                self.connection.commit()
+                self.connection.close()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+        finally:
+            self.connection = None
         pass
     def get_tracked_voice_channel_ids(self, guildId):
         try:
@@ -34,7 +41,9 @@ class SqliteDatabase(database.Database):
             c = self.connection.cursor()
             c.execute("SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?", (guildId, voiceChannelId))
             item = c.fetchone()
-            return item[0]
+            if item:
+                return item[0]
+            return None
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -50,4 +59,100 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+        pass
+
+    def get_channel_owner_id(self, guildId, voiceChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
+            item = c.fetchone()
+            if item:
+                return int(item[0])
+            return None
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
+    def get_user_settings(self, guildId, userId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (userId, guildId,))
+            row = c.fetchone()
+            if row:
+                result = settings.UserSettings(guildId=guildId, userId=userId, channelName=row[0], channelLimit=int(row[1]), bitrate=int(row[2]), defaultRole=row[3])
+                return result
+            print("NO USER SETTINGS FOUND")
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
+    def get_guild_settings(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT ownerID, voiceChannelID, voiceCategoryID, useStage FROM guild WHERE guildID = ?", (guildId,))
+            rows = c.fetchall()
+            if rows:
+                result = settings.GuildSettings(guildId=guildId)
+                for r in rows:
+                    result.channels.append(settings.GuildCategoryChannel(ownerId=int(r[0]), categoryId=r[2], channelId=r[1], useStage=int(r[3])))
+                print(json.dumps(result))
+                return result
+            print("NO GUILD SETTINGS FOUND")
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        pass
+    def get_guild_category_settings(self, guildId, categoryId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildId, categoryId,))
+            row = c.fetchone()
+            print(json.dumps(row))
+            if row:
+                result = settings.GuildCategorySettings(guildId=guildId, categoryId=categoryId, channelLimit=int(row[0]), channelLocked=int(row[1]), bitrate=row[2], defaultRole=row[3])
+                print(json.dumps(result))
+                return result
+            print("NO GUILD CATEGORY SETTINGS FOUND")
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        pass
+
+    def update_user_channel_name(self, guildId, userId, channelName):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (guildId, userId, channelName, channelLimit, bitrate, defaultRole))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
         pass

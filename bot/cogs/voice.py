@@ -78,61 +78,93 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
+        self.db.open()
         try:
             if before and after:
                 if after.type == discord.ChannelType.voice:
                     if before.id == after.id:
                         # This handles a manual channel rename. it changes the text channel name to match.
                         guildID = before.guild.id or after.guild.id
-                        c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
-                        trackedSet = c.fetchone()
-                        category_id = after.category.id
-                        if trackedSet:
-                            channelOwnerId = int(trackedSet[0])
+
+                        channelOwnerId = self.db.get_channel_owner_id(guildID, after.id)
+                        if channelOwnerId:
                             if before.name == after.name:
                                 # same name. ignore
                                 print(f"Channel Names are the same. Nothing to do")
                                 pass
                             else:
+                                userSettings = self.db.get_user_settings(guildID, channelOwnerId)
+                                guildSettings = self.db.get_guild_category_settings(guildId=guildID, categoryId=after.category.id)
 
-                                c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
-                                userSettings = c.fetchone()
-                                c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-                                guildSettings = c.fetchone()
                                 if userSettings:
-                                    default_role = userSettings[3]
+                                    default_role = userSettings.default_role
                                 else:
                                     if guildSettings:
-                                        default_role = guildSettings[3] or self.settings.default_role
+                                        default_role = guildSettings.default_row or self.settings.default_role
                                     else:
                                         default_role = self.settings.default_role
 
 
                                 # new channel name
-                                c.execute("SELECT channelID from textChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id))
-                                textSet = c.fetchone()
-                                textChannel = None
-                                if textSet:
-                                    textChannel = self.bot.get_channel(int(textSet[0]))
+                                text_channel_id = self.db.get_text_channel_id(guildId=guildID, voiceChannelId=after.id)
+                                if text_channel_id:
+                                    textChannel = self.bot.get_channel(int(text_channel_id))
                                 if textChannel:
                                     print(f"Change Text Channel Name: {after.name}")
                                     await textChannel.edit(name=after.name)
                                     await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
-                                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
-                                voiceGroup = c.fetchone()
-                                if voiceGroup is None:
-                                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (guildID, channelOwnerId, after.name, 0, self.BITRATE_DEFAULT, default_role))
+
+                                # userSettings
+                                if userSettings:
+                                    self.db.update_user_channel_name(guildId=guildID, userId=channelOwnerId, channelName=after.name)
                                 else:
-                                    c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (after.name, channelOwnerId, guildID,))
+                                    self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.BITRATE_DEFAULT, defaultRole=default_role)
+
+                        # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id,))
+                        # trackedSet = c.fetchone()
+                        # category_id = after.category.id
+                        # if trackedSet:
+                        #     channelOwnerId = int(trackedSet[0])
+                        #     if before.name == after.name:
+                        #         # same name. ignore
+                        #         print(f"Channel Names are the same. Nothing to do")
+                        #         pass
+                        #     else:
+
+                        #         c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
+                        #         userSettings = c.fetchone()
+                        #         c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+                        #         guildSettings = c.fetchone()
+                        #         if userSettings:
+                        #             default_role = userSettings[3]
+                        #         else:
+                        #             if guildSettings:
+                        #                 default_role = guildSettings[3] or self.settings.default_role
+                        #             else:
+                        #                 default_role = self.settings.default_role
+
+
+                        #         # new channel name
+                        #         c.execute("SELECT channelID from textChannel WHERE guildID = ? AND voiceID = ?", (guildID, after.id))
+                        #         textSet = c.fetchone()
+                        #         textChannel = None
+                        #         if textSet:
+                        #             textChannel = self.bot.get_channel(int(textSet[0]))
+                        #         if textChannel:
+                        #             print(f"Change Text Channel Name: {after.name}")
+                        #             await textChannel.edit(name=after.name)
+                        #             await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
+                        #         c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (channelOwnerId, guildID,))
+                        #         voiceGroup = c.fetchone()
+                        #         if voiceGroup is None:
+                        #             c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (guildID, channelOwnerId, after.name, 0, self.BITRATE_DEFAULT, default_role))
+                        #         else:
+                        #             c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (after.name, channelOwnerId, guildID,))
         except Exception as e:
             print(e)
             traceback.print_exc()
         finally:
-            conn.commit()
-            conn.close()
-
+            self.db.close()
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         print("On Voice State Update")
