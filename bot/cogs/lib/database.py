@@ -42,3 +42,7 @@ class Database():
         pass
     def get_tracked_channels_for_guild(self, guildId):
         pass
+    def get_tracked_channel_owner(self, guildId, voiceChannelId):
+        pass
+    def clean_guild_user_settings(self, guildId):
+        pass

@@ -45,7 +45,6 @@ class SqliteDatabase(database.Database):
             traceback.print_exc(ex)
 
     def get_text_channel_id(self, guildId, voiceChannelId):
-        # SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?
         try:
             if self.connection is None:
                 self.open()
@@ -254,3 +253,56 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def get_tracked_channel_owner(self, guildId, voiceChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
+            ownerSet = c.fetchone()
+            if ownerSet:
+                return int(ownerSet[0])
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def update_tracked_channel_owner(self, guildId, voiceChannelId, ownerId, newOwnerId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE voiceChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+            c.execute("UPDATE textChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def clean_guild_user_settings(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def clean_user_settings(self, guildId, userId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("DELETE FROM `userSettings` WHERE guildID = ? AND userID = ?", (guildId, userId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
