@@ -1641,45 +1641,51 @@ class voice(commands.Cog):
     async def delete(self, ctx):
         if self.isAdmin(ctx):
             guildID = ctx.guild.id
-            conn = sqlite3.connect(self.settings.db_path)
-            c = conn.cursor()
-            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildID, ))
-            chans = [item for clist in c.fetchall() for item in clist]
-            vchans = [chan for chan in ctx.guild.channels if chan.id in chans]
-
-            embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
-            embed.set_author(name=f"{self.settings.name} v{self.settings.APP_VERSION}", url=self.settings.url,
-                            icon_url=self.settings.icon)
-            channel_array = []
-            index = 0
-            for c in vchans:
-                channel_array.append(c.id)
-                embed.add_field(name=f'{index+1}: {c.category.name}/{c.name}', value=f"Enter: {index+1} to delete.", inline='false')
-                index += 1
-            embed.set_footer(text=f'--- You have 60 seconds to respond. ---')
-            await ctx.channel.send(embed=embed, delete_after=65)
-            selected_index = -1
             try:
-                def check_index(m):
-                    idx = int(m.content)
-                    result = m.content.isnumeric() and idx > 0 and idx <= len(channel_array)
-                    return result
-                result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
-            except asyncio.TimeoutError:
-                await self.sendEmbed(ctx.channel, "Timeout", f'You took too long to answer.', delete_after=5)
-            else:
-                selected_index = int(result_message.content)
-                await result_message.delete()
-                if selected_index >= 0:
-                    chan = self.bot.get_channel(channel_array[selected_index - 1])
-                    if chan:
-                        print(f"Attempting to remove users in {chan}")
-                        for mem in chan.members:
-                            await mem.move_to(None, reason="Deleting Channel")
-                        await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
+                self.db.open()
+                tracked_voice_channels_ids = [item for clist in self.db.get_tracked_voice_channel_ids(guildId=guildID) for item in clist]
+                tracked_voice_channels = [chan for chan in ctx.guild.channels if chan.id in tracked_voice_channels_ids]
+                embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
+                embed.set_author(name=f"{self.settings.name} v{self.settings.APP_VERSION}", url=self.settings.url,
+                                icon_url=self.settings.icon)
+                channel_array = []
+                index = 0
+                for c in tracked_voice_channels:
+                    channel_array.append(c.id)
+                    embed.add_field(name=f'{index+1}: {c.category.name}/{c.name}', value=f"Enter: {index+1} to delete.", inline='false')
+                    index += 1
+                embed.set_footer(text=f'--- You have 60 seconds to respond. ---')
+                await ctx.channel.send(embed=embed, delete_after=65)
+                selected_index = -1
+                try:
+                    def check_index(m):
+                        idx = int(m.content)
+                        result = m.content.isnumeric() and idx > 0 and idx <= len(channel_array)
+                        return result
+                    result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, "Timeout", f'You took too long to answer.', delete_after=5)
+                else:
+                    selected_index = int(result_message.content)
+                    await result_message.delete()
+                    if selected_index >= 0:
+                        chan = self.bot.get_channel(channel_array[selected_index - 1])
+                        if not chan:
+                            chan = self.bot.fetch_channel(channel_array[selected_index - 1])
+                        if chan:
+                            print(f"Attempting to remove users in {chan}")
+                            for mem in chan.members:
+                                print(f"Moving user: {mem}")
+                                await mem.move_to(None, reason="Deleting Channel")
+                            await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc()
+            finally:
+                self.db.close()
+                await ctx.message.delete()
         else:
             print(f"{ctx.author} tried to run command 'delete'")
-        await ctx.message.delete()
 
     async def set_role_ask_category(self, ctx):
         try:
