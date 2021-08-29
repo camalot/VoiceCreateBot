@@ -30,3 +30,15 @@ class Database():
         pass
     def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
         pass
+    def get_guild_create_channels(self, guildId):
+        pass
+    def get_use_stage_on_create(self, guildId, channelId, categoryId):
+        pass
+    def add_tracked_text_channel(self, guildId, ownerId, voiceChannelId, textChannelId):
+        pass
+    def delete_tracked_text_channel(self, guildId, voiceChannelId, textChannelId):
+        pass
+    def track_new_channel_set(self, guildId, ownerId, voiceChannelId, textChannelId):
+        pass
+    def get_tracked_channels_for_guild(self, guildId):
+        pass

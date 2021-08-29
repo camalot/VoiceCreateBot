@@ -32,6 +32,17 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def get_guild_create_channels(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildId,))
+            channel_ids = [item for clist in c.fetchall() for item in clist]
+            return channel_ids
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
 
     def get_text_channel_id(self, guildId, voiceChannelId):
         # SELECT channelID FROM textChannel WHERE guildID = ? and voiceId = ?
@@ -126,7 +137,20 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-        pass
+    def get_use_stage_on_create(self, guildId, channelId, categoryId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT useStage FROM guild WHERE guildID = ? AND voiceCategoryID = ? AND voiceChannelID = ?", (guildId, categoryId, channelId))
+            create_channel = c.fetchone()
+            if create_channel:
+                return create_channel[0]
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+
     def get_guild_category_settings(self, guildId, categoryId):
         try:
             print(f"category: {categoryId}")
@@ -172,3 +196,61 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
+    def track_new_channel_set(self, guildId, ownerId, voiceChannelId, textChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
+            c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildId, ownerId, textChannelId, voiceChannelId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+
+    def add_tracked_text_channel(self, guildId, ownerId, voiceChannelId, textChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildId, ownerId, textChannelId, voiceChannelId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def delete_tracked_text_channel(self, guildId, voiceChannelId, textChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ? AND channelID = ?", (guildId, voiceChannelId, textChannelId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def get_tracked_channels_for_guild(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT voiceID, userID FROM voiceChannel WHERE guildID = ?", (guildId,))
+            voiceSets = c.fetchall()
+            voice_channels = []
+            for item in voiceSets:
+                voice_channels.append(settings.TrackedVoiceChannel(guildId=guildId, ownerId=item[1], voiceChannelId=item[0]))
+            c.execute("SELECT voiceID, channelID, userID FROM textChannel WHERE guildID = ?", (guildId,))
+            textSets = c.fetchall()
+            text_channels = []
+            for item in textSets:
+                text_channels.append(settings.TrackedTextChannel(guildId=guildId, ownerId=item[2], voiceChannelId=item[0], textChannelId=item[1]))
+            tracked = settings.TrackedChannels(voiceChannels=voice_channels, textChannels=text_channels)
+            return tracked
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()

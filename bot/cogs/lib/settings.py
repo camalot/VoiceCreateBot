@@ -21,9 +21,16 @@ class Settings:
         self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
 
-class UserSettings:
-    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+class GuildCategorySettings:
+    def __init__(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
         self.guild_id = guildId
+        self.category_id = categoryId
+        self.channel_limit = channelLimit
+        self.channel_locked = channelLocked >= 1
+        self.bitrate = bitrate
+        self.default_role = defaultRole
+class UserSettings():
+    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
         self.user_id = userId
         self.channel_name = channelName
         self.channel_limit = channelLimit
@@ -38,15 +45,22 @@ class GuildSettings:
         pass
 class GuildCategoryChannel:
     def __init__(self, ownerId, categoryId, channelId, useStage):
-        self.owner_id = ownerId
-        self.category_id = categoryId
-        self.channel_id = channelId
+        self.owner_id = int(ownerId)
+        self.category_id = int(categoryId)
+        self.channel_id = int(channelId)
         self.use_stage = useStage >= 1
-class GuildCategorySettings:
-    def __init__(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
-        self.guild_id = guildId
-        self.category_id = categoryId
-        self.channel_limit = channelLimit
-        self.channel_locked = channelLocked >= 1
-        self.bitrate = bitrate
-        self.default_role = defaultRole
+class TrackedVoiceChannel:
+    def __init__(self, guildId, ownerId, voiceChannelId):
+        self.guild_id = int(guildId)
+        self.owner_id = int(ownerId)
+        self.voice_channel_id = int(voiceChannelId)
+
+class TrackedTextChannel(TrackedVoiceChannel):
+    def __init__(self, guildId, ownerId, voiceChannelId, textChannelId):
+        super(TrackedTextChannel, self).__init__(guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId)
+        self.text_channel_id = int(textChannelId)
+
+class TrackedChannels:
+    def __init__(self, voiceChannels, textChannels):
+        self.voice_channels = voiceChannels
+        self.text_channels = textChannels
