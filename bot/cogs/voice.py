@@ -129,6 +129,7 @@ class voice(commands.Cog):
             traceback.print_exc()
         finally:
             self.db.close()
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         self.db.open()
@@ -288,9 +289,8 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["track-text-channel", "ttc"])
     async def track_text_channel(self, ctx, channel: discord.TextChannel = None):
-        mid = ctx.author.id
         guildID = ctx.author.guild.id
-
+        self.db.open()
         try:
             if self.isAdmin(ctx):
 
@@ -300,7 +300,6 @@ class voice(commands.Cog):
 
                 if channel is None:
                     await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You must specific a channel to track.", fields=None, delete_after=5)
-                    # conn.close()
                     await ctx.message.delete()
                     return
 
@@ -355,38 +354,59 @@ class voice(commands.Cog):
 
     @voice.command()
     async def track(self, ctx):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        mid = ctx.author.id
-        guildID = ctx.author.guild.id
-
-        channel = None
+        self.db.open()
         try:
-            if ctx.author.voice:
-                channel = ctx.author.voice.channel
-            if channel is None:
+            message_author_id = ctx.author.id
+            guild_id = ctx.author.guild.id
+            channel = ctx.author.voice.channel
+            if not channel:
                 await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
             else:
                 if self.isAdmin(ctx):
-                    c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
-                    voiceGroup = c.fetchone()
-                    if voiceGroup:
+                    tracked_channels = self.db.get_tracked_channels_for_guild(guildId=guild_id)
+                    filtered = [t for t in tracked_channels.voice_channels if t.voice_channel_id == channel.id]
+                    if filtered:
                         await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
                     else:
-                        c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
-                        conn.commit()
+                        self.db.track_new_voice_channel(guildId=guild_id, ownerId=message_author_id, voiceChannelId=channel.id)
                         await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
+
+        # conn = sqlite3.connect(self.settings.db_path)
+        # c = conn.cursor()
+        # mid = ctx.author.id
+        # guildID = ctx.author.guild.id
+
+        # channel = None
+        # try:
+        #     if ctx.author.voice:
+        #         channel = ctx.author.voice.channel
+        #     if channel is None:
+        #         await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
+        #     else:
+        #         if self.isAdmin(ctx):
+        #             c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
+        #             voiceGroup = c.fetchone()
+        #             if voiceGroup:
+        #                 await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
+        #             else:
+        #                 c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
+        #                 conn.commit()
+        #                 await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
+        # except Exception as ex:
+        #     print(ex)
+        #     traceback.print_exc()
+        # finally:
+        #     conn.close()
+        #     await ctx.message.delete()
 
     @voice.command()
     async def owner(self, ctx, member: discord.Member):
-        # conn = sqlite3.connect(self.settings.db_path)
-        # c = conn.cursor()
         self.db.open()
         guildId = ctx.author.guild.id
         channel = None
@@ -405,17 +425,6 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
                     else:
                         await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
-
-                # c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
-                # voiceGroup = c.fetchone()
-                # if voiceGroup is None:
-                #     await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention} That channel is not managed by me. I can't help you own that channel.", delete_after=5)
-                # else:
-                #     if self.isAdmin(ctx) or ctx.author.id == voiceGroup[0]:
-                #         await self.sendEmbed(ctx.channel, "Channel Owner Updated", f"{ctx.author.mention}, {member.mention} is now the owner of the channel.", delete_after=5)
-                #         c.execute("UPDATE voiceChannel SET userID = ? WHERE voiceID = ?", (member.id, channel.id))
-                #     else:
-                #         await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -850,56 +859,88 @@ class voice(commands.Cog):
         print(error)
         traceback.print_exc()
 
+    @voice.command(aliases=['get-default-role', 'gdr'])
     async def get_default_role(self, ctx):
-        if self.isAdmin(ctx):
-            guildID = ctx.guild.id
-            conn = sqlite3.connect(self.settings.db_path)
-            c = conn.cursor()
             try:
-                #TODO:
-                pass
-            except Exception as e:
+                if self.isAdmin(ctx):
+                    if self.isInVoiceChannel(ctx):
+                        guild_id = ctx.guild.id
+                        voice_channel = ctx.author.voice.channel
+                        # category_id = ctx.channel.category.id
+                        self.db.open()
+                        user_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel.id)
+                        default_role = self.db.get_default_role(guildId=guild_id, categoryId=voice_channel.category.id, userId=user_id)
+                        if default_role:
+                            await self.sendEmbed(ctx.channel, "Channel Settings", f"The default role applied to the channel or category you are in is: `{default_role}`", fields=None, delete_after=30)
+                        else:
+                            await self.sendEmbed(ctx.channel, "Channel Settings", f"I was unable to locate default role information based on the channel and category you are in.", fields=None, delete_after=5)
+                    else:
+                        await self.sendEmbed(ctx.channel, "Channel Settings", f"You must be in a voice channel to use this command", fields=None, delete_after=5)
+                else:
+                    print(f"{ctx.author.mention} attempted to call get_default_role")
+            except Exception as ex:
                 print(ex)
-                trackback.print_exc()
+                traceback.print_exc()
             finally:
-                conn.commit()
-                conn.close()
                 await ctx.message.delete()
+                self.db.close()
 
     @voice.command(aliases=['set-default-role', 'sdr'])
     async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, str]):
         if self.isAdmin(ctx):
+
             temp_default_role = default_role
             if not isinstance(temp_default_role, discord.Role):
                 temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
-            guildID = ctx.guild.id
-            conn = sqlite3.connect(self.settings.db_path)
-            c = conn.cursor()
+            guild_id = ctx.guild.id
+            self.db.open()
             try:
                 category = await self.set_role_ask_category(ctx)
                 if category:
-                    print(category)
-                    c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category.id,))
-                    guildSettings = c.fetchone()
-                    if guildSettings:
-                        c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (temp_default_role, guildID, category.id))
+                    category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
+                    if category_settings:
+                        self.db.set_default_role_for_category(guildId=guild_id, categoryId=category.id, defaultRole=temp_default_role)
                     else:
                         await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
                 else:
-                    print("no category found")
-            except Exception as e:
+                    print(f"unable to locate the expected category")
+            except Exception as ex:
                 print(ex)
-                trackback.print_exc()
+                traceback.print_exc()
             finally:
-                conn.commit()
-                conn.close()
+                self.db.close()
                 await ctx.message.delete()
+
+            # guildID = ctx.guild.id
+            # conn = sqlite3.connect(self.settings.db_path)
+            # c = conn.cursor()
+            # try:
+            #     category = await self.set_role_ask_category(ctx)
+            #     if category:
+            #         print(category)
+            #         c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category.id,))
+            #         guildSettings = c.fetchone()
+            #         if guildSettings:
+            #             c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (temp_default_role, guildID, category.id))
+            #         else:
+            #             await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
+            #     else:
+            #         print("no category found")
+            # except Exception as ex:
+            #     print(ex)
+            #     traceback.print_exc()
+            # finally:
+            #     conn.commit()
+            #     conn.close()
+            #     await ctx.message.delete()
 
     @voice.command()
     async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
         if self.isAdmin(ctx):
-            conn = sqlite3.connect(self.settings.db_path)
-            c = conn.cursor()
+            guild_id = ctx.guild.id
+            # conn = sqlite3.connect(self.settings.db_path)
+            # c = conn.cursor()
+            self.db.open()
             try:
                 if category is None:
                     category = await self.set_role_ask_category(ctx)
@@ -922,16 +963,18 @@ class voice(commands.Cog):
                     new_default_role = temp_default_role
                     if not new_default_role:
                         new_default_role = self.settings.default_role
-                    c.execute("SELECT channelLimit, channelLocked, defaultRole FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
-                    catSettings = c.fetchone()
-                    if catSettings:
-                        new_default_role = catSettings[3] or self.settings.default_role
-                        print(f"UPDATE category settings")
-                        c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ? AND defaultRole = ?",
-                            (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role,))
-                    else:
-                        print(f"INSERT category settings")
-                        c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role,))
+
+                    self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=int(limit), channelLocked=utils.str2bool(locked), bitrate=int(br), defaultRole=new_default_role)
+                    # c.execute("SELECT channelLimit, channelLocked, defaultRole FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
+                    # catSettings = c.fetchone()
+                    # if catSettings:
+                    #     new_default_role = catSettings[3] or self.settings.default_role
+                    #     print(f"UPDATE category settings")
+                    #     c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ? AND defaultRole = ?",
+                    #         (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role,))
+                    # else:
+                    #     print(f"INSERT category settings")
+                    #     c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role,))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -958,8 +1001,7 @@ class voice(commands.Cog):
                 print(ex)
                 traceback.print_exc()
             finally:
-                conn.commit()
-                conn.close()
+                self.db.close()
         else:
             await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()

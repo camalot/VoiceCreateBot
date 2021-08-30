@@ -176,6 +176,15 @@
 			"admin": true,
 			"aliases": ["sdr"]
 		},
+		"get-default-role": {
+			"help": "**Change the Default Role for a specific category**",
+			"usage": ".voice get-default-role",
+			"example": ".voice get-default-role",
+			"admin": true,
+			"aliases": [
+				"gdr"
+			]
+		},
 		"setup": {
 			"help": "**Setup a Create Voice Channel**",
 			"usage": ".voice setup",

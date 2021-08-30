@@ -1,8 +1,11 @@
 import sqlite3
 import traceback
 import json
+
+from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
+from . import utils
 class SqliteDatabase(database.Database):
     def __init__(self):
         self.settings = settings.Settings()
@@ -149,7 +152,21 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
-
+    def set_guild_category_settings(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
+            if cat_settings:
+                c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
+            else:
+                c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
     def get_guild_category_settings(self, guildId, categoryId):
         try:
             print(f"category: {categoryId}")
@@ -195,6 +212,18 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
+    def track_new_voice_channel(self, guildId, ownerId, voiceChannelId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
     def track_new_channel_set(self, guildId, ownerId, voiceChannelId, textChannelId):
         try:
             if self.connection is None:
@@ -300,6 +329,53 @@ class SqliteDatabase(database.Database):
                 self.open()
             c = self.connection.cursor()
             c.execute("DELETE FROM `userSettings` WHERE guildID = ? AND userID = ?", (guildId, userId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def get_default_role(self, guildId, categoryId, userId):
+        try:
+            user_settings = self.get_user_settings(guildId=guildId, userId=userId)
+            guild_category_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
+            if user_settings:
+                return user_settings.default_role
+            elif guild_category_settings:
+                return guild_category_settings.default_role
+            else:
+                return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def set_default_role_for_user(self, guildId, userId, defaultRole):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            user_settings = self.get_user_settings(guildId=guildId, userId=userId)
+            if user_settings:
+                c.execute("UPDATE userSettings SET defaultRole = ? WHERE WHERE guildID = ? and userId = ?", (defaultRole, guildId, userId))
+                return True
+            else:
+                return False
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+    def set_default_role_for_category(self, guildId, categoryId, defaultRole):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            category_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
+            if category_settings:
+                c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (defaultRole, guildId, categoryId))
+                return True
+            else:
+                return False
         except Exception as ex:
             print(ex)
             traceback.print_exc()
