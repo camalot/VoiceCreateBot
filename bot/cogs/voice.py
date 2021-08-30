@@ -1042,65 +1042,48 @@ class voice(commands.Cog):
     async def lock(self, ctx, role: discord.Role = None):
         conn = sqlite3.connect(self.settings.db_path)
         c = conn.cursor()
-        aid = ctx.author.id
+        owner_id = ctx.author.id
+        owner = ctx.author
         guildID = ctx.guild.id
         category_id = ctx.channel.category.id
-        channel_id = None
+        current_voice_channel_id = None
         if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
+            current_voice_channel_id = ctx.author.voice.channel.id
         else:
             await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
             return
         try:
-            # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to lock it.', delete_after=5)
-                return
-
-            c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-            userSettings = c.fetchone()
-            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-            guildSettings = c.fetchone()
-            if userSettings:
-                default_role = userSettings[3]
-            else:
-                if guildSettings:
-                    default_role = guildSettings[3] or self.settings.default_role
-                else:
-                    default_role = self.settings.default_role
+            if self.isAdmin(ctx):
+                owner_id = self.db.get_channel_owner_id(guildId=guildID, channelId=current_voice_channel_id)
+                owner = self.bot.get_user(owner_id)
+                if not owner:
+                    owner = await self.bot.fetch_user(owner_id)
+            default_role = self.db.get_default_role(guildId=guildID, categoryId=category_id, userId=owner_id) or self.settings.default_role
 
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role ]) == 1
             if not validRole:
                 default_role = ctx.guild.default_role.name
-
             print(f"Lock: default role: {default_role}")
-
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                await self.sendEmbed(ctx.channel, "Channel Lock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guildID,ownerId=owner_id)
+            is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
+            if not is_owner and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to lock it.', delete_after=5)
             else:
-                channelID = voiceGroup[0]
+                channel = self.bot.get_channel(current_voice_channel_id)
+                if not channel:
+                    channel = await self.bot.fetch_channel(current_voice_channel_id)
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-                channel = self.bot.get_channel(channelID)
-
-                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
-                textGroup = c.fetchone()
-                textChannel = None
-                if channel:
-                    if textGroup:
-                        textChannel = self.bot.get_channel(textGroup[0])
+                text_channel_id = self.db.get_text_channel_id(guildId=guildID, voiceChannelId=current_voice_channel_id)
+                if text_channel_id:
+                    textChannel = self.bot.get_channel(text_channel_id)
+                    if not textChannel:
+                        textChannel = await self.bot.fetch_channel(text_channel_id)
                     if textChannel:
-                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
+                        await textChannel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
                         if everyone:
                             await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
 
-                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     await channel.set_permissions(everyone, connect=False, view_channel=True, stream=False)
                     if role:
                         await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=True, stream=False)
@@ -1112,8 +1095,7 @@ class voice(commands.Cog):
             print(ex)
             traceback.print_exc()
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @voice.command()

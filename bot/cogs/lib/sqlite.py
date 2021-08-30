@@ -35,6 +35,18 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def get_tracked_voice_channel_id_by_owner(self, guildId, ownerId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ? AND userID = ?", (guildId, ownerId,))
+            items = c.fetchall()
+            channel_ids = [item for items in c.fetchall() for item in items]
+            return channel_ids
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def get_guild_create_channels(self, guildId):
         try:
             if self.connection is None:
