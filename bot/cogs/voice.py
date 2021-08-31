@@ -1179,110 +1179,83 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["allow"])
     async def permit(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        channel_id = None
+        self.db.open()
+        guild_id = ctx.guild.id
+        voice_channel_id = None
+        text_channel = None
         if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
+            voice_channel = ctx.author.voice.channel
+            voice_channel_id = voice_channel.id
         else:
             await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
             return
         try:
             # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if not self.isAdmin(ctx) and ctx.author.id != owner_id:
                 await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You do not own this channel, and do not have permissions to allow access.', delete_after=5)
                 return
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = self.bot.get_channel(text_channel_id)
+            if not text_channel:
+                text_channel = await self.bot.fetch_channel(text_channel_id)
 
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                await self.sendEmbed(ctx.channel, "Grant User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
-            else:
-                channelID = voiceGroup[0]
-                channel = self.bot.get_channel(channelID)
-
-                c.execute("SELECT channelID from textChannel WHERE voiceID = ?", (channelID,))
-                textSet = c.fetchone()
-                if textSet:
-                    textChannelID = textSet[0]
-                    textChannel = self.bot.get_channel(textChannelID)
-                    if textChannel:
-                        if userOrRole:
-                            await textChannel.set_permissions(userOrRole, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, )
+            if text_channel:
                 if userOrRole:
-                    await channel.set_permissions(userOrRole, connect=True, view_channel=True, speak=True, stream=True)
-                    await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
+                    await text_channel.set_permissions(userOrRole, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, )
+            if userOrRole:
+                await voice_channel.set_permissions(userOrRole, connect=True, view_channel=True, speak=True, stream=True)
+                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @voice.command(aliases=["deny"])
     async def reject(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        guildID = ctx.guild.id
-        channel_id = None
+        self.db.open()
+        guild_id = ctx.guild.id
+        voice_channel_id = None
+        text_channel = None
+        voice_channel = None
         if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
+            voice_channel = ctx.author.voice.channel
+            voice_channel_id = voice_channel.id
         else:
             await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
             return
         try:
             # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You do not own this channel, and do not have permissions to deny access.', delete_after=5)
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if not self.isAdmin(ctx) and ctx.author.id != owner_id:
+                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You do not own this channel, and do not have permissions to allow access.', delete_after=5)
                 return
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = self.bot.get_channel(text_channel_id)
+            if not text_channel:
+                text_channel = await self.bot.fetch_channel(text_channel_id)
+            if userOrRole:
+                await text_channel.set_permissions(userOrRole, read_messages=False, send_messages=False, view_channel=True, read_message_history=False)
 
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ?", (aid,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                await self.sendEmbed(ctx.channel, "Reject User Access", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
-            else:
-                channelID = voiceGroup[0]
-                channel = self.bot.get_channel(channelID)
+            if userOrRole:
+                for m in voice_channel.members:
+                    if m.id != owner_id:
+                        if m.id == userOrRole.id:
+                            m.disconnect()
+                        if m.has_role(userOrRole):
+                            m.disconnect()
 
-                c.execute("SELECT channelID from textChannel WHERE voiceID = ?", (channelID,))
-                textSet = c.fetchone()
-                if textSet:
-                    textChannelID = textSet[0]
-                    textChannel = self.bot.get_channel(textChannelID)
-                    if textChannel:
-                        if userOrRole:
-                            await textChannel.set_permissions(userOrRole, read_messages=False, send_messages=False, view_channel=True, read_message_history=False)
-
-
-                if userOrRole:
-                    for m in channel.members:
-                        if m.id != aid:
-                            if m.id == userOrRole.id:
-                                m.disconnect()
-                            if m.has_role(userOrRole):
-                                m.disconnect()
-
-                    await channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=True, speak=False, stream=False, read_message_history=False)
-                    await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
+            await voice_channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=True, speak=False, stream=False, read_message_history=False)
+            await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @voice.command()
@@ -1666,8 +1639,7 @@ class voice(commands.Cog):
                         if chan:
                             print(f"Attempting to remove users in {chan}")
                             for mem in chan.members:
-                                print(f"Moving user: {mem}")
-                                await mem.move_to(None, reason="Deleting Channel")
+                                mem.disconnect()
                             await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
             except Exception as ex:
                 print(ex)
