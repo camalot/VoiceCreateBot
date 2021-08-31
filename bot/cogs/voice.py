@@ -436,64 +436,43 @@ class voice(commands.Cog):
 
     @voice.command()
     async def resync(self, ctx):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        guildID = ctx.guild.id
-        category_id = ctx.channel.category.id
-        channel_id = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
         try:
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
+            self.db.open
+            guild_id = ctx.guild.id
+            category_id = ctx.channel.category.id
+            voice_channel = None
+            voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = ctx.author.voice.channel
+                voice_channel_id = ctx.author.voice.channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if not self.isAdmin(ctx) and ctx.author.id != owner_id:
                 await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} You do not own this channel, and do not have permissions to resync it.', delete_after=5)
                 return
-            c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-            userSettings = c.fetchone()
-            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-            guildSettings = c.fetchone()
-            if userSettings:
-                default_role = userSettings[3]
-            else:
-                if guildSettings:
-                    default_role = guildSettings[3] or self.settings.default_role
-                else:
-                    default_role = self.settings.default_role
-            everyone = discord.utils.get(ctx.guild.roles, name=default_role)
 
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID, ))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None or not channel_id:
-                await self.sendEmbed(ctx.channel, "Channel Sync", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
-            else:
-                channelID = voiceGroup[0]
-                channel = self.bot.get_channel(channelID)
+            # default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = self.bot.get_channel(text_channel_id)
+            if not text_channel:
+                text_channel = await self.bot.fetch_channel(text_channel_id)
+            if text_channel:
+                await text_channel.edit(sync_permissions=True)
+                await text_channel.set_permissions(ctx.author, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
 
-                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
-                textGroup = c.fetchone()
-                textChannel = None
-                if channel:
-                    if textGroup:
-                        textChannel = self.bot.get_channel(textGroup[0])
-                        await textChannel.edit(sync_permissions=True)
-                        await textChannel.set_permissions(ctx.author, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.edit(sync_permissions=True)
-                    await channel.set_permissions(ctx.author, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
-                await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} The permissions of this channel have been resync\'d with the defaults.', delete_after=5)
+            await voice_channel.edit(sync_permissions=True)
+            await voice_channel.set_permissions(ctx.author, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+            await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} The permissions of this channel have been resync\'d with the defaults. ♻', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @voice.command()
