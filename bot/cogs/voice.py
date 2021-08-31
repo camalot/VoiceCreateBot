@@ -283,6 +283,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -348,6 +349,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -373,37 +375,10 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
-
-        # conn = sqlite3.connect(self.settings.db_path)
-        # c = conn.cursor()
-        # mid = ctx.author.id
-        # guildID = ctx.author.guild.id
-
-        # channel = None
-        # try:
-        #     if ctx.author.voice:
-        #         channel = ctx.author.voice.channel
-        #     if channel is None:
-        #         await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
-        #     else:
-        #         if self.isAdmin(ctx):
-        #             c.execute("SELECT voiceID FROM voiceChannel WHERE voiceID = ?", (channel.id,))
-        #             voiceGroup = c.fetchone()
-        #             if voiceGroup:
-        #                 await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} This channel is already tracked.", delete_after=5)
-        #             else:
-        #                 c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildID, mid, channel.id,))
-        #                 conn.commit()
-        #                 await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
-        # finally:
-        #     conn.close()
-        #     await ctx.message.delete()
 
     @voice.command()
     async def owner(self, ctx, member: discord.Member):
@@ -428,9 +403,8 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
-            # conn.commit()
-            # conn.close()
             self.db.close()
             await ctx.message.delete()
 
@@ -471,6 +445,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -538,6 +513,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
 
@@ -595,6 +571,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -649,6 +626,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -765,6 +743,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             conn.commit()
             conn.close()
@@ -797,6 +776,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
+                self.notify_of_error(ctx)
             finally:
                 await ctx.message.delete()
                 self.db.close()
@@ -916,6 +896,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
+                self.notify_of_error(ctx)
             finally:
                 self.db.close()
         else:
@@ -934,6 +915,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
+                self.notify_of_error(ctx)
             finally:
                 self.db.close()
                 await ctx.message.delete()
@@ -950,6 +932,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1010,6 +993,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1088,6 +1072,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             conn.commit()
             conn.close()
@@ -1126,6 +1111,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1170,6 +1156,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1223,6 +1210,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             conn.commit()
             conn.close()
@@ -1289,6 +1277,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             conn.commit()
             conn.close()
@@ -1386,6 +1375,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1427,6 +1417,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             print("close db")
             self.db.close()
@@ -1453,6 +1444,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1480,6 +1472,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1512,6 +1505,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1560,6 +1554,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
+                self.notify_of_error(ctx)
             finally:
                 self.db.close()
                 await ctx.message.delete()
@@ -1666,7 +1661,8 @@ class voice(commands.Cog):
         else:
             embed.set_footer(text=footer)
         await channel.send(embed=embed, delete_after=delete_after)
-
+    async def notify_of_error(self, ctx):
+        await self.sendEmbed(ctx.channel, "Something Went Wrong", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry. 😢', delete_after=30)
 
 def setup(bot):
     bot.add_cog(voice(bot))
