@@ -41,8 +41,8 @@ class SqliteDatabase(database.Database):
                 self.open()
             c = self.connection.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ? AND userID = ?", (guildId, ownerId,))
-            items = c.fetchall()
             channel_ids = [item for items in c.fetchall() for item in items]
+            print(json.dumps(channel_ids))
             return channel_ids
         except Exception as ex:
             print(ex)
