@@ -38,6 +38,8 @@ class Database():
         pass
     def update_user_channel_name(self, guildId, userId, channelName):
         pass
+    def update_user_limit(self, guildId, userId, limit: int = 0):
+        pass
     def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
         pass
     def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):

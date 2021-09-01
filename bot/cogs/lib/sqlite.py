@@ -143,8 +143,8 @@ class SqliteDatabase(database.Database):
             if useStage:
                 stageInt = 1
 
-            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
-                                guildId, ownerId, createChannelId, categoryId, guildId, stageInt))
+            c.execute("UPDATE guild SET ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ? AND voiceChannelID = ?", (
+                                ownerId, createChannelId, categoryId, stageInt, guildId, createChannelId))
             self.connection.commit()
             return True
         except Exception as ex:
@@ -239,6 +239,19 @@ class SqliteDatabase(database.Database):
             c = self.connection.cursor()
             c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
 
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
+    def update_user_limit(self, guildId, userId, limit: int = 0):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, userId, guildId,))
         except Exception as ex:
             print(ex)
             traceback.print_exc()

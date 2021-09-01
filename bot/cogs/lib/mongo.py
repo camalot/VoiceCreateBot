@@ -122,7 +122,7 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
+    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -130,27 +130,120 @@ class MongoDatabase(database.Database):
             stageInt = 0
             if useStage:
                 stageInt = 1
-            
-            # c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
-            #                     guildId, ownerId, createChannelId, categoryId, guildId, stageInt))
-            # self.connection.commit()
+            self.connect.guild.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": stageInt } })
             return True
         except Exception as ex:
             print(ex)
             traceback.print_exc()
             return False
-    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
-        pass
+    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            stageInt = 0
+            if useStage:
+                stageInt = 1
+            payload = {
+                "guildID": guildId,
+                "ownerID": ownerId,
+                "voiceChannelID": createChannelId,
+                "voiceCategoryID": categoryId,
+                "useStage": stageInt
+            }
+            result = self.connection.guild.insert_one(payload)
+            # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
+            return result is not None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
     def set_guild_category_settings(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
-        pass
+        try:
+            if not self.connection:
+                self.open()
+            # c = self.connection.cursor()
+            cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
+            if cat_settings:
+                payload = { "channelLimit": channelLimit, "channelLocked": channelLocked, "bitrate": bitrate, "defaultRole": defaultRole }
+                self.connection.guildCategorySettings.find_one_and_update({"guildID": guildId, "voiceCategoryID": categoryId}, { "$set": payload })
+                # c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
+            else:
+                # c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
+                payload = {
+                    "guildID": guildId,
+                    "voiceCategoryID": categoryId,
+                    "channelLimit": channelLimit,
+                    "channelLocked": channelLocked,
+                    "bitrate": bitrate,
+                    "defaultRole": defaultRole
+                }
+                self.connection.guildCategorySettings.insert_one(payload)
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
     def get_guild_category_settings(self, guildId, categoryId):
-        pass
+        try:
+            if self.connection is None:
+                self.open()
+            row = self.connection.guildCategorySettings.find_one({ "guildID": guildId, "voiceCategoryID": categoryId})
+            if row:
+                result = settings.GuildCategorySettings(guildId=guildId, categoryId=categoryId, channelLimit=row.channelLimit, channelLocked=row.channelLocked, bitrate=row.bitrate, defaultRole=row.defaultRole)
+                return result
+            # c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildId, categoryId,))
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def update_user_channel_name(self, guildId, userId, channelName):
-        pass
+        try:
+            if self.connection is None:
+                self.open()
+            # c = self.connection.cursor()
+            # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelName": channelName }})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def update_user_limit(self, guildId, userId, limit: int = 0):
+        try:
+            if self.connection is None:
+                self.open()
+            # c = self.connection.cursor()
+            # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelLimit": limit }})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
-        pass
+        try:
+            if self.connection is None:
+                self.open()
+            # c = self.connection.cursor()
+            # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "bitrate": bitrate }})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
-        pass
+        try:
+            if self.connection is None:
+                self.open()
+            # c = self.connection.cursor()
+            # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+            payload = {
+                "guildID": guildId,
+                "userID": userId,
+                "channelName": channelName,
+                "channelLimit": channelLimit,
+                "bitrate": bitrate,
+                "defaultRole": defaultRole
+            }
+            self.connection.userSettings.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def get_guild_create_channels(self, guildId):
         pass
     def get_use_stage_on_create(self, guildId, channelId, categoryId):

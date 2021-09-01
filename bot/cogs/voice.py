@@ -720,7 +720,10 @@ class voice(commands.Cog):
                         guild_settings = self.db.get_guild_settings(guildId=guild_id)
 
                         if guild_settings:
-                            self.db.update_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                            if len([c for c in guild_settings.channels if c.category_id == category.id and c.channel_id == channel.id]) >= 1:
+                                self.db.update_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                            else:
+                                self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                         else:
                             self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
@@ -1262,7 +1265,7 @@ class voice(commands.Cog):
         finally:
             self.db.close()
             await ctx.message.delete()
-       
+
 
     # @voice.command()
     # async def game(self, ctx):
