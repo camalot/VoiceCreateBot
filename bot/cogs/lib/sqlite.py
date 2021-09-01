@@ -134,6 +134,37 @@ class SqliteDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
+    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            stageInt = 0
+            if useStage:
+                stageInt = 1
+
+            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
+                                guildId, ownerId, createChannelId, categoryId, guildId, stageInt))
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            stageInt = 0
+            if useStage:
+                stageInt = 1
+            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+
     def get_guild_settings(self, guildId):
         try:
             if self.connection is None:
@@ -211,7 +242,20 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+    def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE userSettings SET bitrate = ? WHERE userID = ? AND guildID = ?", (bitrate, userId, guildId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
         try:
             if self.connection is None:
                 self.open()

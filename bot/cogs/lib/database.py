@@ -1,4 +1,7 @@
 
+from traceback import print_exc
+
+
 class Database():
 
     def __init__(self):
@@ -25,13 +28,19 @@ class Database():
         pass
     def get_guild_settings(self, guildId):
         pass
+    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
+        pass
+    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
+        pass
     def set_guild_category_settings(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
         pass
     def get_guild_category_settings(self, guildId, categoryId):
         pass
     def update_user_channel_name(self, guildId, userId, channelName):
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+    def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
+        pass
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
         pass
     def get_guild_create_channels(self, guildId):
         pass
