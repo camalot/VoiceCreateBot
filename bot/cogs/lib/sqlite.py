@@ -145,6 +145,7 @@ class SqliteDatabase(database.Database):
 
             c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
                                 guildId, ownerId, createChannelId, categoryId, guildId, stageInt))
+            self.connection.commit()
             return True
         except Exception as ex:
             print(ex)
@@ -159,6 +160,7 @@ class SqliteDatabase(database.Database):
             if useStage:
                 stageInt = 1
             c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
+            self.connection.commit()
             return True
         except Exception as ex:
             print(ex)
@@ -205,6 +207,7 @@ class SqliteDatabase(database.Database):
                 c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
             else:
                 c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
+            self.connection.commit()
             return True
         except Exception as ex:
             print(ex)
@@ -235,6 +238,7 @@ class SqliteDatabase(database.Database):
                 self.open()
             c = self.connection.cursor()
             c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+
         except Exception as ex:
             print(ex)
             traceback.print_exc()

@@ -22,7 +22,7 @@ class Database():
         pass
     def get_tracked_voice_channel_id_by_owner(self, guildId, ownerId):
         pass
-    def get_channel_owner_id(self, guildId, voiceChannelId):
+    def get_channel_owner_id(self, guildId, channelId):
         pass
     def get_user_settings(self, guildId, userId):
         pass
