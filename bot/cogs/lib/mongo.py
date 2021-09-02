@@ -136,6 +136,24 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def clean_guild_user_settings(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            # c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
+            self.connection.userSettings.delete_many({"guildID": guildId})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def clean_user_settings(self, guildId, userId):
+        try:
+            if self.connection is None:
+                self.open()
+            # c.execute("DELETE FROM `userSettings` WHERE guildID = ? AND userID = ?", (guildId, userId,))
+            self.connection.userSettings.delete_many({"guildID": guildId, "userID": userId})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def get_tracked_voice_channel_id_by_owner(self, guildId, ownerId):
         try:
             if self.connection is None:
