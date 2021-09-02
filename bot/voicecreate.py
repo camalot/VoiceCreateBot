@@ -52,7 +52,7 @@ class VoiceCreate():
         sql3db = sqlite.SqliteDatabase()
         sql3db.UPDATE_SCHEMA(self.DBVERSION)
         mdb = mongo.MongoDatabase()
-        mdb.RESET_MIGRATION()
+        # mdb.RESET_MIGRATION()
         mdb.UPDATE_SCHEMA(self.DBVERSION)
 
     def get_prefix(self, client, message):
