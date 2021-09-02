@@ -17,8 +17,8 @@ import glob
 import typing
 from .lib import utils
 from .lib import settings
-from .lib import sqlite
-
+# from .lib import sqlite
+from .lib import mongo
 class EmbedField():
     def __init__(self, name, value):
         self.name = name
@@ -30,7 +30,8 @@ class voice(commands.Cog):
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = sqlite.SqliteDatabase()
+        # self.db = sqlite.SqliteDatabase()
+        self.db = mongo.MongoDatabase()
 
     async def clean_up_tracked_channels(self, guildID):
         print("Clean up tracked channels")
@@ -38,13 +39,20 @@ class voice(commands.Cog):
         try:
             trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
             for vc in trackedChannels:
-                voiceChannelId = vc[0]
+                print(vc)
+                textChannel = None
+                voiceChannelId = vc
                 if voiceChannelId:
                     voiceChannel = self.bot.get_channel(voiceChannelId)
+                    if not voiceChannel:
+                        voiceChannel = await self.bot.fetch_channel(voiceChannelId)
 
                     textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
+                    print(f"TEXTCHANNELID: {textChannelId}")
                     if textChannelId:
                         textChannel = self.bot.get_channel(textChannelId)
+                        if not textChannel:
+                            textChannelId = await self.bot.fetch_channel(textChannelId)
 
                     if voiceChannel:
                         if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
@@ -111,9 +119,12 @@ class voice(commands.Cog):
                                     await textChannel.edit(name=after.name)
                                     await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
                             if after.type == discord.ChannelType.text:
+                                voiceChannel = None
                                 voice_channel_id = self.db.get_voice_channel_id_from_text_channel(guildId=guildID, textChannelId=after.id)
                                 if voice_channel_id:
-                                    voiceChannel = self.bot.get_channel(int(voice_channel_id))
+                                    voiceChannel = self.bot.get_channel(voice_channel_id)
+                                    if not voiceChannel:
+                                        voiceChannel = await self.bot.fetch_channel(voice_channel_id)
                                 if voiceChannel:
                                     print(f"Change Text Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
@@ -283,7 +294,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -349,7 +360,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -375,7 +386,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -403,7 +414,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -445,7 +456,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -513,7 +524,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
 
@@ -571,11 +582,10 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
-
 
     @voice.command()
     async def unmute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
@@ -626,7 +636,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -680,21 +690,30 @@ class voice(commands.Cog):
     @voice.command(pass_context=True)
     @has_permissions(administrator=True)
     async def setup(self, ctx):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        guildID = ctx.guild.id
+        self.db.open()
+        guild_id = ctx.guild.id
         try:
             print(f"User id triggering setup: {ctx.author.id}")
-            aid = ctx.author.id
+            author_id = ctx.author.id
             # If the person is the OWNER or an ADMIN
             if self.isAdmin(ctx):
                 def check(m):
-                    return m.author.id == ctx.author.id
+                    return m.author.id == author_id
                 def check_yes_no(m):
                     if(check(m)):
                         msg = m.content
+                        # await m.delete()
                         return utils.str2bool(msg)
-
+                def check_role(m):
+                    if(check(m)):
+                        if m.content == "DEFAULT":
+                            return discord.utils.get(m.guild.roles, name=self.settings.default_role or "everyone")
+                        # is valid role?
+                        role = discord.utils.get(m.guild.roles,name=m.content)
+                        print(f"ROLE: {role}")
+                        if role:
+                            return True
+                        return False
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
                 if category is None:
@@ -711,28 +730,55 @@ class voice(commands.Cog):
 
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
-                    channel = await self.bot.wait_for('message', check=check, timeout=60.0)
+                    channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
                 else:
                     try:
-                        channel = await ctx.guild.create_voice_channel(channel.content, category=category)
-                        c.execute("SELECT * FROM guild WHERE guildID = ? AND ownerID=? AND voiceChannelID=?", (guildID, aid, channel.id))
-                        voiceGroup = c.fetchone()
-                        stageToInt = 0
-                        if useStage:
-                            stageToInt = 1
-                        if voiceGroup is None:
-                            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildID, aid, channel.id, category.id, stageToInt))
+                        channel = await ctx.guild.create_voice_channel(channelName.content, category=category)
+                        await channelName.delete()
+
+                        guild_settings = self.db.get_guild_settings(guildId=guild_id)
+
+                        if guild_settings:
+                            if len([c for c in guild_settings.channels if c.category_id == category.id and c.channel_id == channel.id]) >= 1:
+                                self.db.update_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                            else:
+                                self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                         else:
-                            c.execute("UPDATE guild SET guildID = ?, ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ?", (
-                                guildID, aid, channel.id, category.id, guildID, stageToInt))
+                            self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
 
+                        guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
+                        if not guild_category_settings:
 
-                        ## SET DEFAULT ROLE
-                        ## TODO:
-                        # Update Schema?
-                        # Add column for Guild Level Default Role
+                            # ASK SET DEFAULT CHANNEL LIMIT
+
+                            # ASK SET DEFAULT CHANNEL LOCKED
+                            # defaultLocked = False
+                            # await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            # try:
+                            #     defaultLockedResponse = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                            # except asyncio.TimeoutError:
+                            #     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                            #     return
+                            # else:
+                            #     defaultLocked = defaultLockedResponse
+                            # ASK DEFAULT ROLE
+                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter Name of the default role you want to use. This is the base role that will have access to the channels\n\n ENTER: DEFAULT to use the default role**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            defaultRoleResp = None
+                            defaultRole = self.settings.default_role
+                            try:
+                                defaultRoleResp = await self.bot.wait_for('message', check=check_role, timeout=60)
+                            except asyncio.TimeoutError:
+                                defaultRole = self.settings.default_role
+                            else:
+                                if defaultRoleResp.content == "DEFAULT":
+                                    defaultRole = discord.utils.get(ctx.guild.roles, name=self.settings.default_role or "everyone").name
+                                else:
+                                    defaultRole = discord.utils.get(ctx.guild.roles, name=defaultRoleResp.content).name
+                            await defaultRoleResp.delete()
+
+                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=0, channelLocked=False, bitrate=self.BITRATE_DEFAULT, defaultRole=defaultRole)
 
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                     except Exception as e:
@@ -743,10 +789,9 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @setup.error
@@ -776,7 +821,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
-                self.notify_of_error(ctx)
+                await self.notify_of_error(ctx)
             finally:
                 await ctx.message.delete()
                 self.db.close()
@@ -834,8 +879,6 @@ class voice(commands.Cog):
     async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
         if self.isAdmin(ctx):
             guild_id = ctx.guild.id
-            # conn = sqlite3.connect(self.settings.db_path)
-            # c = conn.cursor()
             self.db.open()
             try:
                 if category is None:
@@ -861,16 +904,6 @@ class voice(commands.Cog):
                         new_default_role = self.settings.default_role
 
                     self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=int(limit), channelLocked=utils.str2bool(locked), bitrate=int(br), defaultRole=new_default_role)
-                    # c.execute("SELECT channelLimit, channelLocked, defaultRole FROM guildCategorySettings WHERE guildID = ? AND voiceCategoryID = ?", (ctx.guild.id, found_category.id,))
-                    # catSettings = c.fetchone()
-                    # if catSettings:
-                    #     new_default_role = catSettings[3] or self.settings.default_role
-                    #     print(f"UPDATE category settings")
-                    #     c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ? WHERE guildID = ? AND channelLimit = ? AND bitrate = ? AND defaultRole = ?",
-                    #         (int(limit), utils.str2bool(locked), ctx.guild.id, found_category.id, int(br), new_default_role,))
-                    # else:
-                    #     print(f"INSERT category settings")
-                    #     c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (ctx.guild.id, found_category.id, int(limit), utils.str2bool(locked), int(br), new_default_role,))
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -896,7 +929,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
-                self.notify_of_error(ctx)
+                await self.notify_of_error(ctx)
             finally:
                 self.db.close()
         else:
@@ -905,177 +938,154 @@ class voice(commands.Cog):
 
     @voice.command()
     async def cleandb(self,ctx):
-        if self.isAdmin(ctx):
-            self.db.open()
-            guildID = ctx.guild.id
-            try:
-
-                self.db.clean_guild_user_settings(guildId=guildID)
+        try:
+            if self.isAdmin(ctx):
+                self.db.open()
+                guild_id = ctx.guild.id
+                self.db.clean_guild_user_settings(guildId=guild_id)
                 await self.sendEmbed(ctx.channel, "Clean Database", "All User Settings have been purged from database.", delete_after=5)
-            except Exception as ex:
-                print(ex)
-                traceback.print_exc()
-                self.notify_of_error(ctx)
-            finally:
-                self.db.close()
-                await ctx.message.delete()
+            else:
+                await self.sendEmbed(ctx.channel, "Permission Denied", f"{ctx.author.mention}, you do not have permission to run this command.", delete_after=5)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
+        finally:
+            self.db.close()
+            await ctx.message.delete()
 
     @voice.command()
     async def reset(self,ctx, user: discord.Member = None):
-        dataUser = ctx.author
-        if user and self.isAdmin(ctx):
-            dataUser = user
-        guildID = ctx.guild.id
         try:
-            self.db.clean_user_settings(guildId=guildID, userId=dataUser.id)
+            author = ctx.author
+            if user and self.isAdmin(ctx):
+                author = user
+            guild_id = ctx.guild.id
+            self.db.clean_user_settings(guildId=guild_id, userId=author.id)
             await self.sendEmbed(ctx.channel, "Reset User Settings", f"User Settings for '{dataUser.mention}' has been purged from database.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
 
     @voice.command()
     async def lock(self, ctx, role: discord.Role = None):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        owner_id = ctx.author.id
-        owner = ctx.author
-        guildID = ctx.guild.id
-        category_id = ctx.author.voice.channel.category.id
-        current_voice_channel_id = None
-        if self.isInVoiceChannel(ctx):
-            current_voice_channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
         try:
+            owner_id = ctx.author.id
+            owner = ctx.author
+            guild_id = ctx.guild.id
+            category_id = ctx.author.voice.channel.category.id
+            current_voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                current_voice_channel = ctx.author.voice.channel
+                current_voice_channel_id = current_voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+
             if self.isAdmin(ctx):
-                owner_id = self.db.get_channel_owner_id(guildId=guildID, channelId=current_voice_channel_id)
+                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=current_voice_channel_id)
                 owner = self.bot.get_user(owner_id)
                 if not owner:
                     owner = await self.bot.fetch_user(owner_id)
-            default_role = self.db.get_default_role(guildId=guildID, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
 
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role ]) == 1
             if not validRole:
                 default_role = ctx.guild.default_role.name
             print(f"Lock: default role: {default_role}")
-            owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guildID,ownerId=owner_id)
+            owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
             is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
             if not is_owner and not self.isAdmin(ctx):
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to lock it.', delete_after=5)
             else:
-                channel = self.bot.get_channel(current_voice_channel_id)
-                if not channel:
-                    channel = await self.bot.fetch_channel(current_voice_channel_id)
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-                text_channel_id = self.db.get_text_channel_id(guildId=guildID, voiceChannelId=current_voice_channel_id)
+                text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=current_voice_channel_id)
                 if text_channel_id:
-                    textChannel = self.bot.get_channel(text_channel_id)
-                    if not textChannel:
-                        textChannel = await self.bot.fetch_channel(text_channel_id)
-                    if textChannel:
-                        await textChannel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
+                    text_channel = self.bot.get_channel(text_channel_id)
+                    if not text_channel:
+                        text_channel = await self.bot.fetch_channel(text_channel_id)
+                    if text_channel:
+                        await text_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                         if everyone:
-                            await textChannel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
+                            await text_channel.set_permissions(everyone, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
 
-                    await channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    await channel.set_permissions(everyone, connect=False, view_channel=True, stream=False)
+                    await current_voice_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await current_voice_channel.set_permissions(everyone, connect=False, view_channel=True, stream=False)
                     if role:
-                        await channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=True, stream=False)
-                        if textChannel:
-                            await textChannel.set_permissions(role, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
+                        await current_voice_channel.set_permissions(role, connect=False, read_messages=False, send_messages=False, view_channel=True, stream=False)
+                        if text_channel:
+                            await text_channel.set_permissions(role, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
 
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
 
     @voice.command()
     async def unlock(self, ctx, role: discord.Role = None):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        guildID = ctx.guild.id
-        category_id = ctx.author.voice.channel.category.id
-        channel_id = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
         try:
-            # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to unlock it.', delete_after=5)
+            owner_id = ctx.author.id
+            owner = ctx.author
+            guild_id = ctx.guild.id
+            category_id = ctx.author.voice.channel.category.id
+            current_voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                current_voice_channel = ctx.author.voice.channel
+                current_voice_channel_id = current_voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
                 return
 
-            c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-            userSettings = c.fetchone()
-            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-            guildSettings = c.fetchone()
-            if userSettings:
-                default_role = userSettings[3]
-            else:
-                if guildSettings:
-                    default_role = guildSettings[3] or self.settings.default_role
-                else:
-                    default_role = self.settings.default_role
+            if self.isAdmin(ctx):
+                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=current_voice_channel_id)
+                owner = self.bot.get_user(owner_id)
+                if not owner:
+                    owner = await self.bot.fetch_user(owner_id)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
 
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role ]) == 1
             if not validRole:
                 default_role = ctx.guild.default_role.name
-
-            print(f"Unlock: default role: {default_role}")
-
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? and guildID = ?", (aid, guildID,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None:
-                await self.sendEmbed(ctx.channel, "Channel Unlock", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            print(f"Lock: default role: {default_role}")
+            owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
+            is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
+            if not is_owner and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} You do not own this channel, and do not have permissions to lock it.', delete_after=5)
             else:
-                channelID = voiceGroup[0]
                 everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-                channel = self.bot.get_channel(channelID)
-
-                c.execute("SELECT channelID FROM textChannel WHERE userID = ? AND guildID = ? AND voiceID = ?", (aid, guildID, channelID))
-                textGroup = c.fetchone()
-                textChannel = None
-                if channel:
-                    if textGroup:
-                        textChannel = self.bot.get_channel(textGroup[0])
-                    if textChannel:
-                        await textChannel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=False)
+                text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=current_voice_channel_id)
+                if text_channel_id:
+                    text_channel = self.bot.get_channel(text_channel_id)
+                    if not text_channel:
+                        text_channel = await self.bot.fetch_channel(text_channel_id)
+                    if text_channel:
+                        await text_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                         if everyone:
-                          await textChannel.set_permissions(everyone, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
+                            await text_channel.set_permissions(everyone, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
-                    await channel.set_permissions(ctx.message.author, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
-                    if everyone:
-                        await channel.set_permissions(everyone, connect=True, view_channel=True, stream=True)
+                    await current_voice_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await current_voice_channel.set_permissions(everyone, connect=True, view_channel=True, stream=True)
                     if role:
-                        await channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
-                        if textChannel:
-                            await textChannel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
+                        await current_voice_channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+                        if text_channel:
+                            await text_channel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
-                await self.sendEmbed(ctx.channel, "Channel Unlock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
 
     @voice.command(aliases=["allow"])
@@ -1111,7 +1121,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1156,97 +1166,133 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
 
     @voice.command()
     async def limit(self, ctx, limit):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        guildID = ctx.guild.id
-        category_id = ctx.author.voice.channel.category.id
-        channel_id = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
         try:
-            # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+            self.db.open()
+            guild_id = ctx.guild.id
+            author = ctx.author
+            owner = ctx.author
+            owner_id = owner.id
+            category_id = ctx.author.voice.channel.category.id
+
+            channel_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = owner.voice.channel
+                voice_channel_id = voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if self.isAdmin(ctx) or owner_id == author.id:
+                owner = self.bot.get_user(owner_id)
+                if not owner:
+                    owner = await self.bot.fetch_user(owner_id)
+            else:
+                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention} You are not an admin, nor are you the owner of this channel.', delete_after=5)
                 return
 
-            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-            guildSettings = c.fetchone()
-            default_role = self.settings.default_role
-            if guildSettings:
-                default_role = guildSettings[3] or self.settings.default_role
-
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+            await voice_channel.edit(user_limit=limit)
+            await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
+            category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+            if user_settings:
+                self.db.update_user_limit(guildId=guild_id, userId=owner_id, channelLimit=limit)
             else:
-                channelID = voiceGroup[0]
-                channel = self.bot.get_channel(channelID)
-
-                await channel.edit(user_limit=limit)
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
-                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-                voiceGroup = c.fetchone()
-                if voiceGroup is None:
-                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)",(ctx.guild.id, aid, f"{ctx.author.name}'s Channel'", limit, self.BITRATE_DEFAULT, default_role))
-                else:
-                    c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, aid, guildID,))
+                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=limit, bitrate=category_settings.bitrate, defaultRole=default_role)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
+        # conn = sqlite3.connect(self.settings.db_path)
+        # c = conn.cursor()
+        # aid = ctx.author.id
+        # guildID = ctx.guild.id
+        # category_id = ctx.author.voice.channel.category.id
+        # channel_id = None
+        # if self.isInVoiceChannel(ctx):
+        #     channel_id = ctx.author.voice.channel.id
+        # else:
+        #     await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+        #     return
+        # try:
+        #     # get the channel owner, in case this is an admin running the command.
+        #     c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
+        #     channelOwnerGroup = c.fetchone()
+        #     if channelOwnerGroup:
+        #         if channelOwnerGroup[0] != aid:
+        #             aid = channelOwnerGroup[0]
+        #     if not self.isAdmin(ctx) and ctx.author.id != aid:
+        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+        #         return
+
+        #     c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
+        #     guildSettings = c.fetchone()
+        #     default_role = self.settings.default_role
+        #     if guildSettings:
+        #         default_role = guildSettings[3] or self.settings.default_role
+
+        #     c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
+        #     voiceGroup = c.fetchone()
+        #     if voiceGroup is None and not self.isAdmin(ctx):
+        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
+        #     else:
+        #         channelID = voiceGroup[0]
+        #         channel = self.bot.get_channel(channelID)
+
+        #         await channel.edit(user_limit=limit)
+        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
+        #         c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
+        #         voiceGroup = c.fetchone()
+        #         if voiceGroup is None:
+        #             c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)",(ctx.guild.id, aid, f"{ctx.author.name}'s Channel'", limit, self.BITRATE_DEFAULT, default_role))
+        #         else:
+        #             c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, aid, guildID,))
+        # except Exception as ex:
+        #     print(ex)
+        #     traceback.print_exc()
+        #     await self.notify_of_error(ctx)
+        # finally:
+        #     conn.commit()
+        #     conn.close()
+        #     await ctx.message.delete()
 
     @voice.command()
     async def bitrate(self, ctx, bitrate: int = 64):
-        conn = sqlite3.connect(self.settings.db_path)
-        c = conn.cursor()
-        aid = ctx.author.id
-        guildID = ctx.guild.id
-        category_id = ctx.author.voice.channel.category.id
-        bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
-        bitrate_min = 8
-        channel_id = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
         try:
-            # get the channel owner, in case this is an admin running the command.
-            c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-            channelOwnerGroup = c.fetchone()
-            if channelOwnerGroup:
-                if channelOwnerGroup[0] != aid:
-                    aid = channelOwnerGroup[0]
-            if not self.isAdmin(ctx) and ctx.author.id != aid:
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+            self.db.open()
+            guild_id = ctx.guild.id
+            author = ctx.author
+            owner = ctx.author
+            owner_id = owner.id
+            category_id = ctx.author.voice.channel.category.id
+            bitrate_min = 8
+            bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+
+            channel_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = owner.voice.channel
+                voice_channel_id = voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{author.mention} You must be in a voice channel to use this command.', delete_after=5)
                 return
-            c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-            guildSettings = c.fetchone()
-            default_role = self.settings.default_role
-            if guildSettings:
-                default_role = guildSettings[3] or self.settings.default_role
-            print(f"Bitrate Limit: {bitrate_limit}")
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if self.isAdmin(ctx) or owner_id == author.id:
+                owner = self.bot.get_user(owner_id)
+                if not owner:
+                    owner = await self.bot.fetch_user(owner_id)
+            else:
+                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention} You are not an admin, nor are you the owner of this channel.', delete_after=5)
+                return
             br_set = int(bitrate)
 
             if br_set > bitrate_limit:
@@ -1254,34 +1300,26 @@ class voice(commands.Cog):
                 br_set = bitrate_limit
             elif br_set < bitrate_min:
                 await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, your bitrate is below the bitrate minimum of {bitrate_min}kbps. I will apply the the minimum instead.", delete_after=5)
-
                 br_set = bitrate_min
 
-            c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
-            voiceGroup = c.fetchone()
-            if voiceGroup is None and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, you don't own a channel.", delete_after=5)
+            br = br_set * 1000
+            await voice_channel.edit(bitrate=br)
+            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
+            category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+            if user_settings:
+                self.db.update_user_bitrate(guildId=guild_id, userId=owner_id, bitrate=br_set)
             else:
-                channelID = ctx.author.voice.channel.id
-                channel = self.bot.get_channel(channelID)
-                br = br_set * 1000
-                await channel.edit(bitrate=br)
-                await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
-                # see if we have user settings
-                c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-                voiceGroup = c.fetchone()
-                if voiceGroup is None:
-                    c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (ctx.guild.id, aid, f"{ctx.author.name}'s Channel", 0, br_set, default_role))
-                else:
-                    c.execute("UPDATE userSettings SET bitrate = ? WHERE userID = ? AND guildID = ?", (br_set, aid, guildID,))
+                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=category_settings.channel_limit, bitrate=br_set, defaultRole=default_role)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
-            conn.commit()
-            conn.close()
+            self.db.close()
             await ctx.message.delete()
+
 
     # @voice.command()
     # async def game(self, ctx):
@@ -1357,6 +1395,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+            print(json.dumps(category_settings.__dict__))
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
             is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel.id]) >= 1
             if not is_tracked_channel:
@@ -1375,7 +1414,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1417,7 +1456,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             print("close db")
             self.db.close()
@@ -1444,7 +1483,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1472,7 +1511,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1505,7 +1544,7 @@ class voice(commands.Cog):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-            self.notify_of_error(ctx)
+            await self.notify_of_error(ctx)
         finally:
             self.db.close()
             await ctx.message.delete()
@@ -1554,7 +1593,7 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
-                self.notify_of_error(ctx)
+                await self.notify_of_error(ctx)
             finally:
                 self.db.close()
                 await ctx.message.delete()

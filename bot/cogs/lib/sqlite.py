@@ -1,6 +1,8 @@
 import sqlite3
 import traceback
 import json
+import glob
+from typing import final
 
 from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
@@ -9,6 +11,7 @@ from . import utils
 class SqliteDatabase(database.Database):
     def __init__(self):
         self.settings = settings.Settings()
+        self.connection = None
         pass
     def open(self):
         self.connection = sqlite3.connect(self.settings.db_path)
@@ -30,7 +33,7 @@ class SqliteDatabase(database.Database):
                 self.open()
             c = self.connection.cursor()
             c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ?", (guildId,))
-            items = c.fetchall()
+            items = [i[0] for i in c.fetchall()]
             return items
         except Exception as ex:
             print(ex)
@@ -134,6 +137,39 @@ class SqliteDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
+    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            stageInt = 0
+            if useStage:
+                stageInt = 1
+
+            c.execute("UPDATE guild SET ownerID = ?, voiceChannelID = ?, voiceCategoryID = ?, useStage = ? WHERE guildID = ? AND voiceChannelID = ?", (
+                                ownerId, createChannelId, categoryId, stageInt, guildId, createChannelId))
+            self.connection.commit()
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            stageInt = 0
+            if useStage:
+                stageInt = 1
+            c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
+            self.connection.commit()
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+
     def get_guild_settings(self, guildId):
         try:
             if self.connection is None:
@@ -174,6 +210,7 @@ class SqliteDatabase(database.Database):
                 c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
             else:
                 c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
+            self.connection.commit()
             return True
         except Exception as ex:
             print(ex)
@@ -204,6 +241,7 @@ class SqliteDatabase(database.Database):
                 self.open()
             c = self.connection.cursor()
             c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
+
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -211,7 +249,33 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+    def update_user_limit(self, guildId, userId, limit: int = 0):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, userId, guildId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
+    def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("UPDATE userSettings SET bitrate = ? WHERE userID = ? AND guildID = ?", (bitrate, userId, guildId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
         try:
             if self.connection is None:
                 self.open()
@@ -394,3 +458,119 @@ class SqliteDatabase(database.Database):
         finally:
             if self.connection:
                 self.connection.commit()
+
+    def UPDATE_SCHEMA(self, newDBVersion: int):
+        try:
+            print(f"INITIALIZE SQLITE")
+            if self.connection is None:
+                self.open()
+            dbversion = utils.get_scalar_result(self.connection, "PRAGMA user_version", 0)
+            c = self.connection.cursor()
+            print(f"LOADED SCHEMA VERSION: {dbversion}")
+            print(f"CURRENT SCHEMA VERSION: {newDBVersion}")
+            for x in range(0, newDBVersion+1):
+                files = glob.glob(f"sql/{x:04d}.*.sql")
+                for f in files:
+                    if dbversion == 0 or dbversion < x:
+                        print(f"Applying SQL: {f}")
+                        file = open(f, mode='r')
+                        contents = file.read()
+                        c.executescript(contents)
+                        self.connection.commit()
+                        file.close()
+                    else:
+                        print(f"Skipping SQL: {f}")
+            if dbversion < newDBVersion:
+                print(f"Updating SCHEMA Version to {newDBVersion}")
+                c.execute(f"PRAGMA user_version = {newDBVersion}")
+                self.connection.commit()
+            c.close()
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            self.close()
+
+    def get_all_from_guild_table(self):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            result = []
+            rows = c.execute("SELECT guildID, ownerID, voiceChannelID, voiceCategoryID, useStage FROM guild")
+            for r in rows:
+                result.append({ "guildID": int(r[0]), "ownerID": int(r[1]), "voiceChannelID": int(r[2]), "voiceCategoryID": int(r[3]), "useStage": bool(r[4]) })
+            return result
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_all_from_guild_category_settings_table(self):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            result = []
+            rows = c.execute("SELECT guildID, voiceCategoryID, channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings")
+            for r in rows:
+                result.append({ "guildID": int(r[0]), "voiceCategoryID": int(r[1]), "channelLimit": int(r[2]), "channelLocked": bool(r[3]), "bitrate": int(r[4]), "defaultRole": str(r[5]) })
+            return result
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_all_from_user_settings_table(self):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            result = []
+            rows = c.execute("SELECT guildID, userID, channelName, channelLimit, bitrate, defaultRole FROM userSettings")
+            for r in rows:
+                result.append({ "guildID": int(r[0]), "userID": int(r[1]), "channelName": str(r[2]), "channelLimit": int(r[3]), "bitrate": int(r[4]), "defaultRole": str(r[5]) })
+            return result
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_all_from_text_channel_table(self):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            result = []
+            rows = c.execute("SELECT guildID, userID, channelID, voiceID FROM textChannel")
+            for r in rows:
+                result.append({ "guildID": int(r[0]), "userID": int(r[1]), "channelID": int(r[2]), "voiceID": int(r[3]) })
+            return result
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_all_from_voice_channel_table(self):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.cursor()
+            result = []
+            rows = c.execute("SELECT guildID, userID, voiceID FROM voiceChannel")
+            for r in rows:
+                result.append({ "guildID": int(r[0]), "userID": int(r[1]), "voiceID": int(r[3]) })
+            return result
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
