@@ -13,7 +13,8 @@ import glob
 import typing
 from .cogs.lib import utils
 from .cogs.lib import settings
-
+from .cogs.lib import sqlite
+from .cogs.lib import mongo
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
     DBVERSION = 3 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
@@ -48,34 +49,11 @@ class VoiceCreate():
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
-        conn = sqlite3.connect(self.settings.db_path)
-        try:
-            dbversion = utils.get_scalar_result(conn, "PRAGMA user_version", 0)
-            c = conn.cursor()
-            print(f"LOADED SCHEMA VERSION: {dbversion}")
-            print(f"CURRENT SCHEMA VERSION: {self.DBVERSION}")
-            for x in range(0, self.DBVERSION+1):
-                files = glob.glob(f"sql/{x:04d}.*.sql")
-                for f in files:
-                    if dbversion == 0 or dbversion < x:
-                        print(f"Applying SQL: {f}")
-                        file = open(f, mode='r')
-                        contents = file.read()
-                        c.executescript(contents)
-                        conn.commit()
-                        file.close()
-                    else:
-                        print(f"Skipping SQL: {f}")
-            if dbversion < self.DBVERSION:
-                print(f"Updating SCHEMA Version to {self.DBVERSION}")
-                c.execute(f"PRAGMA user_version = {self.DBVERSION}")
-                conn.commit()
-            c.close()
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            conn.close()
+        sql3db = sqlite.SqliteDatabase()
+        sql3db.UPDATE_SCHEMA(self.DBVERSION)
+        mdb = mongo.MongoDatabase()
+        mdb.RESET_MIGRATION()
+        mdb.UPDATE_SCHEMA(self.DBVERSION)
 
     def get_prefix(self, client, message):
         prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix

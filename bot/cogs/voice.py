@@ -17,8 +17,8 @@ import glob
 import typing
 from .lib import utils
 from .lib import settings
-from .lib import sqlite
-
+# from .lib import sqlite
+from .lib import mongo
 class EmbedField():
     def __init__(self, name, value):
         self.name = name
@@ -30,7 +30,8 @@ class voice(commands.Cog):
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = sqlite.SqliteDatabase()
+        # self.db = sqlite.SqliteDatabase()
+        self.db = mongo.MongoDatabase()
 
     async def clean_up_tracked_channels(self, guildID):
         print("Clean up tracked channels")
@@ -38,13 +39,20 @@ class voice(commands.Cog):
         try:
             trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
             for vc in trackedChannels:
-                voiceChannelId = vc[0]
+                print(vc)
+                textChannel = None
+                voiceChannelId = vc
                 if voiceChannelId:
                     voiceChannel = self.bot.get_channel(voiceChannelId)
+                    if not voiceChannel:
+                        voiceChannel = await self.bot.fetch_channel(voiceChannelId)
 
                     textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
+                    print(f"TEXTCHANNELID: {textChannelId}")
                     if textChannelId:
                         textChannel = self.bot.get_channel(textChannelId)
+                        if not textChannel:
+                            textChannelId = await self.bot.fetch_channel(textChannelId)
 
                     if voiceChannel:
                         if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
@@ -111,9 +119,12 @@ class voice(commands.Cog):
                                     await textChannel.edit(name=after.name)
                                     await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
                             if after.type == discord.ChannelType.text:
+                                voiceChannel = None
                                 voice_channel_id = self.db.get_voice_channel_id_from_text_channel(guildId=guildID, textChannelId=after.id)
                                 if voice_channel_id:
-                                    voiceChannel = self.bot.get_channel(int(voice_channel_id))
+                                    voiceChannel = self.bot.get_channel(voice_channel_id)
+                                    if not voiceChannel:
+                                        voiceChannel = await self.bot.fetch_channel(voice_channel_id)
                                 if voiceChannel:
                                     print(f"Change Text Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
@@ -693,7 +704,16 @@ class voice(commands.Cog):
                         msg = m.content
                         # await m.delete()
                         return utils.str2bool(msg)
-
+                def check_role(m):
+                    if(check(m)):
+                        if m.content == "DEFAULT":
+                            return discord.utils.get(m.guild.roles, name=self.settings.default_role or "everyone")
+                        # is valid role?
+                        role = discord.utils.get(m.guild.roles,name=m.content)
+                        print(f"ROLE: {role}")
+                        if role:
+                            return True
+                        return False
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
                 if category is None:
@@ -710,12 +730,13 @@ class voice(commands.Cog):
 
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
-                    channel = await self.bot.wait_for('message', check=check, timeout=60.0)
+                    channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
                 else:
                     try:
-                        channel = await ctx.guild.create_voice_channel(channel.content, category=category)
+                        channel = await ctx.guild.create_voice_channel(channelName.content, category=category)
+                        await channelName.delete()
 
                         guild_settings = self.db.get_guild_settings(guildId=guild_id)
 
@@ -726,6 +747,39 @@ class voice(commands.Cog):
                                 self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                         else:
                             self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+
+                        guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
+                        if not guild_category_settings:
+
+                            # ASK SET DEFAULT CHANNEL LIMIT
+
+                            # ASK SET DEFAULT CHANNEL LOCKED
+                            # defaultLocked = False
+                            # await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            # try:
+                            #     defaultLockedResponse = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                            # except asyncio.TimeoutError:
+                            #     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                            #     return
+                            # else:
+                            #     defaultLocked = defaultLockedResponse
+                            # ASK DEFAULT ROLE
+                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter Name of the default role you want to use. This is the base role that will have access to the channels\n\n ENTER: DEFAULT to use the default role**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            defaultRoleResp = None
+                            defaultRole = self.settings.default_role
+                            try:
+                                defaultRoleResp = await self.bot.wait_for('message', check=check_role, timeout=60)
+                            except asyncio.TimeoutError:
+                                defaultRole = self.settings.default_role
+                            else:
+                                if defaultRoleResp.content == "DEFAULT":
+                                    defaultRole = discord.utils.get(ctx.guild.roles, name=self.settings.default_role or "everyone").name
+                                else:
+                                    defaultRole = discord.utils.get(ctx.guild.roles, name=defaultRoleResp.content).name
+                            await defaultRoleResp.delete()
+
+                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=0, channelLocked=False, bitrate=self.BITRATE_DEFAULT, defaultRole=defaultRole)
+
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                     except Exception as e:
                         traceback.print_exc()
@@ -1341,6 +1395,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+            print(json.dumps(category_settings.__dict__))
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
             is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel.id]) >= 1
             if not is_tracked_channel:

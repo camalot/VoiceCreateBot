@@ -68,3 +68,17 @@ class Database():
         pass
     def set_default_role_for_category(self, guildId, categoryId, defaultRole):
         pass
+
+    def get_all_from_guild_table(self):
+        pass
+    def get_all_from_guild_category_settings_table(self):
+        pass
+    def get_all_from_user_settings_table(self):
+        pass
+    def get_all_from_text_channel_table(self):
+        pass
+    def get_all_from_voice_channel_table(self):
+        pass
+
+    def UPDATE_SCHEMA(self):
+        pass
