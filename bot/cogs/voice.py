@@ -963,7 +963,7 @@ class voice(commands.Cog):
                 author = user
             guild_id = ctx.guild.id
             self.db.clean_user_settings(guildId=guild_id, userId=author.id)
-            await self.sendEmbed(ctx.channel, "Reset User Settings", f"User Settings for '{dataUser.mention}' has been purged from database.", delete_after=5)
+            await self.sendEmbed(ctx.channel, "Reset User Settings", f"{author.mention}, I have reset your settings.", delete_after=5)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
