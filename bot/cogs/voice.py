@@ -702,8 +702,15 @@ class voice(commands.Cog):
                 def check_yes_no(m):
                     if(check(m)):
                         msg = m.content
-                        # await m.delete()
-                        return utils.str2bool(msg)
+                        result = utils.str2bool(msg)
+                        return result == True or result == False
+                def check_limit(m):
+                    if check(m):
+                        if m.content.isnumeric():
+                            val = int(m.content)
+                            return val >= 0 and val <= 100
+                        else:
+                            return False
                 def check_role(m):
                     if(check(m)):
                         if m.content == "DEFAULT":
@@ -713,6 +720,14 @@ class voice(commands.Cog):
                         print(f"ROLE: {role}")
                         if role:
                             return True
+                        return False
+                def check_bitrate(m):
+                    if check(m):
+                        if m.content.isnumeric():
+                            bitrate_min = 8
+                            bitrate_limit = int(round(m.guild.bitrate_limit / 1000))
+                            set_br = int(m.content)
+                            return set_br == 0 or (set_br >= bitrate_min and set_br <= bitrate_limit)
                         return False
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
@@ -752,17 +767,45 @@ class voice(commands.Cog):
                         if not guild_category_settings:
 
                             # ASK SET DEFAULT CHANNEL LIMIT
-
+                            defaultLimit = 0
+                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Set the default channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            try:
+                                defaultLimitResp = await self.bot.wait_for('message', check=check_limit, timeout=60)
+                            except asyncio.TimeoutError:
+                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                                return
+                            else:
+                                defaultLimit = int(defaultLimitResp.content)
+                                await defaultLimitResp.delete()
                             # ASK SET DEFAULT CHANNEL LOCKED
-                            # defaultLocked = False
-                            # await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
-                            # try:
-                            #     defaultLockedResponse = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
-                            # except asyncio.TimeoutError:
-                            #     await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                            #     return
-                            # else:
-                            #     defaultLocked = defaultLockedResponse
+                            defaultLocked = False
+                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            try:
+                                defaultLockedResponse = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                            except asyncio.TimeoutError:
+                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                                return
+                            else:
+                                defaultLocked = utils.str2bool(defaultLockedResponse.content)
+                                await defaultLockedResponse.delete()
+
+                            # ASK SET DEFAULT BITRATE
+                            defaultBitrate = 64
+
+                            bitrate_min = 8
+                            bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'**Set the default channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            try:
+                                bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
+                            except asyncio.TimeoutError:
+                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                                return
+                            else:
+                                defaultBitrate = int(bitrateResp.content)
+                                if defaultBitrate == 0:
+                                    defaultBitrate = self.BITRATE_DEFAULT
+                                await bitrateResp.delete()
+
                             # ASK DEFAULT ROLE
                             await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter Name of the default role you want to use. This is the base role that will have access to the channels\n\n ENTER: DEFAULT to use the default role**', delete_after=60, footer="**You have 60 seconds to answer**")
                             defaultRoleResp = None
@@ -778,8 +821,10 @@ class voice(commands.Cog):
                                     defaultRole = discord.utils.get(ctx.guild.roles, name=defaultRoleResp.content).name
                             await defaultRoleResp.delete()
 
-                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=0, channelLocked=False, bitrate=self.BITRATE_DEFAULT, defaultRole=defaultRole)
-
+                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=defaultRole)
+                        else:
+                            print(f"GUILD CATEGORY SETTINGS FOUND")
+                            print(json.dumps(guild_category_settings.__dict__))
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                     except Exception as e:
                         traceback.print_exc()
@@ -851,29 +896,6 @@ class voice(commands.Cog):
             finally:
                 self.db.close()
                 await ctx.message.delete()
-
-            # guildID = ctx.guild.id
-            # conn = sqlite3.connect(self.settings.db_path)
-            # c = conn.cursor()
-            # try:
-            #     category = await self.set_role_ask_category(ctx)
-            #     if category:
-            #         print(category)
-            #         c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category.id,))
-            #         guildSettings = c.fetchone()
-            #         if guildSettings:
-            #             c.execute("UPDATE guildCategorySettings SET defaultRole = ? WHERE WHERE guildID = ? and voiceCategoryID = ?", (temp_default_role, guildID, category.id))
-            #         else:
-            #             await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
-            #     else:
-            #         print("no category found")
-            # except Exception as ex:
-            #     print(ex)
-            #     traceback.print_exc()
-            # finally:
-            #     conn.commit()
-            #     conn.close()
-            #     await ctx.message.delete()
 
     @voice.command()
     async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
