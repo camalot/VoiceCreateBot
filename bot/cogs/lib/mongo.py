@@ -381,6 +381,8 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ? AND channelID = ?", (guildId, voiceChannelId, textChannelId,))
+            tracked = self.connection.tracked_channels.find_one({"textChannel": { "id": textChannelId }, "voiceChannel": { "id" : voiceChannelId }})
+            self.connection.tracked_channels_history.insert_one(tracked)
             self.connection.textChannel.delete_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
         except Exception as ex:
             print(ex)
