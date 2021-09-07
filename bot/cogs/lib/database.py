@@ -32,6 +32,8 @@ class Database():
         pass
     def get_guild_settings(self, guildId):
         pass
+    def delete_guild_create_channel(self, guildId, channelId, categoryId):
+        pass
     def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
         pass
     def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):

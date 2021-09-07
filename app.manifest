@@ -17,8 +17,8 @@
 	"commands": {
 		"name": {
 			"help": "**Change your channel name**",
-			"usage": ".voice name <name>",
-			"example": ".voice name EU 5kd+",
+			"usage": ".voice name [name]",
+			"example": ".voice name my awesome channel",
 			"admin": false,
 			"aliases": []
 		},

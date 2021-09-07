@@ -187,6 +187,19 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def delete_guild_create_channel(self, guildId, channelId, categoryId):
+        try:
+            if self.connection is None:
+                self.open()
+            c = self.connection.cursor()
+            c.execute("DELETE FROM guild WHERE guildID = ? AND voiceChannelID = ? AND voiceCategoryID = ?", (guildId, channelId, categoryId,))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.connection.commit()
+        pass
     def get_use_stage_on_create(self, guildId, channelId, categoryId):
         try:
             if self.connection is None:
@@ -218,8 +231,6 @@ class SqliteDatabase(database.Database):
             return False
     def get_guild_category_settings(self, guildId, categoryId):
         try:
-            print(f"category: {categoryId}")
-            print(f"guild: {guildId}")
             if self.connection is None:
                 self.open()
             c = self.connection.cursor()
@@ -234,7 +245,6 @@ class SqliteDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         pass
-
     def update_user_channel_name(self, guildId, userId, channelName):
         try:
             if self.connection is None:
@@ -469,7 +479,7 @@ class SqliteDatabase(database.Database):
             print(f"LOADED SCHEMA VERSION: {dbversion}")
             print(f"CURRENT SCHEMA VERSION: {newDBVersion}")
             for x in range(0, newDBVersion+1):
-                files = glob.glob(f"sql/{x:04d}.*.sql")
+                files = glob.glob(f"database/sql/{x:04d}.*.sql")
                 for f in files:
                     if dbversion == 0 or dbversion < x:
                         print(f"Applying SQL: {f}")
