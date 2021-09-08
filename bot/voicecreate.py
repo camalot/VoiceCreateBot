@@ -36,7 +36,8 @@ class VoiceCreate():
 
         self.bot = commands.Bot(
             command_prefix=self.get_prefix,
-            case_insensitive=True
+            case_insensitive=True,
+            intents=discord.Intents.all()
         )
 
         initial_extensions = ['bot.cogs.events', 'bot.cogs.voice']
@@ -59,7 +60,7 @@ class VoiceCreate():
 
     def get_prefix(self, client, message):
         # get the prefix for the guild.
-        
+
         prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         if not message.guild:
             prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
