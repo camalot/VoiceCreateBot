@@ -255,7 +255,21 @@ class voice(commands.Cog):
             except Exception as ex:
                 print(ex)
                 traceback.print_exc()
-
+    @voice.command()
+    async def test(self, ctx):
+        try:
+            print("AUTHOR ACTIVITIES START")
+            for i in ctx.author.activities:
+                print(i.name)
+                print(i.type)
+                print(type(i))
+            print("AUTHOR ACTIVITIES END")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
+        finally:
+            await ctx.message.delete()
     @voice.command()
     async def version(self, ctx):
         appName = utils.dict_get(self.settings.__dict__, "name", default_value = "Voice Create Bot")
@@ -1451,20 +1465,17 @@ class voice(commands.Cog):
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
             if owner:
-                if owner.activity:
-                    if isinstance(owner.activity,discord.Game):
-                        name = owner.activity.name
-                    elif isinstance(owner.activity, discord.Streaming):
-                        name = owner.activity.game
-                    else:
-                        print(f"activity: {owner.activity}")
-                elif owner.activities:
-                    game_activity = [a for a in owner.activities if isinstance(a, discord.Game)]
-                    stream_activity = [a for a in owner.activities if isinstance(a, discord.Streaming)]
+
+                if owner.activities:
+                    game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                    stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
                     if game_activity:
-                        name = game_activity.name
+                        if len(game_activity) > 1:
+                            pass
+                        else:
+                            name = game_activity[0].name
                     elif stream_activity:
-                        name = stream_activity.game
+                        name = stream_activity[0].game
                     else:
                         for a in owner.activities:
                             print(f"activity: {a}")
@@ -1472,15 +1483,15 @@ class voice(commands.Cog):
                     print(f"owner.activity is None")
 
             if name:
-                self.name(ctx, name=name)
+                await self.name(ctx, name=name)
+                # message deleted by the name call.
             else:
                 await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
+                await ctx.message.delete()
         except Exception as ex:
             print(ex)
             traceback.print_exc()
             await self.notify_of_error(ctx)
-        finally:
-            await ctx.message.delete()
 
     @voice.command()
     async def name(self, ctx, *, name: str = None):
