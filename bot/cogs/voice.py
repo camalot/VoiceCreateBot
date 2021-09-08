@@ -45,6 +45,7 @@ class voice(commands.Cog):
                     cc_channel = await self.get_or_fetch_channel(cc.channel_id)
                     if not cc_channel:
                         # delete this channel as it no longer exists.
+                        print(f"Deleting channel {cc.channel_id}")
                         self.db.delete_guild_create_channel(guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id)
                         pass
 
@@ -1425,31 +1426,43 @@ class voice(commands.Cog):
 
     @voice.command()
     async def game(self, ctx):
-        author = ctx.author
-        author_id = author.id
-        guild_id = ctx.guild.id
-        channel_id = None
-        name = None
-        if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
-        owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
-        if owner_id != author_id and not self.isAdmin(ctx):
-            await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
-            return
-        owner = self.get_or_fetch_user(owner_id)
-        if owner:
-            if isinstance(owner.activity,discord.Game):
-                name = owner.activity.name
-            elif isinstance(owner.activity, discord.Streaming):
-                name = owner.activity.game
+        try:
+            author = ctx.author
+            author_id = author.id
+            guild_id = ctx.guild.id
+            channel_id = None
+            name = None
+            if self.isInVoiceChannel(ctx):
+                channel_id = ctx.author.voice.channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+            if owner_id != author_id and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                return
+            owner = await self.get_or_fetch_member(ctx.guild, owner_id)
+            if owner:
+                if owner.activity:
+                    if isinstance(owner.activity,discord.Game):
+                        name = owner.activity.name
+                    elif isinstance(owner.activity, discord.Streaming):
+                        name = owner.activity.game
+                    else:
+                        print(f"{owner.activity}")
+                else:
+                    print(f"owner.activity is None")
 
-        if name:
-            self.name(ctx, name=name)
-        else:
-            await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
+            if name:
+                self.name(ctx, name=name)
+            else:
+                await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
+        finally:
+            await ctx.message.delete()
 
     @voice.command()
     async def name(self, ctx, *, name: str = None):
@@ -1778,15 +1791,40 @@ class voice(commands.Cog):
         await channel.send(embed=embed, delete_after=delete_after)
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, "Something Went Wrong", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry. 😢', delete_after=30)
+
     async def get_or_fetch_channel(self, channelId: int):
-        chan = await self.bot.get_channel(channelId)
-        if not chan:
-            chan = await self.bot.fetch_channel(channelId)
-        return chan
+        try:
+            if channelId:
+                chan = self.bot.get_channel(channelId)
+                if not chan:
+                    chan = await self.bot.fetch_channel(channelId)
+                return chan
+            else:
+                return  None
+        except Exception as ex:
+            print(ex)
+            return None
     async def get_or_fetch_user(self, userId: int):
-        user = self.bot.get_user(userId)
-        if not user:
-            user = await self.bot.fetch_user(userId)
-        return user
+        try:
+            if userId:
+                user = self.bot.get_user(userId)
+                if not user:
+                    user = await self.bot.fetch_user(userId)
+                return user
+            return None
+        except Exception as ex:
+            print(ex)
+            return None
+    async def get_or_fetch_member(self, guild, userId: int):
+        try:
+            if userId:
+                user = guild.get_member(userId)
+                if not user:
+                    user = await guild.fetch_member(userId)
+                return user
+            return None
+        except Exception as ex:
+            print(ex)
+            return None
 def setup(bot):
     bot.add_cog(voice(bot))

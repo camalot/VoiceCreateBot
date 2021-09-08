@@ -235,9 +235,6 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-        finally:
-            if self.connection:
-                self.connection.commit()
         pass
     def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
