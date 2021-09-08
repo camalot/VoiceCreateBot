@@ -185,6 +185,13 @@
 				"gdr"
 			]
 		},
+		"init": {
+			"help": "**Set bot for this discord**",
+			"usage": ".voice init",
+			"example": ".voice init",
+			"admin": true,
+			"aliases": []
+		},
 		"setup": {
 			"help": "**Setup a Create Voice Channel**",
 			"usage": ".voice setup",

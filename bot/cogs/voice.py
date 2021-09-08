@@ -39,7 +39,7 @@ class voice(commands.Cog):
         try:
 
             print(f"checking guild create channels")
-            guildSettings = self.db.get_guild_settings(guildId=guildID)
+            guildSettings = self.db.get_guild_create_channel_settings(guildId=guildID)
             if guildSettings and guildSettings.channels:
                 for cc in guildSettings.channels:
                     cc_channel = await self.get_or_fetch_channel(cc.channel_id)
@@ -656,15 +656,17 @@ class voice(commands.Cog):
                 fields.append({"name": "**Aliases**", "value": f"`{cmd['aliases']}`"})
 
                 await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
-
         else:
-            chunked = utils.chunk_list(list(command_list.keys()), 10)
-            pages = math.ceil(len(command_list) / 10)
+            filtered_list = command_list
+            if self.isAdmin(ctx):
+                filtered_list = [i for i in command_list if i['admin'] == True]
+            chunked = utils.chunk_list(list(filtered_list.keys()), 10)
+            pages = math.ceil(len(filtered_list) / 10)
             page = 1
             for chunk in chunked:
                 fields = list()
                 for k in chunk:
-                    cmd = command_list[k.lower()]
+                    cmd = filtered_list[k.lower()]
                     if cmd['admin']:
                         if self.isAdmin(ctx) :
                             fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
@@ -677,6 +679,56 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, f"Voice Bot Command Help ({page}/{pages})", "List of Available Commands", fields=fields)
                 page += 1
         await ctx.message.delete()
+
+    @voice.command(pass_context=True)
+    @has_permissions(administrator=True)
+    async def init(self, ctx):
+        if self.isAdmin(ctx):
+            self.db.open()
+            try:
+                author_id = ctx.author.id
+                guild_id = ctx.guild.id
+                def check_user(m):
+                    return m.author.id == author_id
+                def check_role(m):
+                    if(check_user(m)):
+                        role = discord.utils.get(m.guild.roles,name=m.content)
+                        if role:
+                            return True
+                        return False
+                # ask default role
+                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What should the default role of channels be?\n\nThis can also be changed at the Create Channel Level**', delete_after=60, footer="**You have 60 seconds to answer**")
+                try:
+                    roleResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
+                else:
+                    found_role = discord.utils.get(ctx.guild.roles, name=roleResp.content)
+                    if found_role:
+                        default_role = found_role.name
+                    else:
+                        default_role = self.settings.default_role or "everyone"
+                    await roleResp.delete()
+                # ask bot prefix?
+                prefix = "."
+                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What would you like to set for the bot prefix?\n\nExample: `.`**', delete_after=60, footer="**You have 60 seconds to answer**")
+                try:
+                    prefixResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
+                else:
+                    prefix = prefixResp.content
+                    await prefixResp.delete()
+                self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=default_role)
+                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'You have successfully initialized the bot for this discord.', delete_after=5)
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc()
+                await self.notify_of_error(ctx)
+            finally:
+                self.db.close()
+        else:
+            pass
 
     @voice.command(pass_context=True)
     @has_permissions(administrator=True)
@@ -720,6 +772,10 @@ class voice(commands.Cog):
                             set_br = int(m.content)
                             return set_br == 0 or (set_br >= bitrate_min and set_br <= bitrate_limit)
                         return False
+                guild_settings = self.db.get_guild_settings(guildId=guild_id)
+                if not guild_settings:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**', delete_after=10)
+                    return
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
                 if category is None:
@@ -744,15 +800,15 @@ class voice(commands.Cog):
                         channel = await ctx.guild.create_voice_channel(channelName.content, category=category)
                         await channelName.delete()
 
-                        guild_settings = self.db.get_guild_settings(guildId=guild_id)
+                        guild_cc_settings = self.db.get_guild_create_channel_settings(guildId=guild_id)
 
-                        if guild_settings:
-                            if len([c for c in guild_settings.channels if c.category_id == category.id and c.channel_id == channel.id]) >= 1:
-                                self.db.update_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                        if guild_cc_settings:
+                            if len([c for c in guild_cc_settings.channels if c.category_id == category.id and c.channel_id == channel.id]) >= 1:
+                                self.db.update_guild_create_channel_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                             else:
-                                self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                                self.db.insert_guild_create_channel_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
                         else:
-                            self.db.insert_guild_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
+                            self.db.insert_guild_create_channel_settings(guildId=guild_id, createChannelId=channel.id, categoryId=category.id, ownerId=author_id, useStage=useStage)
 
                         guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
                         if not guild_category_settings:
@@ -807,7 +863,7 @@ class voice(commands.Cog):
                                 defaultRole = self.settings.default_role
                             else:
                                 if defaultRoleResp.content == "DEFAULT":
-                                    defaultRole = discord.utils.get(ctx.guild.roles, name=self.settings.default_role or "everyone").name
+                                    defaultRole = discord.utils.get(ctx.guild.roles, name=guild_settings.default_role or self.settings.default_role or "everyone").name
                                 else:
                                     defaultRole = discord.utils.get(ctx.guild.roles, name=defaultRoleResp.content).name
                             await defaultRoleResp.delete()

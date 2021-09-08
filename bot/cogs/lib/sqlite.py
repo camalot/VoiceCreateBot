@@ -136,8 +136,15 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-
-    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def get_guild_settings(self, guildId):
+        pass
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+        pass
+    def insert_guild_settings(self, guildId):
+        pass
+    def update_guild_settings(self, guildId):
+        pass
+    def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -154,7 +161,7 @@ class SqliteDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def insert_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -170,7 +177,7 @@ class SqliteDatabase(database.Database):
             traceback.print_exc()
             return False
 
-    def get_guild_settings(self, guildId):
+    def get_guild_create_channel_settings(self, guildId):
         try:
             if self.connection is None:
                 self.open()
@@ -178,7 +185,7 @@ class SqliteDatabase(database.Database):
             c.execute("SELECT ownerID, voiceChannelID, voiceCategoryID, useStage FROM guild WHERE guildID = ?", (guildId,))
             rows = c.fetchall()
             if rows:
-                result = settings.GuildSettings(guildId=guildId)
+                result = settings.GuildCreateChannelSettings(guildId=guildId)
                 for r in rows:
                     result.channels.append(settings.GuildCategoryChannel(ownerId=int(r[0]), categoryId=r[2], channelId=r[1], useStage=int(r[3])))
                 return result

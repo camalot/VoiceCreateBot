@@ -211,13 +211,13 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def get_guild_settings(self, guildId):
+    def get_guild_create_channel_settings(self, guildId):
         try:
             if self.connection is None:
                 self.open()
             rows = self.connection.guild.find({"guildID": guildId})
             if rows:
-                result = settings.GuildSettings(guildId=guildId)
+                result = settings.GuildCreateChannelSettings(guildId=guildId)
                 for r in rows:
                     result.channels.append(settings.GuildCategoryChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
                 return result
@@ -239,7 +239,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
-    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -250,7 +250,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def insert_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -264,6 +264,60 @@ class MongoDatabase(database.Database):
             result = self.connection.guild.insert_one(payload)
             # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
             return result is not None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def get_guild_settings(self, guildId):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.guild_settings.find_one({"guild_id": guildId})
+            if c:
+                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'])
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+            return None
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            gs = self.get_guild_settings(guildId=guildId)
+            if gs:
+                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole)
+            else:
+                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+            return False
+    def insert_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            payload = {
+                "guild_id": guildId,
+                "prefix": prefix,
+                "default_role": defaultRole
+            }
+            self.connection.guild_settings.insert_one(payload)
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def update_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            payload = {
+                "prefix": prefix,
+                "default_role": defaultRole
+            }
+            self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+            return True
         except Exception as ex:
             print(ex)
             traceback.print_exc()
