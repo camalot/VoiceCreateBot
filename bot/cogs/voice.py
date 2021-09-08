@@ -45,7 +45,7 @@ class voice(commands.Cog):
                     cc_channel = await self.get_or_fetch_channel(cc.channel_id)
                     if not cc_channel:
                         # delete this channel as it no longer exists.
-                        print(f"Deleting channel {cc.channel_id}")
+                        print(f"Deleting create channel {cc.channel_id} as it does not exist")
                         self.db.delete_guild_create_channel(guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id)
                         pass
 
