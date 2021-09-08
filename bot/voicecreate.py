@@ -23,7 +23,7 @@ class VoiceCreate():
     # VERSION HISTORY:
     # v1: 04/30/2020
     # v2: 07/01/2020
-    #
+    # v3: 09/01/2021
 
     def __init__(self):
         self.settings = settings.Settings()
@@ -31,6 +31,8 @@ class VoiceCreate():
         print(f"DBPath: {self.settings.db_path}")
         self.initDB()
         self.client = discord.Client()
+
+        # loop all guilds and init per guild???
 
         self.bot = commands.Bot(
             command_prefix=self.get_prefix,
@@ -56,6 +58,8 @@ class VoiceCreate():
         mdb.UPDATE_SCHEMA(self.DBVERSION)
 
     def get_prefix(self, client, message):
+        # get the prefix for the guild.
+        
         prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         if not message.guild:
             prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional

@@ -17,8 +17,8 @@
 	"commands": {
 		"name": {
 			"help": "**Change your channel name**",
-			"usage": ".voice name <name>",
-			"example": ".voice name EU 5kd+",
+			"usage": ".voice name [name]",
+			"example": ".voice name my awesome channel",
 			"admin": false,
 			"aliases": []
 		},
@@ -61,6 +61,20 @@
 			"help": "**Removes the specified role or user as being a 'muted' role in the channel**",
 			"usage": ".voice unmute [@role|@user]",
 			"example": ".voice unmute @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
+		"hide": {
+			"help": "**Hides the channel from the specified user or role**",
+			"usage": ".voice hide [@role|@user]",
+			"example": ".voice hide @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
+		"show": {
+			"help": "**Shows the channel to the specified user or role**",
+			"usage": ".voice show [@role|@user]",
+			"example": ".voice show @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
@@ -184,6 +198,13 @@
 			"aliases": [
 				"gdr"
 			]
+		},
+		"init": {
+			"help": "**Set bot for this discord**",
+			"usage": ".voice init",
+			"example": ".voice init",
+			"admin": true,
+			"aliases": []
 		},
 		"setup": {
 			"help": "**Setup a Create Voice Channel**",

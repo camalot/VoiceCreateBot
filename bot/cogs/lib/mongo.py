@@ -1,4 +1,5 @@
 
+from bot.cogs.voice import voice
 from typing import final
 from pymongo import MongoClient
 import traceback
@@ -45,23 +46,25 @@ class MongoDatabase(database.Database):
             db_version = self.connection.migration.find_one({"user_version": newDBVersion})
             if not db_version:
                 # need to migrate
-                print("NEEDS SQLITE -> MONGO MIGRATION")
-                sql3 = sqlite.SqliteDatabase()
-                gd = sql3.get_all_from_guild_table()
-                if gd:
-                    self.connection.guild.insert_many(gd)
-                gcsd = sql3.get_all_from_guild_category_settings_table()
-                if gcsd:
-                    self.connection.guildCategorySettings.insert_many(gcsd)
-                usd = sql3.get_all_from_user_settings_table()
-                if usd:
-                    self.connection.userSettings.insert_many(usd)
-                vcd = sql3.get_all_from_voice_channel_table()
-                if vcd:
-                    self.connection.voiceChannel.insert_many(vcd)
-                tcd = sql3.get_all_from_text_channel_table()
-                if tcd:
-                    self.connection.textChannel.insert_many(tcd)
+                pass
+                # disable the migration because this has already been done...
+                # print("NEEDS SQLITE -> MONGO MIGRATION")
+                # sql3 = sqlite.SqliteDatabase()
+                # gd = sql3.get_all_from_guild_table()
+                # if gd:
+                #     self.connection.guild.insert_many(gd)
+                # gcsd = sql3.get_all_from_guild_category_settings_table()
+                # if gcsd:
+                #     self.connection.guildCategorySettings.insert_many(gcsd)
+                # usd = sql3.get_all_from_user_settings_table()
+                # if usd:
+                #     self.connection.userSettings.insert_many(usd)
+                # vcd = sql3.get_all_from_voice_channel_table()
+                # if vcd:
+                #     self.connection.voiceChannel.insert_many(vcd)
+                # tcd = sql3.get_all_from_text_channel_table()
+                # if tcd:
+                #     self.connection.textChannel.insert_many(tcd)
 
                 self.connection.migration.insert_one({"user_version": newDBVersion})
             else:
@@ -131,8 +134,22 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.voiceChannel.delete_many({"guildID": guildId, "voiceID": voiceChannelId})
-            self.connection.textChannel.delete_many({"guildID": guildId, "channelID": textChannelId})
+            tracked_voice = self.connection.voiceChannel.find_one({ "guildID": guildId, "voiceID": voiceChannelId})
+            if tracked_voice:
+                tracked_text = self.connection.textChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
+                text_channel_id = None
+                if tracked_text:
+                    text_channel_id = tracked_text['channelID']
+                payload = {
+                    "guild_id": guildId,
+                    "user_id": tracked_voice['userID'],
+                    "text_channel_id": text_channel_id,
+                    "voice_channel_id": tracked_voice['voiceID'],
+                    "timestamp": utils.get_timestamp()
+                }
+                self.connection.tracked_channels_history.insert_one(payload)
+            self.connection.voiceChannel.delete_one({"guildID": guildId, "voiceID": voiceChannelId})
+            self.connection.textChannel.delete_one({"guildID": guildId, "channelID": textChannelId})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -170,15 +187,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, channelId,))
-            # item = c.fetchone()
-            # if item:
-            #     return int(item[0])
             # c.execute("SELECT userID FROM textChannel WHERE guildID = ? AND channelID = ?", (guildId, channelId,))
-            # item = c.fetchone()
-            # if item:
-            #     return int(item[0])
-
-            # return None
             item = self.connection.voiceChannel.find_one({"guildID": guildId, "voiceID": channelId}, {"userID": 1})
             if item:
                 return int(item['userID'])
@@ -202,13 +211,13 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def get_guild_settings(self, guildId):
+    def get_guild_create_channel_settings(self, guildId):
         try:
             if self.connection is None:
                 self.open()
             rows = self.connection.guild.find({"guildID": guildId})
             if rows:
-                result = settings.GuildSettings(guildId=guildId)
+                result = settings.GuildCreateChannelSettings(guildId=guildId)
                 for r in rows:
                     result.channels.append(settings.GuildCategoryChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
                 return result
@@ -216,7 +225,18 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def update_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def delete_guild_create_channel(self, guildId, channelId, categoryId):
+        try:
+            if self.connection is None:
+                self.open()
+            # c = self.connection.cursor()
+            # c.execute("DELETE FROM guild WHERE guildID = ? AND voiceChannelID = ? AND voiceCategoryID = ?", (guildId, channelId, categoryId,))
+            self.connection.guild.delete_many({"guildID": guildId, "voiceChannelID": channelId, "voiceCategoryID": categoryId})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        pass
+    def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -227,7 +247,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def insert_guild_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def insert_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -241,6 +261,60 @@ class MongoDatabase(database.Database):
             result = self.connection.guild.insert_one(payload)
             # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
             return result is not None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def get_guild_settings(self, guildId):
+        try:
+            if not self.connection:
+                self.open()
+            c = self.connection.guild_settings.find_one({"guild_id": guildId})
+            if c:
+                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'])
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+            return None
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            gs = self.get_guild_settings(guildId=guildId)
+            if gs:
+                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole)
+            else:
+                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc(ex)
+            return False
+    def insert_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            payload = {
+                "guild_id": guildId,
+                "prefix": prefix,
+                "default_role": defaultRole
+            }
+            self.connection.guild_settings.insert_one(payload)
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+    def update_guild_settings(self, guildId, prefix, defaultRole):
+        try:
+            if not self.connection:
+                self.open()
+            payload = {
+                "prefix": prefix,
+                "default_role": defaultRole
+            }
+            self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+            return True
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -381,6 +455,36 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ? AND channelID = ?", (guildId, voiceChannelId, textChannelId,))
+            # tracked = self.connection.tracked_channels.find_one({"textChannel": { "id": textChannelId }, "voiceChannel": { "id" : voiceChannelId }})
+            # tracked_text = self.connection.textChannel.find_one({"channelID": textChannelId, "guildID": guildId, "voiceID": voiceChannelId })
+            # tracked_voice = self.connection.voiceChannel.fine_one({ "voiceID": voiceChannelId, "guildID": guildId })
+            # tt_payload = None
+            # tv_payload = None
+            # if tracked_text:
+            #     tt_payload = {
+            #         "id": tracked_text['channelID'],
+            #         "user_id": tracked_text['userID']
+            #     }
+            # if tracked_voice:
+            #     tv_payload = {
+            #         "id": tracked_voice['voiceID']
+            #     }
+            # payload = {
+            #     "guild_id": guildId,
+            #     "text_channel": tt_payload,
+            #     "voice_channel": tv_payload
+            # }
+
+            tracked = self.connection.textChannel.find_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
+            if tracked:
+                payload = {
+                    "guild_id": guildId,
+                    "user_id": tracked['userID'],
+                    "text_channel_id": tracked['channelID'],
+                    "voice_channel_id": tracked['voiceID'],
+                    "timestamp": utils.get_timestamp()
+                }
+                self.connection.tracked_channels_history.insert_one(payload)
             self.connection.textChannel.delete_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
         except Exception as ex:
             print(ex)
@@ -467,12 +571,15 @@ class MongoDatabase(database.Database):
             return False
     def get_default_role(self, guildId, categoryId, userId):
         try:
+            guild_settings = self.get_guild_settings(guildId=guildId)
             user_settings = self.get_user_settings(guildId=guildId, userId=userId)
             guild_category_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if user_settings:
                 return user_settings.default_role
             elif guild_category_settings:
                 return guild_category_settings.default_role
+            elif guild_settings:
+                return guild_settings.default_role
             else:
                 return None
         except Exception as ex:

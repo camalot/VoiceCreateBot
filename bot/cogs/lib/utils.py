@@ -9,6 +9,7 @@ import typing
 import requests
 import random
 import re
+import datetime
 
 def dict_get(dictionary, key, default_value = None):
     if key in dictionary.keys():
@@ -62,6 +63,10 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
+def to_timestamp(date):
+    return (date - datetime.datetime(1970,1,1)).total_seconds()
+def get_timestamp():
+    return to_timestamp(datetime.datetime.now())
 
 def load_from_gist(type, count):
     types = [ "adjectives", "nouns", "verbs" ]
