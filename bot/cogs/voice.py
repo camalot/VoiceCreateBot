@@ -747,38 +747,45 @@ class voice(commands.Cog):
 
     @voice.command()
     async def help(self, ctx, command=""):
-        command_list = self.settings.commands
-        if command and command.lower() in command_list:
-            cmd = command_list[command.lower()]
-            if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
-                fields = list()
-                fields.append({"name": "**Usage**", "value": f"`{cmd['usage']}`"})
-                fields.append({"name": "**Example**", "value": f"`{cmd['example']}`"})
-                fields.append({"name": "**Aliases**", "value": f"`{cmd['aliases']}`"})
+        try:
+            command_list = self.settings.commands
+            if command and command.lower() in command_list:
+                cmd = command_list[command.lower()]
+                if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
+                    fields = list()
+                    fields.append({"name": "**Usage**", "value": f"`{cmd['usage']}`"})
+                    fields.append({"name": "**Example**", "value": f"`{cmd['example']}`"})
+                    fields.append({"name": "**Aliases**", "value": f"`{cmd['aliases']}`"})
 
-                await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
-        else:
-            filtered_list = command_list
-            if self.isAdmin(ctx):
-                filtered_list = [i for i in command_list if i['admin'] == True]
-            chunked = utils.chunk_list(list(filtered_list.keys()), 10)
-            pages = math.ceil(len(filtered_list) / 10)
-            page = 1
-            for chunk in chunked:
-                fields = list()
-                for k in chunk:
-                    cmd = filtered_list[k.lower()]
-                    if cmd['admin']:
-                        if self.isAdmin(ctx) :
+                    await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
+            else:
+                filtered_list = list()
+                if self.isAdmin(ctx):
+                    filtered_list = [i for i in command_list.keys()]
+                else:
+                    filtered_list = [i for i in command_list.keys() if command_list[i]['admin'] == False]
+
+                chunked = utils.chunk_list(list(filtered_list), 10)
+                pages = math.ceil(len(filtered_list) / 10)
+                page = 1
+                for chunk in chunked:
+                    fields = list()
+                    for k in chunk:
+                        cmd = command_list[k.lower()]
+                        if cmd['admin'] and self.isAdmin(ctx):
                             fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
                             fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
                             fields.append({"name": "Admin Command", "value": f"Can only be ran by a server admin"})
-                    else:
-                        fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
-                        fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
+                        else:
+                            fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
+                            fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
 
-                await self.sendEmbed(ctx.channel, f"Voice Bot Command Help ({page}/{pages})", "List of Available Commands", fields=fields)
-                page += 1
+                    await self.sendEmbed(ctx.channel, f"Voice Bot Command Help ({page}/{pages})", "List of Available Commands", fields=fields)
+                    page += 1
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
         await ctx.message.delete()
 
     @voice.command(pass_context=True)
@@ -1449,7 +1456,17 @@ class voice(commands.Cog):
                     elif isinstance(owner.activity, discord.Streaming):
                         name = owner.activity.game
                     else:
-                        print(f"{owner.activity}")
+                        print(f"activity: {owner.activity}")
+                elif owner.activities:
+                    game_activity = [a for a in owner.activities if isinstance(a, discord.Game)]
+                    stream_activity = [a for a in owner.activities if isinstance(a, discord.Streaming)]
+                    if game_activity:
+                        name = game_activity.name
+                    elif stream_activity:
+                        name = stream_activity.game
+                    else:
+                        for a in owner.activities:
+                            print(f"activity: {a}")
                 else:
                     print(f"owner.activity is None")
 
