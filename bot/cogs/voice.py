@@ -133,7 +133,7 @@ class voice(commands.Cog):
                                 if voice_channel_id:
                                     voiceChannel = await self.get_or_fetch_channel(voice_channel_id)
                                 if voiceChannel:
-                                    print(f"Change Text Channel Name: {after.name}")
+                                    print(f"Change Voice Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
                                     await self.sendEmbed(after, "Updated Channel Name", f'You have changed the channel name to {after.name}!', delete_after=5)
 
@@ -1483,7 +1483,7 @@ class voice(commands.Cog):
                     print(f"owner.activity is None")
 
             if name:
-                await self.name(ctx, name=name)
+                await self._name(ctx, name=name, saveSettings=False)
                 # message deleted by the name call.
             else:
                 await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
@@ -1495,9 +1495,14 @@ class voice(commands.Cog):
 
     @voice.command()
     async def name(self, ctx, *, name: str = None):
-        channel_id = None
+        await self._name(ctx, name=name, saveSettings=True)
+
+    async def _name(self, ctx, name: str = None, saveSettings: bool = True):
+        voice_channel_id = None
+        voice_channel = None
         if self.isInVoiceChannel(ctx):
-            channel_id = ctx.author.voice.channel.id
+            voice_channel_id = ctx.author.voice.channel.id
+            voice_channel = ctx.author.voice.channel
         else:
             await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
             return
@@ -1505,30 +1510,34 @@ class voice(commands.Cog):
             name = utils.get_random_name()
         self.db.open()
         author_id = ctx.author.id
-        voice_channel = ctx.author.voice.channel
         guild_id = ctx.guild.id
         category_id = ctx.author.voice.channel.category.id
         try:
-            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
             if owner_id != author_id and not self.isAdmin(ctx):
                 await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-            print(json.dumps(category_settings.__dict__))
+
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
-            is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel.id]) >= 1
+            is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel_id]) >= 1
             if not is_tracked_channel:
                 await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, this channel is not tracked by me.', delete_after=5)
                 return
 
-            # text channel rename is automatically handled by the change event on the voice channel.
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+            if text_channel:
+                await text_channel.edit(name=name)
 
             await voice_channel.edit(name=name)
-            user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
-            if user_settings:
-                self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
-            else:
-                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=default_role)
+            if saveSettings:
+                user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
+                if user_settings:
+                    self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
+                else:
+                    self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=default_role)
             await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
         except Exception as ex:
             print(ex)
@@ -1538,6 +1547,7 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
+            
     @voice.command(aliases=["rename"])
     async def force_name(self, ctx, *, name: str = None):
         self.db.open()
