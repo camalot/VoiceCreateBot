@@ -574,12 +574,15 @@ class MongoDatabase(database.Database):
             return False
     def get_default_role(self, guildId, categoryId, userId):
         try:
+            guild_settings = self.get_guild_settings(guildId=guildId)
             user_settings = self.get_user_settings(guildId=guildId, userId=userId)
             guild_category_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if user_settings:
                 return user_settings.default_role
             elif guild_category_settings:
                 return guild_category_settings.default_role
+            elif guild_settings:
+                return guild_settings.default_role
             else:
                 return None
         except Exception as ex:

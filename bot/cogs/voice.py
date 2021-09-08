@@ -444,8 +444,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} You do not own this channel, and do not have permissions to resync it.', delete_after=5)
                 return
 
-            # default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
-            # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -526,21 +524,123 @@ class voice(commands.Cog):
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
+    @voice.command()
+    async def hide(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
+        try:
+            self.db.open()
+            author_id = ctx.author.id
+            guild_id = ctx.guild.id
+            category_id = None
+            category = None
+            voice_channel = None
+            voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = ctx.author.voice.channel
+                category = voice_channel.category
+                category_id = category.id
+                voice_channel_id = voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
 
-    # TODO: implement command to make view_channel = false
-    # async def hide(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
-    #     pass
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            owner = await self.get_or_fetch_user(owner_id)
+            if (not self.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
+                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to hide it.', delete_after=5)
+                return
 
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            everyone = discord.utils.get(ctx.guild.roles, name=default_role)
+
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = await self.get_or_fetch_channel(text_channel_id)
+
+            permRoles = []
+            if everyone:
+                permRoles = [everyone]
+            if userOrRole:
+                permRoles.append(userOrRole)
+            if text_channel:
+                await text_channel.set_permissions(owner, view_channel=True)
+                for r in permRoles:
+                    await text_channel.set_permissions(r, view_channel=False)
+
+            await voice_channel.set_permissions(owner, view_channel=True)
+            for r in permRoles:
+                await voice_channel.set_permissions(r, view_channel=False)
+
+            await self.sendEmbed(ctx.channel, "Channel Hide", f'{ctx.author.mention} Channel now hidden from users or specified role. 🙈', delete_after=5)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
+    @voice.command()
+    async def show(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
+        try:
+            self.db.open()
+            author_id = ctx.author.id
+            guild_id = ctx.guild.id
+            category_id = None
+            category = None
+            voice_channel = None
+            voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = ctx.author.voice.channel
+                category = voice_channel.category
+                category_id = category.id
+                voice_channel_id = voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            owner = await self.get_or_fetch_user(owner_id)
+            if (not self.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
+                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to hide it.', delete_after=5)
+                return
+
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            everyone = discord.utils.get(ctx.guild.roles, name=default_role)
+
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            if text_channel_id:
+                text_channel = await self.get_or_fetch_channel(text_channel_id)
+
+            permRoles = []
+            if everyone:
+                permRoles = [everyone]
+            if userOrRole:
+                permRoles.append(userOrRole)
+            if text_channel:
+                await text_channel.set_permissions(owner, view_channel=True)
+                for r in permRoles:
+                    await text_channel.set_permissions(r, view_channel=True)
+
+            await voice_channel.set_permissions(owner, view_channel=True)
+            for r in permRoles:
+                await voice_channel.set_permissions(r, view_channel=True)
+
+            await self.sendEmbed(ctx.channel, "Channel Show", f'{ctx.author.mention} Channel now hidden from users or specified role. 👀', delete_after=5)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
     @voice.command()
     async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         try:
             self.db.open()
             author_id = ctx.author.id
-            category_id = ctx.author.voice.channel.category.id
             guild_id = ctx.guild.id
+            category_id = None
+            category = None
             voice_channel = None
             if self.isInVoiceChannel(ctx):
                 voice_channel = ctx.author.voice.channel
+                category = voice_channel.category
+                category_id = category.id
                 voice_channel_id = voice_channel.id
             else:
                 await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
@@ -549,7 +649,7 @@ class voice(commands.Cog):
             owner = await self.get_or_fetch_user(owner_id)
 
             if (not self.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
-                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to make it private.', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Channel Mute", f'{ctx.author.mention} You do not own this channel, and do not have permissions to mute it.', delete_after=5)
                 return
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
@@ -1270,58 +1370,6 @@ class voice(commands.Cog):
         finally:
             self.db.close()
             await ctx.message.delete()
-        # conn = sqlite3.connect(self.settings.db_path)
-        # c = conn.cursor()
-        # aid = ctx.author.id
-        # guildID = ctx.guild.id
-        # category_id = ctx.author.voice.channel.category.id
-        # channel_id = None
-        # if self.isInVoiceChannel(ctx):
-        #     channel_id = ctx.author.voice.channel.id
-        # else:
-        #     await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-        #     return
-        # try:
-        #     # get the channel owner, in case this is an admin running the command.
-        #     c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-        #     channelOwnerGroup = c.fetchone()
-        #     if channelOwnerGroup:
-        #         if channelOwnerGroup[0] != aid:
-        #             aid = channelOwnerGroup[0]
-        #     if not self.isAdmin(ctx) and ctx.author.id != aid:
-        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
-        #         return
-
-        #     c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildID, category_id,))
-        #     guildSettings = c.fetchone()
-        #     default_role = self.settings.default_role
-        #     if guildSettings:
-        #         default_role = guildSettings[3] or self.settings.default_role
-
-        #     c.execute("SELECT voiceID FROM voiceChannel WHERE userID = ? AND guildID = ?", (aid, guildID,))
-        #     voiceGroup = c.fetchone()
-        #     if voiceGroup is None and not self.isAdmin(ctx):
-        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f"{ctx.author.mention} You don't own a channel.", delete_after=5)
-        #     else:
-        #         channelID = voiceGroup[0]
-        #         channel = await self.get_or_fetch_channel(channelID)
-
-        #         await channel.edit(user_limit=limit)
-        #         await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
-        #         c.execute("SELECT channelName FROM userSettings WHERE userID = ? AND guildID = ?", (aid, guildID,))
-        #         voiceGroup = c.fetchone()
-        #         if voiceGroup is None:
-        #             c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)",(ctx.guild.id, aid, f"{ctx.author.name}'s Channel'", limit, self.BITRATE_DEFAULT, default_role))
-        #         else:
-        #             c.execute("UPDATE userSettings SET channelLimit = ? WHERE userID = ? AND guildID = ?", (limit, aid, guildID,))
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
-        #     await self.notify_of_error(ctx)
-        # finally:
-        #     conn.commit()
-        #     conn.close()
-        #     await ctx.message.delete()
 
     @voice.command()
     async def bitrate(self, ctx, bitrate: int = 64):
@@ -1335,7 +1383,7 @@ class voice(commands.Cog):
             bitrate_min = 8
             bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
 
-            channel_id = None
+            voice_channel_id = None
             if self.isInVoiceChannel(ctx):
                 voice_channel = owner.voice.channel
                 voice_channel_id = voice_channel.id
@@ -1375,60 +1423,34 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
+    @voice.command()
+    async def game(self, ctx):
+        author = ctx.author
+        author_id = author.id
+        guild_id = ctx.guild.id
+        channel_id = None
+        name = None
+        if self.isInVoiceChannel(ctx):
+            channel_id = ctx.author.voice.channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
+        owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+        if owner_id != author_id and not self.isAdmin(ctx):
+            await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+            return
+        owner = self.get_or_fetch_user(owner_id)
+        if owner:
+            if isinstance(owner.activity,discord.Game):
+                name = owner.activity.name
+            elif isinstance(owner.activity, discord.Streaming):
+                name = owner.activity.game
 
-    # @voice.command()
-    # async def game(self, ctx):
-    #     channel_id = None
-    #     if self.isInVoiceChannel(ctx):
-    #         channel_id = ctx.author.voice.channel.id
-    #     else:
-    #         await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention} You must be in a voice channel to use this command.', delete_after=5)
-    #         return
-    #     conn = sqlite3.connect(self.settings.db_path)
-    #     c = conn.cursor()
-    #     aid = ctx.author.id
-    #     voiceChannel = ctx.author.voice.channel
-    #     guildID = ctx.guild.id
-    #     category_id = ctx.author.voice.channel.category.id
-    #     try:
-    #         # get the channel owner, in case this is an admin running the command.
-    #         c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ?", (channel_id,))
-    #         channelOwnerGroup = c.fetchone()
-    #         if channelOwnerGroup:
-    #             if channelOwnerGroup[0] != aid:
-    #                 aid = channelOwnerGroup[0]
-    #         if not self.isAdmin(ctx) and ctx.author.id != aid:
-    #             await self.sendEmbed(ctx.channel, "Set Channel to Game", f'{ctx.author.mention} You do not own this channel, and do not have permissions to change the name of this channel.', delete_after=5)
-    #             return
+        if name:
+            self.name(ctx, name=name)
+        else:
+            await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
 
-
-    #         name =
-    #         channelID = voiceChannel.id
-    #         c.execute("SELECT channelID FROM textChannel WHERE guildID = ? AND voiceID = ?", (guildID, channelID))
-    #         textGroup = c.fetchone()
-    #         c.execute("SELECT userID FROM voiceChannel WHERE voiceID = ? AND guildID = ?", (channelID, guildID,))
-    #         voiceSet = c.fetchone()
-    #         channelOwnerID = aid
-    #         if voiceSet is not None:
-    #             channelOwnerID = voiceSet[0] or aid
-    #         textChannel = None
-    #         channel = await self.get_or_fetch_channel(channelID)
-    #         if channel is not None:
-    #             if textGroup is not None:
-    #                 textChannel = await self.get_or_fetch_channel(textGroup[0])
-    #             if textChannel is not None:
-    #                 print(f"Change Text Channel Name from Command")
-    #                 await textChannel.edit(name=name)
-
-    #             await channel.edit(name=name)
-    #             await self.sendEmbed(ctx.channel, "Updated Channel Name", f'You have changed the channel name to {name}!', delete_after=5)
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
-    #     finally:
-    #         conn.commit()
-    #         conn.close()
-    #         await ctx.message.delete()
     @voice.command()
     async def name(self, ctx, *, name: str = None):
         channel_id = None
@@ -1447,14 +1469,14 @@ class voice(commands.Cog):
         try:
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
             if owner_id != author_id and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
             print(json.dumps(category_settings.__dict__))
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
             is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel.id]) >= 1
             if not is_tracked_channel:
-                await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention}, this channel is not tracked by me.', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, this channel is not tracked by me.', delete_after=5)
                 return
 
             # text channel rename is automatically handled by the change event on the voice channel.

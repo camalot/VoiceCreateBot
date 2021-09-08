@@ -64,6 +64,20 @@
 			"admin": false,
 			"aliases": []
 		},
+		"hide": {
+			"help": "**Hides the channel from the specified user or role**",
+			"usage": ".voice hide [@role|@user]",
+			"example": ".voice hide @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
+		"show": {
+			"help": "**Shows the channel to the specified user or role**",
+			"usage": ".voice show [@role|@user]",
+			"example": ".voice show @SomeRole",
+			"admin": false,
+			"aliases": []
+		},
 		"limit": {
 			"help": "**Change your channel's user limit**",
 			"usage": ".voice limit <number>",
