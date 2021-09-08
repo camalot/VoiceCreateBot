@@ -835,6 +835,7 @@ class voice(commands.Cog):
                 await self.notify_of_error(ctx)
             finally:
                 self.db.close()
+                await ctx.message.delete()
         else:
             pass
 
