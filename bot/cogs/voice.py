@@ -91,8 +91,8 @@ class voice(commands.Cog):
         guild_id = after.guild.id
         if not after:
             pass
-
-        if self.isInVoiceChannel(after):
+        is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
+        if is_in_channel:
             print(f"[on_member_update] Member Update Start of user: '{after.name}'")
             voice_channel = after.voice.channel
             voice_channel_id = voice_channel.id
@@ -1487,34 +1487,41 @@ class voice(commands.Cog):
 
     @voice.command(aliases=["enable-auto-game", "eag"])
     async def auto_game(self, ctx, enabled: str):
-        guild_id = ctx.guild.id
-        author = ctx.author
-        owner_id = None
-        if self.isInVoiceChannel(ctx):
-            voice_channel = author.voice.channel
-            channel_category_id = voice_channel.category.id
-            voice_channel_id = voice_channel.id
-        else:
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{author.mention} You must be in a voice channel to use this command.', delete_after=5)
-            return
-        owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-        if owner_id != author.id:
-            await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention} You are not an admin, nor are you the owner of this channel.', delete_after=5)
-            return
+        try:
+            guild_id = ctx.guild.id
+            author = ctx.author
+            owner_id = None
+            if self.isInVoiceChannel(ctx):
+                voice_channel = author.voice.channel
+                channel_category_id = voice_channel.category.id
+                voice_channel_id = voice_channel.id
+            else:
+                await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{author.mention} You must be in a voice channel to use this command.', delete_after=5)
+                return
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if owner_id != author.id:
+                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention} You are not an admin, nor are you the owner of this channel.', delete_after=5)
+                return
 
-        enable_auto = utils.str2bool(enabled)
-        user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
-        default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
-        temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
-        if user_settings:
-            self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
-        else:
-            self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=enable_auto)
-        state = "disabled"
-        if enable_auto:
-            state = "enabled"
-        await self.sendEmbed(ctx.channel, "Enable Auto Game", f'{author.mention} You have {state} the changing of your channel name based on your game.', delete_after=5)
-
+            enable_auto = utils.str2bool(enabled)
+            user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
+            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            if user_settings:
+                self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
+            else:
+                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=enable_auto)
+            state = "disabled"
+            if enable_auto:
+                state = "enabled"
+            await self.sendEmbed(ctx.channel, "Enable Auto Game", f'{author.mention} You have {state} the changing of your channel name based on your game.', delete_after=5)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            await self.notify_of_error(ctx)
+        finally:
+            self.db.close()
+            await ctx.message.delete()
     @voice.command()
     async def game(self, ctx):
         try:
