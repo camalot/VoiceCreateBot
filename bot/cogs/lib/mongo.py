@@ -1,7 +1,4 @@
 
-from bson.py3compat import b
-from bot.cogs.voice import voice
-from typing import final
 from pymongo import MongoClient
 import traceback
 import json
@@ -249,24 +246,19 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return False
     def insert_guild_create_channel_settings(self, guildId: int, createChannelId: int, categoryId: int, ownerId: int, useStage: bool):
-        try:
-            if self.connection is None:
-                self.open()
-            payload = {
-                "guildID": guildId,
-                "ownerID": ownerId,
-                "voiceChannelID": createChannelId,
-                "voiceCategoryID": categoryId,
-                "useStage": useStage
-            }
-            print(json.dumps(payload))
-            result = self.connection.guild.insert_one(payload)
-            # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
-            return result is not None
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-            return False
+        if self.connection is None:
+            self.open()
+
+        payload = {
+            "guildID": guildId,
+            "ownerID": ownerId,
+            "voiceChannelID": createChannelId,
+            "voiceCategoryID": categoryId,
+            "useStage": useStage
+        }
+        result = self.connection.guild.insert_one(payload)
+        # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
+        return result is not None
     def get_guild_settings(self, guildId):
         try:
             if not self.connection:
@@ -323,7 +315,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def set_guild_category_settings(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
+    def set_guild_category_settings(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: int):
         try:
             if not self.connection:
                 self.open()

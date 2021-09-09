@@ -898,11 +898,13 @@ class voice(commands.Cog):
                 if is_community:
                     await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like to use a Stage Channel?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
                     try:
-                        useStage = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                        useStageResp = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
                     except asyncio.TimeoutError:
                         await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
                         return
-
+                    else:
+                        useStage = utils.str2bool(useStageResp.message)
+                        
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
@@ -937,7 +939,7 @@ class voice(commands.Cog):
                             else:
                                 defaultLimit = int(defaultLimitResp.content)
                                 await defaultLimitResp.delete()
-                                
+
                             # ASK SET DEFAULT CHANNEL LOCKED
                             defaultLocked = False
                             await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
