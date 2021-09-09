@@ -84,6 +84,44 @@ class voice(commands.Cog):
     async def on_ready(self):
         for guild in self.bot.guilds:
             await self.clean_up_tracked_channels(guild.id)
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        guild_id = after.guild.id
+        if self.isInVoiceChannel(after):
+            voice_channel = after.voice.channel
+            voice_channel_id = voice_channel.id
+            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            owner = await self.get_or_fetch_user(owner_id)
+            if owner_id != after.id:
+                # user is in a channel, but not their channel
+                pass
+            if before.activity == after.activity:
+                # we are only looking at activity
+                pass
+
+            user_settings = self.db.get_user_settings(guild_id, after.id)
+            if user_settings and user_settings.auto_game:
+                channel_name = voice_channel.name
+                if owner.activities:
+                    game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                    stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                    if game_activity:
+                        if len(game_activity) > 1:
+                            pass
+                        else:
+                            channel_name = game_activity[0].name
+                    elif stream_activity:
+                        channel_name = stream_activity[0].game
+                if voice_channel.name != channel_name:
+                    text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+                    if text_channel_id:
+                        text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+                    if text_channel:
+                        print(f"Change Text Channel Name: {channel_name}")
+                        await text_channel.edit(name=channel_name)
+                        await self.sendEmbed(text_channel, "Updated Channel Name", f'You have changed the channel name to {channel_name}!', delete_after=5)
+                    voice_channel.edit(name=channel_name)
+        pass
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
@@ -136,7 +174,7 @@ class voice(commands.Cog):
                             if userSettings:
                                 self.db.update_user_channel_name(guildId=guildID, userId=channelOwnerId, channelName=after.name)
                             else:
-                                self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id)
+                                self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -398,7 +436,7 @@ class voice(commands.Cog):
         guildId = ctx.author.guild.id
         channel = None
         try:
-            if ctx.author.voice:
+            if self.isInVoiceChannel(ctx):
                 channel = ctx.author.voice.channel
             if channel is None:
                 await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention} you're not in a voice channel.", delete_after=5)
@@ -1374,7 +1412,7 @@ class voice(commands.Cog):
             if user_settings:
                 self.db.update_user_limit(guildId=guild_id, userId=owner_id, channelLimit=limit)
             else:
-                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id)
+                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1427,7 +1465,7 @@ class voice(commands.Cog):
             if user_settings:
                 self.db.update_user_bitrate(guildId=guild_id, userId=owner_id, bitrate=br_set)
             else:
-                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=category_settings.channel_limit, bitrate=br_set, defaultRole=temp_default_role.id)
+                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=category_settings.channel_limit, bitrate=br_set, defaultRole=temp_default_role.id, autoGame=False)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1435,6 +1473,36 @@ class voice(commands.Cog):
         finally:
             self.db.close()
             await ctx.message.delete()
+
+    @voice.command(aliases=["enable-auto-game", "eag"])
+    async def auto_game(self, ctx, enabled: str):
+        guild_id = ctx.guild.id
+        author = ctx.author
+        owner_id = None
+        if self.isInVoiceChannel(ctx):
+            voice_channel = author.voice.channel
+            channel_category_id = voice_channel.category.id
+            voice_channel_id = voice_channel.id
+        else:
+            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{author.mention} You must be in a voice channel to use this command.', delete_after=5)
+            return
+        owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+        if owner_id != author.id:
+            await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention} You are not an admin, nor are you the owner of this channel.', delete_after=5)
+            return
+
+        enable_auto = utils.str2bool(enabled)
+        user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
+        default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
+        temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+        if user_settings:
+            self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
+        else:
+            self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=enable_auto)
+        state = "disabled"
+        if enable_auto:
+            state = "enabled"
+        await self.sendEmbed(ctx.channel, "Enable Auto Game", f'{author.mention} You have {state} the changing of your channel name based on your game.', delete_after=5)
 
     @voice.command()
     async def game(self, ctx):
@@ -1528,7 +1596,7 @@ class voice(commands.Cog):
                 if user_settings:
                     self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
                 else:
-                    self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id)
+                    self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
             await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
         except Exception as ex:
             print(ex)
@@ -1571,7 +1639,7 @@ class voice(commands.Cog):
                 if user_settings:
                     self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
                 else:
-                    self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=guild_category_settings.channel_limit, bitrate=guild_category_settings.bitrate, defaultRole=temp_default_role.id)
+                    self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=guild_category_settings.channel_limit, bitrate=guild_category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
             else:
                 print(f"{ctx.author} tried to run command 'rename'")
         except Exception as ex:
@@ -1878,7 +1946,10 @@ class voice(commands.Cog):
             return None
         await ctx.message.delete()
     def isInVoiceChannel(self, ctx):
-        return ctx.author.voice.channel is not None
+        if isinstance(ctx, discord.Member):
+            return ctx.voice.channel is not None
+        else:
+            return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
         self.db.open()
         guild_settings = self.db.get_guild_settings(ctx.guild.id)

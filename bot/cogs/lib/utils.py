@@ -28,7 +28,7 @@ def get_scalar_result(conn, sql, default_value = None, *args):
         return default_value
 
 def str2bool(v):
-    return v.lower() in ("yes", "true", "yup", "1", "t", "y")
+    return v.lower() in ("yes", "true", "yup", "1", "t", "y", "on")
 
 def chunk_list(lst, size):
     # looping till length l

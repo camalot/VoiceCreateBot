@@ -385,7 +385,7 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int):
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int, autoGame: bool = False):
         try:
             if self.connection is None:
                 self.open()
@@ -397,12 +397,19 @@ class MongoDatabase(database.Database):
                 "channelName": channelName,
                 "channelLimit": channelLimit,
                 "bitrate": bitrate,
-                "defaultRole": defaultRole
+                "defaultRole": defaultRole,
+                "auto_game": autoGame
             }
             self.connection.userSettings.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def set_user_settings_auto_game(self, guildId: int, userId: int, autoGame: bool):
+        if self.connection is None:
+            self.open()
+        existing = self.get_user_settings(guildId=guildId, userId=userId)
+        if existing:
+            self.connection.userSettings.update_one({"guildID": guildId, "userID": userId}, { "$set": { "auto_game": autoGame }})
     def get_guild_create_channels(self, guildId):
         try:
             if self.connection is None:

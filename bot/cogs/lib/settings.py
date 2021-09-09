@@ -39,6 +39,7 @@ class UserSettings():
         self.channel_limit = channelLimit
         self.bitrate = bitrate
         self.default_role = defaultRole
+        self.auto_game = False
         pass
 
 class GuildSettings:
