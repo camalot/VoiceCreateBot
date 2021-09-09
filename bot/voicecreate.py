@@ -17,14 +17,14 @@ from .cogs.lib import sqlite
 from .cogs.lib import mongo
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
-    DBVERSION = 3 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    DBVERSION = 4 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     # 0 = NO SCHEMA APPLIED
 
     # VERSION HISTORY:
     # v1: 04/30/2020
     # v2: 07/01/2020
     # v3: 09/01/2021
-
+    # v4: 9/9/2021 - added auto_game column to userSettings
     def __init__(self):
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
