@@ -1529,12 +1529,17 @@ class voice(commands.Cog):
                     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
                     if game_activity:
                         if len(game_activity) > 1:
-                            pass
-                        else:
-                            name = game_activity[0].name
+                            for a in game_activity:
+                                print(f"game: {a.name}")
+                        name = game_activity[0].name
                     elif stream_activity:
+                        if len(stream_activity) > 1:
+                            for a in stream_activity:
+                                name = stream_activity[0].name
+                                print(f"game: {a.game}")
                         name = stream_activity[0].game
                     else:
+                        print(f"Activities: {str(len(owner.activities))}")
                         for a in owner.activities:
                             print(f"activity: {a}")
                 else:
