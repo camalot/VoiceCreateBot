@@ -403,7 +403,7 @@ class MongoDatabase(database.Database):
                 "channelName": channelName,
                 "channelLimit": channelLimit,
                 "bitrate": bitrate,
-                "defaultRole": defaultRole
+                "defaultRole": defaultRole # update to use role id
             }
             self.connection.userSettings.insert_one(payload)
         except Exception as ex:
@@ -593,7 +593,7 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def set_default_role_for_user(self, guildId, userId, defaultRole):
+    def set_default_role_for_user(self, guildId, userId, defaultRole):  # update to use role id
         try:
             if self.connection is None:
                 self.open()
