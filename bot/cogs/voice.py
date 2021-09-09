@@ -1863,11 +1863,19 @@ class voice(commands.Cog):
     def isInVoiceChannel(self, ctx):
         return ctx.author.voice.channel is not None
     def isAdmin(self, ctx):
+        self.db.open()
+        guild_settings = self.db.get_guild_settings(ctx.guild.id)
         admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower().strip() for s in self.settings.admin_roles), ctx.message.guild.roles)
+        is_in_guild_admin_role = False
+        # see if there are guild settings for admin role
+        if guild_settings:
+            guild_admin_role = discord.utils.get(ctx.guild.roles,name=guild_settings.admin_role)
+            is_in_guild_admin_role = guild_admin_role in ctx.author.roles
         is_in_admin_role = admin_role in ctx.author.roles
         admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
         is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
-        return is_in_admin_role or admin_user or is_bot_owner
+
+        return is_in_admin_role or admin_user or is_bot_owner or is_in_guild_admin_role
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)

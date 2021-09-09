@@ -546,16 +546,22 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
-            # ownerSet = c.fetchone()
-            # if ownerSet:
-            #     return int(ownerSet[0])
-            # return None
             owner = self.connection.voiceChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId}, { "userID": 1 })
             if owner:
                 return owner['userID']
             return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def update_tracked_channel_owner(self, guildId, voiceChannelId, ownerId, newOwnerId):
+        try:
+            if self.connection is None:
+                self.open()
+            # c.execute("UPDATE voiceChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+            # c.execute("UPDATE textChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+            self.connection.voiceChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
+            self.connection.textChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
