@@ -91,8 +91,8 @@ class voice(commands.Cog):
         guild_id = after.guild.id
         if not after:
             pass
-
-        if self.isInVoiceChannel(after):
+        is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
+        if is_in_channel:
             print(f"[on_member_update] Member Update Start of user: '{after.name}'")
             voice_channel = after.voice.channel
             voice_channel_id = voice_channel.id
