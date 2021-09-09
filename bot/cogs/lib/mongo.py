@@ -35,7 +35,7 @@ class MongoDatabase(database.Database):
                 self.close()
 
     def UPDATE_SCHEMA(self, newDBVersion: int):
-        print(f"INITIALIZE MONGO")
+        print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
         try:
             # check if migrated
             # if not, open sqlitedb and migate the data
@@ -63,17 +63,17 @@ class MongoDatabase(database.Database):
                 # tcd = sql3.get_all_from_text_channel_table()
                 # if tcd:
                 #     self.connection.textChannel.insert_many(tcd)
-
                 self.connection.migration.insert_one({"user_version": newDBVersion})
             else:
-                print("DATA PREVIOUSLY MIGRATED")
+                self.connection.migration.update_one({"user_version": db_version['user_version']}, { "$set": { "user_version": newDBVersion } })
+                print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
 
             # setup missing guild category settings...
             guild_channels = self.connection.guild.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
             for g in guild_channels:
                 gcs = self.get_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'])
                 if not gcs:
-                    print(f"Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
+                    print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
                     self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="everyone")
 
         except Exception as ex:
@@ -203,7 +203,7 @@ class MongoDatabase(database.Database):
             # c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (userId, guildId,))
             r = self.connection.userSettings.find_one({"guildID": guildId, "userID": userId})
             if r:
-                return settings.UserSettings(guildId=guildId, userId=userId, channelName=r['channelName'], channelLimit=int(r['channelLimit']), bitrate=int(r['bitrate']), defaultRole=r['defaultRole'])
+                return settings.UserSettings(guildId=guildId, userId=userId, channelName=r['channelName'], channelLimit=int(r['channelLimit']), bitrate=int(r['bitrate']), defaultRole=r['defaultRole'], autoGame=r['auto_game'])
             else:
                 return None
         except Exception as ex:
@@ -385,7 +385,7 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int):
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int, autoGame: bool = False):
         try:
             if self.connection is None:
                 self.open()
@@ -397,12 +397,19 @@ class MongoDatabase(database.Database):
                 "channelName": channelName,
                 "channelLimit": channelLimit,
                 "bitrate": bitrate,
-                "defaultRole": defaultRole
+                "defaultRole": defaultRole,
+                "auto_game": autoGame
             }
             self.connection.userSettings.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+    def set_user_settings_auto_game(self, guildId: int, userId: int, autoGame: bool):
+        if self.connection is None:
+            self.open()
+        existing = self.get_user_settings(guildId=guildId, userId=userId)
+        if existing:
+            self.connection.userSettings.update_one({"guildID": guildId, "userID": userId}, { "$set": { "auto_game": autoGame }})
     def get_guild_create_channels(self, guildId):
         try:
             if self.connection is None:

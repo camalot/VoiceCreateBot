@@ -29,6 +29,13 @@
 			"admin": false,
 			"aliases": []
 		},
+		"enable-auto-game": {
+			"help": "**Automatically change your channel to the name of the game you are playing**",
+			"usage": ".voice enable-auto-game [yes no]",
+			"example": ".voice enable-auto-game yes",
+			"admin": false,
+			"aliases": ["eag"]
+		},
 		"unlock": {
 			"help": "**Unlock your channel**",
 			"usage": ".voice unlock",

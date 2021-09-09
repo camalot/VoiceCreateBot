@@ -33,12 +33,13 @@ class GuildCategorySettings:
         self.bitrate = bitrate
         self.default_role = defaultRole
 class UserSettings():
-    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole):
+    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole, autoGame):
         self.user_id = userId
         self.channel_name = channelName
         self.channel_limit = channelLimit
         self.bitrate = bitrate
         self.default_role = defaultRole
+        self.auto_game = autoGame
         pass
 
 class GuildSettings:
