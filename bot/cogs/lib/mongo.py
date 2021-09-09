@@ -35,7 +35,7 @@ class MongoDatabase(database.Database):
                 self.close()
 
     def UPDATE_SCHEMA(self, newDBVersion: int):
-        print(f"INITIALIZE MONGO")
+        print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
         try:
             # check if migrated
             # if not, open sqlitedb and migate the data
@@ -63,17 +63,17 @@ class MongoDatabase(database.Database):
                 # tcd = sql3.get_all_from_text_channel_table()
                 # if tcd:
                 #     self.connection.textChannel.insert_many(tcd)
-
                 self.connection.migration.insert_one({"user_version": newDBVersion})
             else:
-                print("DATA PREVIOUSLY MIGRATED")
+                self.connection.migration.update_one({"user_version": db_version['user_version']}, { "$set": { "user_version": newDBVersion } })
+                print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
 
             # setup missing guild category settings...
             guild_channels = self.connection.guild.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
             for g in guild_channels:
                 gcs = self.get_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'])
                 if not gcs:
-                    print(f"Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
+                    print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
                     self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="everyone")
 
         except Exception as ex:
