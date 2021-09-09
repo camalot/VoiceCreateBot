@@ -56,7 +56,7 @@ class Database():
         pass
     def update_user_bitrate(self, guildId, userId, bitrate: int = 8):
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int):
         pass
     def get_guild_create_channels(self, guildId):
         pass

@@ -292,7 +292,7 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: str):
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int):
         try:
             if self.connection is None:
                 self.open()
