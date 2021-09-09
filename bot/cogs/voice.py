@@ -49,14 +49,12 @@ class voice(commands.Cog):
             print(f"checking user created channels")
             trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
             for vc in trackedChannels:
-                print(vc)
                 textChannel = None
                 voiceChannelId = vc
                 if voiceChannelId:
                     voiceChannel = await self.get_or_fetch_channel(voiceChannelId)
 
                     textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
-                    print(f"TEXTCHANNELID: {textChannelId}")
                     if textChannelId:
                         textChannel = await self.get_or_fetch_channel(textChannelId)
 
