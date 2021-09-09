@@ -834,7 +834,7 @@ class voice(commands.Cog):
                 index = 0
                 fields = list()
                 for r in author.roles:
-                    fields.append(EmbedField(f"{str(index+1)}", r.name))
+                    fields.append(EmbedField(f"{str(index+1)}: {r.name}", f"Enter {str(index+1)} to choose this role").__dict__)
                     index += 1
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What is your server admin role?\n\nChoose from the list:**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
@@ -850,6 +850,7 @@ class voice(commands.Cog):
                             # found_role = discord.utils.get(ctx.guild.roles, name=roleResp.content)
                             if admin_role:
                                 admin_role_name = found_role.name
+                                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", f"You chose the role: '{admin_role_name}'", delete_after=5)
                             else:
                                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
                                 return
