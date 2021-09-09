@@ -903,8 +903,9 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
                         return
                     else:
-                        useStage = utils.str2bool(useStageResp.message)
-                        
+                        useStage = utils.str2bool(useStageResp.content)
+                        await useStageResp.delete()
+
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
