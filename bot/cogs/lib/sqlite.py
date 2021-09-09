@@ -292,18 +292,21 @@ class SqliteDatabase(database.Database):
             if self.connection:
                 self.connection.commit()
         pass
-    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int):
+    def insert_user_settings(self, guildId, userId, channelName, channelLimit, bitrate: int, defaultRole: int, autoGame: bool):
         try:
             if self.connection is None:
                 self.open()
             c = self.connection.cursor()
-            c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?)", (guildId, userId, channelName, channelLimit, bitrate, defaultRole))
+            c.execute("INSERT INTO userSettings VALUES (?, ?, ?, ?, ?, ?, ?)", (guildId, userId, channelName, channelLimit, bitrate, defaultRole, autoGame))
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
             if self.connection:
                 self.connection.commit()
+        pass
+
+    def set_user_settings_auto_game(self, guildId: int, userId: int, autoGame: bool):
         pass
     def track_new_voice_channel(self, guildId, ownerId, voiceChannelId):
         try:
