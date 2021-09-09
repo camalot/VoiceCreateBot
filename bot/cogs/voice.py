@@ -1,7 +1,6 @@
 import discord
 import math
 import asyncio
-import aiohttp
 import json
 import datetime
 from discord.ext import commands
@@ -25,8 +24,6 @@ class EmbedField():
         self.value = value
 
 class voice(commands.Cog):
-    BITRATE_DEFAULT = 64
-
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
@@ -141,7 +138,7 @@ class voice(commands.Cog):
                             if userSettings:
                                 self.db.update_user_channel_name(guildId=guildID, userId=channelOwnerId, channelName=after.name)
                             else:
-                                self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.BITRATE_DEFAULT, defaultRole=default_role)
+                                self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -173,7 +170,7 @@ class voice(commands.Cog):
                     # CHANNEL SETTINGS START
                     limit = 0
                     locked = False
-                    bitrate = self.BITRATE_DEFAULT
+                    bitrate = self.settings.BITRATE_DEFAULT
                     stage = useStage >= 1
                     name = utils.get_random_name()
 
@@ -973,7 +970,7 @@ class voice(commands.Cog):
                             else:
                                 defaultBitrate = int(bitrateResp.content)
                                 if defaultBitrate == 0:
-                                    defaultBitrate = self.BITRATE_DEFAULT
+                                    defaultBitrate = self.settings.BITRATE_DEFAULT
                                 await bitrateResp.delete()
 
                             # ASK DEFAULT ROLE
@@ -1547,7 +1544,7 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
-            
+
     @voice.command(aliases=["rename"])
     async def force_name(self, ctx, *, name: str = None):
         self.db.open()
