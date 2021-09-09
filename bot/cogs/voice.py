@@ -1523,7 +1523,6 @@ class voice(commands.Cog):
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
             if owner:
-
                 if owner.activities:
                     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
                     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
@@ -1545,11 +1544,14 @@ class voice(commands.Cog):
                 else:
                     print(f"owner.activity is None")
 
-            if name:
-                await self._name(ctx, name=name, saveSettings=False)
-                # message deleted by the name call.
+                if name:
+                    await self._name(ctx, name=name, saveSettings=False)
+                    # message deleted by the name call.
+                else:
+                    await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
+                    await ctx.message.delete()
             else:
-                await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
+                print(f"Unable to locate the owner for 'game' call.")
                 await ctx.message.delete()
         except Exception as ex:
             print(ex)
