@@ -1,4 +1,5 @@
 
+from bson.py3compat import b
 from bot.cogs.voice import voice
 from typing import final
 from pymongo import MongoClient
@@ -247,7 +248,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def insert_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
+    def insert_guild_create_channel_settings(self, guildId: int, createChannelId: int, categoryId: int, ownerId: int, useStage: bool):
         try:
             if self.connection is None:
                 self.open()
@@ -258,6 +259,7 @@ class MongoDatabase(database.Database):
                 "voiceCategoryID": categoryId,
                 "useStage": useStage
             }
+            print(json.dumps(payload))
             result = self.connection.guild.insert_one(payload)
             # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
             return result is not None
