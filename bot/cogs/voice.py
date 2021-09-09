@@ -805,6 +805,7 @@ class voice(commands.Cog):
         if self.isAdmin(ctx):
             self.db.open()
             try:
+                author = ctx.author
                 author_id = ctx.author.id
                 guild_id = ctx.guild.id
                 def check_user(m):
@@ -827,6 +828,38 @@ class voice(commands.Cog):
                         default_role = found_role.name
                     else:
                         default_role = self.settings.default_role or "everyone"
+                    await roleResp.delete()
+
+                # ask admin role
+                index = 0
+                fields = list()
+                for r in author.roles:
+                    fields.append(EmbedField(f"{str(index+1)}", r.name))
+                    index += 1
+                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What is your server admin role?\n\nChoose from the list:**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
+                try:
+                    roleResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
+                else:
+                    if roleResp.content.isnumeric():
+                        idx = int(roleResp.content) - 1
+                        if idx >= 0 and idx < len(author.roles):
+                            admin_role = author.roles[idx]
+                            admin_role_name = None
+                            # found_role = discord.utils.get(ctx.guild.roles, name=roleResp.content)
+                            if admin_role:
+                                admin_role_name = found_role.name
+                            else:
+                                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                                return
+                        else:
+                            await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                            return
+                    else:
+                        await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                        return
+
                     await roleResp.delete()
                 # ask bot prefix?
                 prefix = "."

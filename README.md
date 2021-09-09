@@ -1,50 +1,18 @@
 # VoiceCreateBot
+_Note:
+This started out as a fork of the bot by [@SamSanai](https://github.com/SamSanai). It has sense been complete rewritten and is no longer anything that it once was._
 
-Dedicated bot for creating temp voice channels with commands for changing permissions.
+A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
-This bot runs on [discord.py](https://discord.gg/r3sSKJJ) rw If you need help with the code use the [discord.py server](https://discord.gg/r3sSKJJ)
+- Supports multiple **Create Channels**. Allowing different permissions to each **Create Channel**.
+- Supports changing voice bitrate
+- Dynamic channel names. Uses a custom api to dynamically generate a channel name
+- Support for **Stage Channels** in *Community Discords*
+- 
 
-As there is a very high demand for me to release the source code for my bot I've finally decided to release it.
+For help with the code, or the bot [join the discord](http://discord.darthminos.tv)
+# INSTALL
 
-This was just a small project that got quite big, I wrote the bot in a day so the code is pretty sloppy and sadly I couldn't give a fuck and in no way shape of form I'm saying I'm a good programmer.
+## HOW TO RUN THE BOT LOCALLY
 
-Enjoy the code, don't try to release it as your own bot. :)
-
-If you'd like to support the bot you could pay for my coffee and the servers using the link below <3  [https://www.paypal.me/ssanaizadeh](https://www.paypal.me/ssanaizadeh)
-
-
-# How to setup the bot:
-
-1. Download python using the following link:
-	- https://www.python.org/downloads/release/python-373/
-1. Open command prompt and paste the following:
-	```shell
-	pip3 install discord.py
-	pip3 install validators
-	```  
-
-1. Download the bot from github
-	- clone the repo using `git clone` or download the repo zip file.
-1. Set environment variable `DISCORD_BOT_TOKEN` to contain your Discord Bot Token.
-	- Go to the [Discord Developer site](https://discordapp.com/developers/applications/me) and create an application. You will need the Bot Token, and the application Client Id.
-1. Set `ADMIN_ROLE` environment variable. Users that are in this role are considered to be admins of the voice bot.
-1. Run:
-	```shell
-	python main.py
-	```
-
-1. Invite Bot to your discord using the following url:  
-`https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&permissions=285213712&scope=bot`
-
-# Run the bot in Docker
-
-```shell
-docker run \
-	--rm -d \
-	--restart=unless-stopped \
-	-e DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN} \
-	-e VCB_DB_PATH=/data \
-	-v /path/to/persistent/data:/data \
-	--name voice_create \
-	camalot/voice-create-bot-docker:latest
-```
+## HOW TO RUN THE BOT VIA DOCKER
