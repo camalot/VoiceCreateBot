@@ -937,6 +937,7 @@ class voice(commands.Cog):
                             else:
                                 defaultLimit = int(defaultLimitResp.content)
                                 await defaultLimitResp.delete()
+                                
                             # ASK SET DEFAULT CHANNEL LOCKED
                             defaultLocked = False
                             await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
