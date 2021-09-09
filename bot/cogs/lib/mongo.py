@@ -271,33 +271,34 @@ class MongoDatabase(database.Database):
                 self.open()
             c = self.connection.guild_settings.find_one({"guild_id": guildId})
             if c:
-                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'])
+                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'], adminRole=c['admin_role'])
             return None
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return None
-    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             gs = self.get_guild_settings(guildId=guildId)
             if gs:
-                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole)
+                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
             else:
-                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole)
+                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return False
-    def insert_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             payload = {
                 "guild_id": guildId,
                 "prefix": prefix,
-                "default_role": defaultRole
+                "default_role": defaultRole,
+                "admin_role": adminRole
             }
             self.connection.guild_settings.insert_one(payload)
             return True
@@ -305,13 +306,14 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def update_guild_settings(self, guildId, prefix, defaultRole):
+    def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             payload = {
                 "prefix": prefix,
-                "default_role": defaultRole
+                "default_role": defaultRole,
+                "admin_role": adminRole
             }
             self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
             return True

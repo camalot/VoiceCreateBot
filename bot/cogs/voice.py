@@ -817,24 +817,49 @@ class voice(commands.Cog):
                             return True
                         return False
                 # ask default role
+                index = 0
+                idx = -1
+                fields = list()
+                guild_roles = [r.name for r in ctx.guild.roles]
+                chunked = utils.chunk_list(guild_roles, 20)
+                total_pages = math.ceil(len(guild_roles) / 20)
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What should the default role of channels be?\n\nThis can also be changed at the Create Channel Level**', delete_after=60, footer="**You have 60 seconds to answer**")
+                page = 0
+                for c in chunked:
+                    for r in c:
+                        fields.append(EmbedField(f"{str(index+1)}: {r}", f"Enter {str(index+1)} to choose this role").__dict__)
+                        index += 1
+                    page += 1
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", f'**ROLES PAGE:{page}/{total_pages}**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     roleResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
                 else:
-                    found_role = discord.utils.get(ctx.guild.roles, name=roleResp.content)
-                    if found_role:
-                        default_role = found_role.name
-                    else:
-                        default_role = self.settings.default_role or "everyone"
-                    await roleResp.delete()
+                    guild_role_name = None
+                    if roleResp.content.isnumeric():
+                        idx = int(roleResp.content) - 1
+                        if idx >= 0 and idx < len(guild_roles):
+                            guild_role = discord.utils.get(ctx.guild.roles, name=guild_roles[idx])
+                            if guild_role:
+                                guild_role_name = guild_role.name
+                                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", f"You chose the role: '{guild_role_name}'", delete_after=5)
+
+                await roleResp.delete()
+                if not guild_role_name:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord role.', delete_after=5)
+                    return
 
                 # ask admin role
                 index = 0
+                idx = -1
                 fields = list()
-                for r in author.roles:
-                    fields.append(EmbedField(f"{str(index+1)}: {r.name}", f"Enter {str(index+1)} to choose this role").__dict__)
+                admin_roles = [r.name for r in ctx.guild.roles if r.permissions.administrator]
+                # chunked = utils.chunk_list(admin_roles, 20)
+                # total_pages = math.ceil(len(admin_roles) / 20)
+
+                for r in admin_roles:
+                    fields.append(EmbedField(f"{str(index+1)}: {r}", f"Enter {str(index+1)} to choose this role").__dict__)
                     index += 1
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What is your server admin role?\n\nChoose from the list:**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
@@ -842,26 +867,21 @@ class voice(commands.Cog):
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
                 else:
+                    admin_role_name = None
                     if roleResp.content.isnumeric():
                         idx = int(roleResp.content) - 1
-                        if idx >= 0 and idx < len(author.roles):
-                            admin_role = author.roles[idx]
-                            admin_role_name = None
-                            # found_role = discord.utils.get(ctx.guild.roles, name=roleResp.content)
+                        if idx >= 0 and idx < len(admin_roles):
+                            selected_admin_role_name = admin_roles[idx]
+                            admin_role = discord.utils.get(ctx.guild.roles, name=selected_admin_role_name)
                             if admin_role:
-                                admin_role_name = found_role.name
+                                admin_role_name = admin_role.name
                                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", f"You chose the role: '{admin_role_name}'", delete_after=5)
-                            else:
-                                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
-                                return
-                        else:
-                            await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
-                            return
-                    else:
-                        await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
-                        return
 
-                    await roleResp.delete()
+                await roleResp.delete()
+                if not admin_role_name:
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                    return
+
                 # ask bot prefix?
                 prefix = "."
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What would you like to set for the bot prefix?\n\nExample: `.`**', delete_after=60, footer="**You have 60 seconds to answer**")
@@ -871,8 +891,10 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
                 else:
                     prefix = prefixResp.content
-                    await prefixResp.delete()
-                self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=default_role)
+                await prefixResp.delete()
+
+
+                self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=guild_role_name, adminRole=admin_role_name)
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'You have successfully initialized the bot for this discord.', delete_after=5)
             except Exception as ex:
                 print(ex)
