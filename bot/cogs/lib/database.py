@@ -32,11 +32,11 @@ class Database():
         pass
     def get_guild_settings(self, guildId):
         pass
-    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         pass
-    def insert_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         pass
-    def update_guild_settings(self, guildId, prefix, defaultRole):
+    def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         pass
     def get_guild_create_channel_settings(self, guildId):
         pass

@@ -271,33 +271,34 @@ class MongoDatabase(database.Database):
                 self.open()
             c = self.connection.guild_settings.find_one({"guild_id": guildId})
             if c:
-                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'])
+                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'], adminRole=c['admin_role'])
             return None
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return None
-    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             gs = self.get_guild_settings(guildId=guildId)
             if gs:
-                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole)
+                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
             else:
-                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole)
+                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return False
-    def insert_guild_settings(self, guildId, prefix, defaultRole):
+    def insert_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             payload = {
                 "guild_id": guildId,
                 "prefix": prefix,
-                "default_role": defaultRole
+                "default_role": defaultRole,
+                "admin_role": adminRole
             }
             self.connection.guild_settings.insert_one(payload)
             return True
@@ -305,13 +306,14 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def update_guild_settings(self, guildId, prefix, defaultRole):
+    def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
                 self.open()
             payload = {
                 "prefix": prefix,
-                "default_role": defaultRole
+                "default_role": defaultRole,
+                "admin_role": adminRole
             }
             self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
             return True
@@ -544,16 +546,22 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
-            # ownerSet = c.fetchone()
-            # if ownerSet:
-            #     return int(ownerSet[0])
-            # return None
             owner = self.connection.voiceChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId}, { "userID": 1 })
             if owner:
                 return owner['userID']
             return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def update_tracked_channel_owner(self, guildId, voiceChannelId, ownerId, newOwnerId):
+        try:
+            if self.connection is None:
+                self.open()
+            # c.execute("UPDATE voiceChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+            # c.execute("UPDATE textChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
+            self.connection.voiceChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
+            self.connection.textChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
