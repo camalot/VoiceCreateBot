@@ -203,7 +203,7 @@ class MongoDatabase(database.Database):
             # c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (userId, guildId,))
             r = self.connection.userSettings.find_one({"guildID": guildId, "userID": userId})
             if r:
-                return settings.UserSettings(guildId=guildId, userId=userId, channelName=r['channelName'], channelLimit=int(r['channelLimit']), bitrate=int(r['bitrate']), defaultRole=r['defaultRole'])
+                return settings.UserSettings(guildId=guildId, userId=userId, channelName=r['channelName'], channelLimit=int(r['channelLimit']), bitrate=int(r['bitrate']), defaultRole=r['defaultRole'], autoGame=r['auto_game'])
             else:
                 return None
         except Exception as ex:
