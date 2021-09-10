@@ -38,6 +38,7 @@ class voice(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
 
     async def clean_up_tracked_channels(self, guildID):
         _method = inspect.stack()[1][3]
@@ -109,14 +110,6 @@ class voice(commands.Cog):
     @commands.group()
     async def voice(self, ctx):
         pass
-
-    @setup.error
-    async def info_error(self, ctx, error):
-        _method = inspect.stack()[1][3]
-        if isinstance(error, discord.errors.NotFound):
-            self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
-        else:
-            self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -2383,6 +2376,14 @@ class voice(commands.Cog):
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
+
+    @setup.error
+    async def info_error(self, ctx, error):
+        _method = inspect.stack()[1][3]
+        if isinstance(error, discord.errors.NotFound):
+            self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
+        else:
+            self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
 
 def setup(bot):
     bot.add_cog(voice(bot))
