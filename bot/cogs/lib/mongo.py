@@ -1,13 +1,13 @@
-
 from pymongo import MongoClient
 import traceback
 import json
 
-from discord.ext.commands.converter import CategoryChannelConverter
+# from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
 from . import utils
 from . import sqlite
+
 class MongoDatabase(database.Database):
     def __init__(self):
         self.settings = settings.Settings()
@@ -617,6 +617,31 @@ class MongoDatabase(database.Database):
                 self.connection.guildCategorySettings.update_many({ "guildID": guildId, "voiceCategoryID": categoryId}, { "$set": { "defaultRole": defaultRole }})
                 return True
             return False
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
+    def insert_log(self, guildId: int, level: str, method: str, message: str, stackTrace: str = None):
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "guild_id": guildId,
+                "timestamp": utils.get_timestamp(),
+                "level": level.name,
+                "method": method,
+                "message": message,
+                "stack_trace": stackTrace
+            }
+            self.connection.logs.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+    def clear_log(self, guildId):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.logs.delete_many({ "guild_id": guildId })
         except Exception as ex:
             print(ex)
             traceback.print_exc()

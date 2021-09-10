@@ -1,7 +1,6 @@
 
 from traceback import print_exc
 
-
 class Database():
 
     def __init__(self):
@@ -94,6 +93,11 @@ class Database():
     def get_all_from_text_channel_table(self):
         pass
     def get_all_from_voice_channel_table(self):
+        pass
+
+    def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
+        pass
+    def clear_log(self, guildId: int):
         pass
 
     def UPDATE_SCHEMA(self):
