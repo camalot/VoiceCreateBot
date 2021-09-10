@@ -1507,6 +1507,9 @@ class voice(commands.Cog):
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            print(f"[auto_game] default_role: {str(default_role or self.settings.default_role)}")
+            if temp_default_role is None:
+                temp_default_role = self.get_by_name_or_id(ctx.guild.roles, "@everyone" )
             if user_settings:
                 self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
             else:
