@@ -88,61 +88,103 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        guild_id = after.guild.id
-        if not after:
-            pass
-        is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
-        if is_in_channel:
-            print(f"[on_member_update] Member Update Start of user: '{after.name}'")
-            voice_channel = after.voice.channel
-            voice_channel_id = voice_channel.id
-            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-            if owner_id != after.id:
-                # user is in a channel, but not their channel
-                print("[on_member_update] User is in a channel, but not their own channel.")
+        try:
+            guild_id = after.guild.id
+            if not after:
                 pass
-            if before.activity == after.activity:
-                # we are only looking at activity
-                print("[on_member_update] Before / After activity is the same")
-                pass
+            is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
+            if is_in_channel:
+                self.db.open()
+                print(f"[on_member_update] Member Update Start of user: '{after.name}'")
+                voice_channel = after.voice.channel
+                voice_channel_id = voice_channel.id
+                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+                if owner_id != after.id:
+                    # user is in a channel, but not their channel
+                    print("[on_member_update] User is in a channel, but not their own channel.")
+                    pass
+                if before.activity == after.activity:
+                    # we are only looking at activity
+                    print("[on_member_update] Before / After activity is the same")
+                    pass
 
-            owner = await self.get_or_fetch_member(owner_id)
-            user_settings = self.db.get_user_settings(guild_id, after.id)
-            if user_settings and user_settings.auto_game:
-                print(f"[on_member_update] trigger auto game change")
-                channel_name = voice_channel.name
-                if owner.activities:
-                    game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-                    stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-                    watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
-                    if game_activity:
-                        if len(game_activity) > 1:
-                            print(f"[on_member_update] There are multiple choices. Ask?")
-                            channel_name = game_activity[0].name
-                            pass
-                        else:
-                            channel_name = game_activity[0].name
-                    elif stream_activity:
-                        channel_name = stream_activity[0].game
-                    elif watch_activity:
-                        channel_name = watch_activity[0].name
-                if voice_channel.name != channel_name:
+                owner = await self.get_or_fetch_member(owner_id)
+                user_settings = self.db.get_user_settings(guild_id, after.id)
+
+                if user_settings and user_settings.auto_game:
                     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
                     if text_channel_id:
                         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
-                    if text_channel:
-                        print(f"[on_member_update] Change Text Channel Name: {channel_name}")
-                        await text_channel.edit(name=channel_name)
-                        await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
-                    voice_channel.edit(name=channel_name)
-            else:
-                print(f"[on_member_update] trigger name change, but setting is false.")
-        pass
+                    print(f"[on_member_update] trigger auto game change")
+                    selected_title = voice_channel.name
+                    if owner and text_channel:
+                        selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title="Update Title To Game")
+                        if selected_title:
+                            if voice_channel.name != selected_title:
+                                if text_channel:
+                                    print(f"[on_member_update] Change Text Channel Name: {selected_title}")
+                                    await text_channel.edit(name=selected_title)
+                                    await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {selected_title}!', delete_after=5)
+                                voice_channel.edit(name=selected_title)
+                        else:
+                            print(f"[on_member_update] Unable to retrieve a valid title from game.")
+                    else:
+                        print(f"[on_member_update] owner is none, or text_channel is none. Can't ask to choose game.")
+                        game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                        stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                        watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+                        if game_activity:
+                            selected_title = game_activity[0].name
+                        elif stream_activity:
+                            selected_title = stream_activity[0].game
+                        elif watch_activity:
+                            selected_title = watch_activity[0].name
+
+                        if selected_title:
+                            if voice_channel.name != selected_title:
+                                if text_channel:
+                                    print(f"[on_member_update] Change Text Channel Name: {selected_title}")
+                                    await text_channel.edit(name=selected_title)
+                                print(f"[on_member_update] Change Voice Channel Name: {selected_title}")
+                                voice_channel.edit(name=selected_title)
+
+                    # if owner.activities:
+                    #     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                    #     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                    #     watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+                    #     if game_activity:
+                    #         if len(game_activity) > 1:
+                    #             print(f"[on_member_update] There are multiple choices. Ask?")
+                    #             channel_name = game_activity[0].name
+                    #             pass
+                    #         else:
+                    #             channel_name = game_activity[0].name
+                    #     elif stream_activity:
+                    #         channel_name = stream_activity[0].game
+                    #     elif watch_activity:
+                    #         channel_name = watch_activity[0].name
+                    # if voice_channel.name != channel_name:
+                    #     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+                    #     if text_channel_id:
+                    #         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+                    #     if text_channel:
+                    #         print(f"[on_member_update] Change Text Channel Name: {channel_name}")
+                    #         await text_channel.edit(name=channel_name)
+                    #         await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
+                    #     voice_channel.edit(name=channel_name)
+                else:
+                    print(f"[on_member_update] trigger name change, but setting is false.")
+            pass
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            self.db.close()
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
-        self.db.open()
         try:
+            self.db.open()
             if before and after:
                 if before.id == after.id:
                     # This handles a manual channel rename. it changes the text channel name to match.
@@ -1553,66 +1595,69 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
-            fields = list()
-            titles = list()
-            index = 0
+            # fields = list()
+            # titles = list()
+            # index = 0
             if owner:
-                if owner.activities:
-                    game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-                    stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-                    watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+            #     if owner.activities:
+            #         game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+            #         stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+            #         watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
 
-                    if game_activity:
-                        for a in game_activity:
-                            titles.append(a.name)
-                            print(f"[game] game.name: {a.name}")
-                        # name = game_activity[0].name
-                    elif stream_activity:
-                        for a in stream_activity:
-                            # name = stream_activity[0].name
-                            print(f"[game] stream.game: {a.game}")
-                            print(f"[game] stream.name: {a.name}")
-                            titles.append(a.game)
-                            titles.append(a.name)
-                        # name = stream_activity[0].game
-                    elif watch_activity:
-                        for a in watch_activity:
-                            # name = watch_activity[0].name
-                            print(f"[game] watch.name: {a.name}")
-                            titles.append(a.name)
-                    else:
-                        print(f"Activities: {str(len(owner.activities))}")
-                        for a in owner.activities:
-                            titles.append(a.name)
-                            print(f"[game] activity.name: {a.name}")
+            #         if game_activity:
+            #             for a in game_activity:
+            #                 titles.append(a.name)
+            #                 print(f"[game] game.name: {a.name}")
+            #             # name = game_activity[0].name
+            #         elif stream_activity:
+            #             for a in stream_activity:
+            #                 # name = stream_activity[0].name
+            #                 print(f"[game] stream.game: {a.game}")
+            #                 print(f"[game] stream.name: {a.name}")
+            #                 titles.append(a.game)
+            #                 titles.append(a.name)
+            #             # name = stream_activity[0].game
+            #         elif watch_activity:
+            #             for a in watch_activity:
+            #                 # name = watch_activity[0].name
+            #                 print(f"[game] watch.name: {a.name}")
+            #                 titles.append(a.name)
+            #         else:
+            #             print(f"Activities: {str(len(owner.activities))}")
+            #             for a in owner.activities:
+            #                 titles.append(a.name)
+            #                 print(f"[game] activity.name: {a.name}")
 
-                    if len(titles) > 1:
-                        index = 0
-                        for t in titles:
-                            fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
-                            index += 1
-                        await self.sendEmbed(ctx.channel, "Multiple Options", f'{ctx.author.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
-                        try:
-                            titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
-                        except asyncio.TimeoutError:
-                            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
-                        else:
-                            if titleResp.content.isnumeric():
-                                idx = int(titleResp.content) - 1
-                                if idx >= 0 and idx < len(titles):
-                                    selected_title = titles[idx]
-                                    if selected_title:
-                                        await self.sendEmbed(ctx.channel, "Multiple Options", f"You selected: '{selected_title}'", delete_after=5)
-                            await titleResp.delete()
-                    elif len(titles) == 1:
-                        selected_title = titles[0]
+            #         if len(titles) > 1:
+            #             index = 0
+            #             for t in titles:
+            #                 fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
+            #                 index += 1
+            #             await self.sendEmbed(ctx.channel, "Multiple Options", f'{ctx.author.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
+            #             try:
+            #                 titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
+            #             except asyncio.TimeoutError:
+            #                 await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            #             else:
+            #                 if titleResp.content.isnumeric():
+            #                     idx = int(titleResp.content) - 1
+            #                     if idx >= 0 and idx < len(titles):
+            #                         selected_title = titles[idx]
+            #                         if selected_title:
+            #                             await self.sendEmbed(ctx.channel, "Multiple Options", f"You selected: '{selected_title}'", delete_after=5)
+            #                 await titleResp.delete()
+            #         elif len(titles) == 1:
+            #             selected_title = titles[0]
 
-                else:
-                    print(f"[game] owner.activity is None")
+            #     else:
+            #         print(f"[game] owner.activity is None")
 
+            #     if selected_title:
+            #         await self._name(ctx, name=selected_title, saveSettings=False)
+            #         # message deleted by the name call.
+                selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title="Update Title To Game")
                 if selected_title:
-                    await self._name(ctx, name=selected_title, saveSettings=False)
-                    # message deleted by the name call.
+                    self._name(ctx, selected_title, False)
                 else:
                     await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention} I was unable to determine the game title.', delete_after=5)
                     await ctx.message.delete()
@@ -1902,6 +1947,74 @@ class voice(commands.Cog):
             traceback.print_exc(e)
         finally:
             await ctx.message.delete()
+
+    async def ask_game_for_user(self, targetChannel: discord.TextChannel, user: discord.Member, title: str):
+        def check_user(m):
+            same = m.author.id == user.id
+            return same
+        def check_numeric(m):
+            if check_user(m):
+                return m.content.isnumeric()
+            return False
+        selected_title = None
+        titles = list()
+        fields = list()
+        if user:
+            if user.activities:
+                game_activity = [a for a in user.activities if a.type == discord.ActivityType.playing]
+                stream_activity = [a for a in user.activities if a.type == discord.ActivityType.streaming]
+                watch_activity = [a for a in user.activities if a.type == discord.ActivityType.watching]
+
+                if game_activity:
+                    for a in game_activity:
+                        titles.append(a.name)
+                        print(f"[ask_game] game.name: {a.name}")
+                    # name = game_activity[0].name
+                elif stream_activity:
+                    for a in stream_activity:
+                        # name = stream_activity[0].name
+                        print(f"[ask_game] stream.game: {a.game}")
+                        print(f"[ask_game] stream.name: {a.name}")
+                        titles.append(a.game)
+                        titles.append(a.name)
+                    # name = stream_activity[0].game
+                elif watch_activity:
+                    for a in watch_activity:
+                        # name = watch_activity[0].name
+                        print(f"[ask_game] watch.name: {a.name}")
+                        titles.append(a.name)
+                else:
+                    print(f"Activities: {str(len(user.activities))}")
+                    for a in user.activities:
+                        titles.append(a.name)
+                        print(f"[ask_game] activity.name: {a.name}")
+
+                if len(titles) > 1:
+                    index = 0
+                    for t in titles:
+                        fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
+                        index += 1
+                    await self.sendEmbed(targetChannel, title, f'{user.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
+                    try:
+                        titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
+                    except asyncio.TimeoutError:
+                        await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
+                    else:
+                        if titleResp.content.isnumeric():
+                            idx = int(titleResp.content) - 1
+                            if idx >= 0 and idx < len(titles):
+                                selected_title = titles[idx]
+                                if selected_title:
+                                    await self.sendEmbed(targetChannel, title, f"You selected: '{selected_title}'", delete_after=5)
+                        await titleResp.delete()
+                elif len(titles) == 1:
+                    selected_title = titles[0]
+
+            else:
+                print(f"[game] owner.activity is None")
+
+            return selected_title
+
     async def ask_admin_role(self, ctx, title: str = "Voice Channel Initialization"):
         def check_user(m):
             same = m.author.id == ctx.author.id
