@@ -16,10 +16,11 @@ import glob
 import typing
 from .lib import utils
 from .lib import settings
-# from .lib import sqlite
+from .lib import sqlite
 from .lib import mongo
 from .lib import logger
 from .lib import loglevel
+from .lib import dbprovider
 import inspect
 class EmbedField():
     def __init__(self, name, value):
@@ -30,14 +31,19 @@ class voice(commands.Cog):
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
-        # self.db = sqlite.SqliteDatabase()
-        self.db = mongo.MongoDatabase()
+        if self.settings.db_provider == dbprovider.DatabaseProvider.SQLITE:
+            self.db = sqlite.SqliteDatabase()
+        elif self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
+            self.db = mongo.MongoDatabase()
+        else:
+            self.db = mongo.MongoDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, "voice.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
 
     async def clean_up_tracked_channels(self, guildID):

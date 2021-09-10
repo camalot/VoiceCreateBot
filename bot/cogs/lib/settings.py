@@ -5,6 +5,7 @@ import glob
 import typing
 from . import utils
 import json
+from . import dbprovider
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
@@ -20,12 +21,18 @@ class Settings:
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
+        dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
+        self.db_provider = dbprovider.DatabaseProvider[dbp]
+        if not self.db_provider:
+            self.db_provider = dbprovider.DatabaseProvider.DEFAULT
+
 
         # DEPRECATED
         self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
         self.admin_roles = utils.dict_get(os.environ, 'ADMIN_ROLES', default_value = 'Admin').split(',')
         self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = '').split(' ')
         self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
+
 
 
 class GuildCategorySettings:
