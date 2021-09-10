@@ -88,77 +88,103 @@ class voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        guild_id = after.guild.id
-        if not after:
+        try:
+            guild_id = after.guild.id
+            if not after:
+                pass
+            is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
+            if is_in_channel:
+                self.db.open()
+                print(f"[on_member_update] Member Update Start of user: '{after.name}'")
+                voice_channel = after.voice.channel
+                voice_channel_id = voice_channel.id
+                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+                if owner_id != after.id:
+                    # user is in a channel, but not their channel
+                    print("[on_member_update] User is in a channel, but not their own channel.")
+                    pass
+                if before.activity == after.activity:
+                    # we are only looking at activity
+                    print("[on_member_update] Before / After activity is the same")
+                    pass
+
+                owner = await self.get_or_fetch_member(owner_id)
+                user_settings = self.db.get_user_settings(guild_id, after.id)
+
+                if user_settings and user_settings.auto_game:
+                    text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+                    if text_channel_id:
+                        text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+                    print(f"[on_member_update] trigger auto game change")
+                    selected_title = voice_channel.name
+                    if owner and text_channel:
+                        selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title="Update Title To Game")
+                        if selected_title:
+                            if voice_channel.name != selected_title:
+                                if text_channel:
+                                    print(f"[on_member_update] Change Text Channel Name: {selected_title}")
+                                    await text_channel.edit(name=selected_title)
+                                    await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {selected_title}!', delete_after=5)
+                                voice_channel.edit(name=selected_title)
+                        else:
+                            print(f"[on_member_update] Unable to retrieve a valid title from game.")
+                    else:
+                        print(f"[on_member_update] owner is none, or text_channel is none. Can't ask to choose game.")
+                        game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                        stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                        watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+                        if game_activity:
+                            selected_title = game_activity[0].name
+                        elif stream_activity:
+                            selected_title = stream_activity[0].game
+                        elif watch_activity:
+                            selected_title = watch_activity[0].name
+
+                        if selected_title:
+                            if voice_channel.name != selected_title:
+                                if text_channel:
+                                    print(f"[on_member_update] Change Text Channel Name: {selected_title}")
+                                    await text_channel.edit(name=selected_title)
+                                print(f"[on_member_update] Change Voice Channel Name: {selected_title}")
+                                voice_channel.edit(name=selected_title)
+
+                    # if owner.activities:
+                    #     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
+                    #     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                    #     watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+                    #     if game_activity:
+                    #         if len(game_activity) > 1:
+                    #             print(f"[on_member_update] There are multiple choices. Ask?")
+                    #             channel_name = game_activity[0].name
+                    #             pass
+                    #         else:
+                    #             channel_name = game_activity[0].name
+                    #     elif stream_activity:
+                    #         channel_name = stream_activity[0].game
+                    #     elif watch_activity:
+                    #         channel_name = watch_activity[0].name
+                    # if voice_channel.name != channel_name:
+                    #     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+                    #     if text_channel_id:
+                    #         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+                    #     if text_channel:
+                    #         print(f"[on_member_update] Change Text Channel Name: {channel_name}")
+                    #         await text_channel.edit(name=channel_name)
+                    #         await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
+                    #     voice_channel.edit(name=channel_name)
+                else:
+                    print(f"[on_member_update] trigger name change, but setting is false.")
             pass
-        is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
-        if is_in_channel:
-            print(f"[on_member_update] Member Update Start of user: '{after.name}'")
-            voice_channel = after.voice.channel
-            voice_channel_id = voice_channel.id
-            owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-            if owner_id != after.id:
-                # user is in a channel, but not their channel
-                print("[on_member_update] User is in a channel, but not their own channel.")
-                pass
-            if before.activity == after.activity:
-                # we are only looking at activity
-                print("[on_member_update] Before / After activity is the same")
-                pass
-
-            owner = await self.get_or_fetch_member(owner_id)
-            user_settings = self.db.get_user_settings(guild_id, after.id)
-
-
-            if user_settings and user_settings.auto_game:
-                text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
-                if text_channel_id:
-                    text_channel = await self.get_or_fetch_channel(int(text_channel_id))
-                print(f"[on_member_update] trigger auto game change")
-                channel_name = voice_channel.name
-                if owner and text_channel:
-                    selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title="Update Title To Game")
-                    if selected_title:
-                        if voice_channel.name != channel_name:
-                            if text_channel:
-                                print(f"[on_member_update] Change Text Channel Name: {channel_name}")
-                                await text_channel.edit(name=channel_name)
-                                await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
-                            voice_channel.edit(name=channel_name)
-
-
-                # if owner.activities:
-                #     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-                #     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-                #     watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
-                #     if game_activity:
-                #         if len(game_activity) > 1:
-                #             print(f"[on_member_update] There are multiple choices. Ask?")
-                #             channel_name = game_activity[0].name
-                #             pass
-                #         else:
-                #             channel_name = game_activity[0].name
-                #     elif stream_activity:
-                #         channel_name = stream_activity[0].game
-                #     elif watch_activity:
-                #         channel_name = watch_activity[0].name
-                # if voice_channel.name != channel_name:
-                #     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
-                #     if text_channel_id:
-                #         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
-                #     if text_channel:
-                #         print(f"[on_member_update] Change Text Channel Name: {channel_name}")
-                #         await text_channel.edit(name=channel_name)
-                #         await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
-                #     voice_channel.edit(name=channel_name)
-            else:
-                print(f"[on_member_update] trigger name change, but setting is false.")
-        pass
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            self.db.close()
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
-        self.db.open()
         try:
+            self.db.open()
             if before and after:
                 if before.id == after.id:
                     # This handles a manual channel rename. it changes the text channel name to match.
