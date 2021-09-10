@@ -1910,9 +1910,10 @@ class voice(commands.Cog):
             else:
                 owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel.id)
                 if owner_id:
-                    owner = ctx.guild.get_member(int(owner_id))
-                    if not owner:
-                        owner = await ctx.guild.fetch_member(int(owner_id))
+                    owner = await self.get_or_fetch_member(ctx.guild, owner_id)
+                    # owner = ctx.guild.get_member(int(owner_id))
+                    # if not owner:
+                    #     owner = await ctx.guild.fetch_member(int(owner_id))
                     if owner:
                         await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
                     else:
@@ -1975,7 +1976,8 @@ class voice(commands.Cog):
             else:
                 for data in channel.members:
                     if data.id == owner_id:
-                        owner = ctx.guild.get_member(owner_id)
+                        # owner = ctx.guild.get_member(owner_id)
+                        owner = await self.get_or_fetch_member(ctx.guild, owner_id)
                         await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} This channel is already owned by {owner.mention}!", delete_after=5)
                         found_as_owner = True
                         break
