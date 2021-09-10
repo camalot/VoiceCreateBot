@@ -19,6 +19,7 @@ from .lib import settings
 # from .lib import sqlite
 from .lib import mongo
 from .lib import logger
+from .lib import loglevel
 import inspect
 class EmbedField():
     def __init__(self, name, value):
@@ -31,7 +32,7 @@ class voice(commands.Cog):
         self.bot = bot
         # self.db = sqlite.SqliteDatabase()
         self.db = mongo.MongoDatabase()
-        self.log = logger.Log()
+        self.log = logger.Log(minimumLogLevel=loglevel.LogLevel.WARNING)
 
     async def clean_up_tracked_channels(self, guildID):
         _method = inspect.stack()[1][3]
