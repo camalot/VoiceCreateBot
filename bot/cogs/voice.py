@@ -32,7 +32,12 @@ class voice(commands.Cog):
         self.bot = bot
         # self.db = sqlite.SqliteDatabase()
         self.db = mongo.MongoDatabase()
-        self.log = logger.Log(minimumLogLevel=loglevel.LogLevel.WARNING)
+
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
 
     async def clean_up_tracked_channels(self, guildID):
         _method = inspect.stack()[1][3]
