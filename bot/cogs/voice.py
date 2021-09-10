@@ -136,7 +136,7 @@ class voice(commands.Cog):
                     # print(f"[on_member_update] [guild:{str(guild_id)}] Before / After activity is the same")
                     pass
 
-                owner = await self.get_or_fetch_member(owner_id)
+                owner = await self.get_or_fetch_member(guild_id, owner_id)
                 user_settings = self.db.get_user_settings(guild_id, after.id)
 
                 if user_settings and user_settings.auto_game:
