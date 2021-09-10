@@ -1598,6 +1598,7 @@ class voice(commands.Cog):
                                     selected_title = titles[idx]
                                     if selected_title:
                                         await self.sendEmbed(ctx.channel, "Multiple Options", f"You selected: '{selected_title}'", delete_after=5)
+                            await titleResp.delete()
 
                 else:
                     print(f"[game] owner.activity is None")
