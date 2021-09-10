@@ -105,6 +105,11 @@ class voice(commands.Cog):
     async def voice(self, ctx):
         pass
 
+    @setup.error
+    async def info_error(self, ctx, error):
+        _method = inspect.stack()[1][3]
+        self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
+
     @commands.Cog.listener()
     async def on_ready(self):
         for guild in self.bot.guilds:
@@ -211,6 +216,8 @@ class voice(commands.Cog):
                     self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
                     # print(f"[on_member_update] [guild:{str(guild_id)}] trigger name change, but setting is false.")
             pass
+        except discord.errors.NotFound as nf:
+            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             # print(ex)
@@ -275,10 +282,10 @@ class voice(commands.Cog):
                                 self.db.update_user_channel_name(guildId=guildID, userId=channelOwnerId, channelName=after.name)
                             else:
                                 self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
+        except discord.errors.NotFound as nf:
+            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
             self.log.error(guildID, _method , str(e), traceback.format_exc())
-            # print(e)
-            # traceback.print_exc()
         finally:
             self.db.close()
 
@@ -369,8 +376,6 @@ class voice(commands.Cog):
                         await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
-                        # print(ex)
-                        # traceback.print_exc()
                         self.log.error(guildID, _method , str(ex), traceback.format_exc())
                     self.log.debug(guildID, _method , f"Set user limit to {limit} on {voiceChannel}")
                     # print(f"[on_voice_state_update] [guild:{str(guildID)}] Set user limit to {limit} on {voiceChannel}")
@@ -402,11 +407,8 @@ class voice(commands.Cog):
                         await self.sendEmbed(textChannel, initMessage['title'], initMessage['message'], initMessage['fields'], delete_after=None, footer='')
             except discord.errors.NotFound as nf:
                 self.log.warn(guildID, _method , str(nf))
-                # print(nf)
             except Exception as ex:
                 self.log.error(guildID, _method , str(ex), traceback.format_exc())
-                # print(ex)
-                # traceback.print_exc()
 
 
     @voice.command()
@@ -1182,13 +1184,6 @@ class voice(commands.Cog):
         finally:
             self.db.close()
             await ctx.message.delete()
-
-    @setup.error
-    async def info_error(self, ctx, error):
-        _method = inspect.stack()[1][3]
-        self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
-        # print(error)
-        # traceback.print_exc()
 
     @voice.command(aliases=['get-default-role', 'gdr'])
     async def get_default_role(self, ctx):
@@ -2344,9 +2339,11 @@ class voice(commands.Cog):
                 return chan
             else:
                 return  None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
-            # print(ex)
             return None
     async def get_or_fetch_user(self, userId: int):
         _method = inspect.stack()[1][3]
@@ -2357,9 +2354,11 @@ class voice(commands.Cog):
                     user = await self.bot.fetch_user(userId)
                 return user
             return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
-            # print(ex)
             return None
     async def get_or_fetch_member(self, guild, userId: int):
         _method = inspect.stack()[1][3]
@@ -2370,9 +2369,11 @@ class voice(commands.Cog):
                     user = await guild.fetch_member(userId)
                 return user
             return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
-            # print(ex)
             return None
 
 def setup(bot):
