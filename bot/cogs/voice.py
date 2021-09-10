@@ -43,11 +43,9 @@ class voice(commands.Cog):
     async def clean_up_tracked_channels(self, guildID):
         _method = inspect.stack()[1][3]
         self.log.debug(guildID, _method , "Clean up tracked channels")
-        # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Clean up tracked channels")
         self.db.open()
         try:
             self.log.debug(guildID, _method , "checking guild create channels")
-            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] checking guild create channels")
             guildSettings = self.db.get_guild_create_channel_settings(guildId=guildID)
             if guildSettings and guildSettings.channels:
                 for cc in guildSettings.channels:
@@ -55,7 +53,6 @@ class voice(commands.Cog):
                     if not cc_channel:
                         # delete this channel as it no longer exists.
                         self.log.debug(guildID, _method , f"Deleting create channel {cc.channel_id} as it does not exist")
-                        # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Deleting create channel {cc.channel_id} as it does not exist")
                         self.db.delete_guild_create_channel(guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id)
                         pass
                     else:
@@ -64,15 +61,12 @@ class voice(commands.Cog):
                         if not cc_category:
                             # what if its not in a category at all?
                             self.log.debug(guildID, _method , "Create Channel is no longer in a category")
-                            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Create Channel is no longer in a category")
                         else:
                             # check if the category is the same that we have tracked
                             if cc.category_id != cc_category.id:
                                 self.log.debug(guildID, _method , "Category ID is different")
-                                # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Category ID is different.")
                                 self.db.update_guild_create_channel_settings(guildId=guildID, createChannelId=cc.channel_id, categoryId=cc_category.id, ownerId=cc.owner_id, useStage=cc.use_stage)
             self.log.debug(guildID, _method , "checking user created channels")
-            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] checking user created channels")
             trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
             for vc in trackedChannels:
                 textChannel = None
@@ -88,22 +82,18 @@ class voice(commands.Cog):
                         if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
                             self.log.debug(guildID, _method , f"Start Tracked Cleanup: {voiceChannelId}")
                             self.log.debug(guildID, _method , f"Deleting Channel {voiceChannel} because everyone left")
-                            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Start Tracked Cleanup: {voiceChannelId}")
-                            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Deleting Channel {voiceChannel} because everyone left")
                             self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
                             if textChannel:
                                 await textChannel.delete()
                             await voiceChannel.delete()
                     else:
                         self.log.debug(guildID, _method , f"Unable to find voice channel: {voiceChannelId}")
-                        # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Unable to find voice channel: {voiceChannelId}")
                         self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
         except discord.errors.NotFound as nf:
-            # print(nf)
-            # traceback.print_exc()
             self.log.warn(guildID, _method, str(nf), traceback.format_exc())
             self.log.debug(guildID, _method , f"Channel Not Found. Already Cleaned Up")
-            # print(f"[clean_up_tracked_channels] [guild:{str(guildID)}] Channel Not Found. Already Cleaned Up")
+        except Exception as ex:
+            self.log.error(guildID, _method, str(ex), traceback.format_exc())
         finally:
              self.db.close()
 
@@ -128,19 +118,16 @@ class voice(commands.Cog):
             if is_in_channel:
                 self.db.open()
                 self.log.debug(guild_id, _method , f"Member Update Start of user: '{after.name}'")
-                # print(f"[on_member_update] [guild:{str(guild_id)}] Member Update Start of user: '{after.name}'")
                 voice_channel = after.voice.channel
                 voice_channel_id = voice_channel.id
                 owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
                 if owner_id != after.id:
                     # user is in a channel, but not their channel
                     self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not their own channel.")
-                    # print(f"[on_member_update] [guild:{str(guild_id)}] User is in a channel, but not their own channel.")
                     pass
                 if before.activity == after.activity:
                     # we are only looking at activity
                     self.log.debug(guild_id, _method , f"Before / After activity is the same")
-                    # print(f"[on_member_update] [guild:{str(guild_id)}] Before / After activity is the same")
                     pass
 
                 owner = await self.get_or_fetch_member(after.guild, owner_id)
@@ -151,7 +138,6 @@ class voice(commands.Cog):
                     if text_channel_id:
                         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
                     self.log.debug(guild_id, _method , f"trigger auto game change")
-                    # print(f"[on_member_update] [guild:{str(guild_id)}] trigger auto game change")
                     selected_title = voice_channel.name
                     if owner and text_channel:
                         selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title="Update Title To Game")
@@ -159,16 +145,13 @@ class voice(commands.Cog):
                             if voice_channel.name != selected_title:
                                 if text_channel:
                                     self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
-                                    # print(f"[on_member_update] [guild:{str(guild_id)}] Change Text Channel Name: {selected_title}")
                                     await text_channel.edit(name=selected_title)
                                     await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {selected_title}!', delete_after=5)
                                 await voice_channel.edit(name=selected_title)
                         else:
                             self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
-                            # print(f"[on_member_update] [guild:{str(guild_id)}] Unable to retrieve a valid title from game.")
                     else:
                         self.log.debug(guild_id, _method , f"owner is none, or text_channel is none. Can't ask to choose game.")
-                        # print(f"[on_member_update] [guild:{str(guild_id)}] owner is none, or text_channel is none. Can't ask to choose game.")
                         game_activity = [a for a in after.activities if a.type == discord.ActivityType.playing]
                         stream_activity = [a for a in after.activities if a.type == discord.ActivityType.streaming]
                         watch_activity = [a for a in after.activities if a.type == discord.ActivityType.watching]
@@ -183,46 +166,16 @@ class voice(commands.Cog):
                             if voice_channel.name != selected_title:
                                 if text_channel:
                                     self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
-                                    # print(f"[on_member_update] [guild:{str(guild_id)}] Change Text Channel Name: {selected_title}")
                                     await text_channel.edit(name=selected_title)
                                 self.log.debug(guild_id, _method , f"Change Voice Channel Name: {selected_title}")
-                                # print(f"[on_member_update] [guild:{str(guild_id)}] Change Voice Channel Name: {selected_title}")
                                 await voice_channel.edit(name=selected_title)
-
-                    # if owner.activities:
-                    #     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-                    #     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-                    #     watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
-                    #     if game_activity:
-                    #         if len(game_activity) > 1:
-                    #             print(f"[on_member_update] There are multiple choices. Ask?")
-                    #             channel_name = game_activity[0].name
-                    #             pass
-                    #         else:
-                    #             channel_name = game_activity[0].name
-                    #     elif stream_activity:
-                    #         channel_name = stream_activity[0].game
-                    #     elif watch_activity:
-                    #         channel_name = watch_activity[0].name
-                    # if voice_channel.name != channel_name:
-                    #     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
-                    #     if text_channel_id:
-                    #         text_channel = await self.get_or_fetch_channel(int(text_channel_id))
-                    #     if text_channel:
-                    #         print(f"[on_member_update] Change Text Channel Name: {channel_name}")
-                    #         await text_channel.edit(name=channel_name)
-                    #         await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {channel_name}!', delete_after=5)
-                    #     voice_channel.edit(name=channel_name)
                 else:
                     self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
-                    # print(f"[on_member_update] [guild:{str(guild_id)}] trigger name change, but setting is false.")
             pass
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
         finally:
             self.db.close()
 
@@ -242,7 +195,6 @@ class voice(commands.Cog):
                         if before.name == after.name:
                             # same name. ignore
                             self.log.debug(guildID, _method , "Channel Names are the same. Nothing to do")
-                            # print(f"[on_guild_channel_update] [guild:{str(guildID)}] Channel Names are the same. Nothing to do")
                             pass
                         else:
                             userSettings = self.db.get_user_settings(guildID, channelOwnerId)
@@ -256,7 +208,6 @@ class voice(commands.Cog):
                                 else:
                                     default_role = self.get_by_name_or_id(after.guild.roles, self.settings.default_role or "@everyone")
                             self.log.debug(guildID, _method , f"Channel Type: {after.type}")
-                            # print(f"[on_guild_channel_update] [guild:{str(guildID)}] Channel Type: {after.type}")
                             if after.type == discord.ChannelType.voice:
                                 # new channel name
                                 text_channel_id = self.db.get_text_channel_id(guildId=guildID, voiceChannelId=after.id)
@@ -264,7 +215,6 @@ class voice(commands.Cog):
                                     textChannel = await self.get_or_fetch_channel(int(text_channel_id))
                                 if textChannel:
                                     self.log.debug(guildID, _method , f"Change Text Channel Name: {after.name}")
-                                    # print(f"[on_guild_channel_update] [guild:{str(guildID)}] Change Text Channel Name: {after.name}")
                                     await textChannel.edit(name=after.name)
                                     await self.sendEmbed(textChannel, "Updated Channel Name", f'You have changed the channel name to {textChannel.name}!', delete_after=5)
                             if after.type == discord.ChannelType.text:
@@ -274,7 +224,6 @@ class voice(commands.Cog):
                                     voiceChannel = await self.get_or_fetch_channel(voice_channel_id)
                                 if voiceChannel:
                                     self.log.debug(guildID, _method , f"Change Voice Channel Name: {after.name}")
-                                    # print(f"[on_guild_channel_update] [guild:{str(guildID)}] change Voice Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
                                     await self.sendEmbed(after, "Updated Channel Name", f'You have changed the channel name to {after.name}!', delete_after=5)
 
@@ -284,7 +233,7 @@ class voice(commands.Cog):
                             else:
                                 self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
         except discord.errors.NotFound as nf:
-            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
+            self.log.warn(guildID, _method, str(nf), traceback.format_exc())
         except Exception as e:
             self.log.error(guildID, _method , str(e), traceback.format_exc())
         finally:
@@ -296,22 +245,18 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         guildID = member.guild.id
         self.log.debug(guildID, _method , f"On Voice State Update")
-        # print(f"[on_voice_state_update] [guild:{str(guildID)}] On Voice State Update")
         await self.clean_up_tracked_channels(guildID)
         await asyncio.sleep(2)
         voiceChannels = self.db.get_guild_create_channels(guildID)
         if voiceChannels is None:
             self.log.debug(guildID, _method , f"No voice create channels found for GuildID: {guildID}")
-            # print(f"[on_voice_state_update] [guild:{str(guildID)}] No voice create channels found for GuildID: {guildID}")
             pass
         else:
             try:
                 self.log.debug(guildID, _method , f"Check for user in Create Channel")
-                # print(f"[on_voice_state_update] [guild:{str(guildID)}] Check for user in Create Channel")
                 if after.channel is not None and after.channel.id in voiceChannels:
                     # User Joined the CREATE CHANNEL
                     self.log.debug(guildID, _method , f"User requested to CREATE CHANNEL")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
                     source_channel_id = after.channel.id
                     userSettings = self.db.get_user_settings(guildId=guildID, userId=member.id)
@@ -353,39 +298,31 @@ class voice(commands.Cog):
                     mid = member.id
                     category = discord.utils.get(member.guild.categories, id=category_id)
                     self.log.debug(guildID, _method , f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] Creating channel {name} in {category} with bitrate {bitrate}kbps")
                     is_community = member.guild.features.count("COMMUNITY") > 0
                     if(stage and is_community):
                         self.log.debug(guildID, _method , f"Creating Stage Channel")
-                        # print(f"[on_voice_state_update] [guild:{str(guildID)}] Creating Stage Channel")
                         stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
                         voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
                     else:
                         self.log.debug(guildID, _method , f"Created Voice Channel")
-                        # print(f"[on_voice_state_update] [guild:{str(guildID)}] Created Voice Channel")
                         voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
                     self.log.debug(guildID, _method , f"Moving {member} to {voiceChannel}")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] Moving {member} to {voiceChannel}")
                     await member.move_to(voiceChannel)
                     # if the bot cant do this, dont fail...
                     try:
                         self.log.debug(guildID, _method , f"Setting permissions on {voiceChannel}")
-                        # print(f"[on_voice_state_update] [guild:{str(guildID)}] Setting permissions on {voiceChannel}")
                         await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         self.log.error(guildID, _method , str(ex), traceback.format_exc())
                     self.log.debug(guildID, _method , f"Set user limit to {limit} on {voiceChannel}")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] Set user limit to {limit} on {voiceChannel}")
                     await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000))
 
                     self.log.debug(guildID, _method , f"Track voiceChannel userID: {mid} channelID: {channelID}")
                     self.log.debug(guildID, _method , f"Track Voice and Text Channels {name} in {category}")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] Track voiceChannel userID: {mid} channelID: {channelID}")
-                    # print(f"[on_voice_state_update] [guild:{str(guildID)}] Track Voice and Text Channels {name} in {category}")
 
                     self.db.track_new_channel_set(guildId=guildID, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
 
@@ -393,13 +330,10 @@ class voice(commands.Cog):
                     try:
                         if sec_role:
                             self.log.debug(guildID, _method , f"Check if bot can set channel for {sec_role.name} {voiceChannel}")
-                            # print(f"[on_voice_state_update] [guild:{str(guildID)}] Check if bot can set channel for {sec_role.name} {voiceChannel}")
                             await textChannel.set_permissions(sec_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
                             await voiceChannel.set_permissions(sec_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
                     except Exception as ex:
                         self.log.error(guildID, _method , str(ex), traceback.format_exc())
-                        # print(ex)
-                        # traceback.print_exc()
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'{member.mention}, This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
                     initMessage = self.settings.initMessage
@@ -455,8 +389,6 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, "Tracked Channels", "There are currently no tracked channels", delete_after=5)
         except Exception as ex:
             self.log.error(guildID, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -524,8 +456,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You do not have permission to add '{channel}' as a tracked channel", fields=None, delete_after=5)
         except Exception as ex:
             self.log.error(guildID, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -552,8 +482,6 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention} The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -582,8 +510,6 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Set Channel Owner", f"{ctx.author.mention}, You do not have permission to set the owner of the channel. If the owner left, try `claim`.", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -622,8 +548,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Channel Sync", f'{ctx.author.mention} The permissions of this channel have been resync\'d with the defaults. ♻', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -688,8 +612,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -744,8 +666,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
     @voice.command()
     async def show(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
@@ -798,8 +718,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
     @voice.command()
     async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
@@ -851,8 +769,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -904,8 +820,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -965,8 +879,6 @@ class voice(commands.Cog):
                     page += 1
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         await ctx.message.delete()
 
@@ -1015,8 +927,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'You have successfully initialized the bot for this discord.', delete_after=5)
             except Exception as ex:
                 self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-                # print(ex)
-                # traceback.print_exc()
                 await self.notify_of_error(ctx)
             finally:
                 self.db.close()
@@ -1032,7 +942,6 @@ class voice(commands.Cog):
         guild_id = ctx.guild.id
         try:
             self.log.debug(guild_id, _method , f"User id triggering setup: {ctx.author.id}")
-            # print(f"[setup] User id triggering setup: {ctx.author.id}")
             author_id = ctx.author.id
             # If the person is the OWNER or an ADMIN
             if self.isAdmin(ctx):
@@ -1062,7 +971,6 @@ class voice(commands.Cog):
                         # is valid role?
                         # role = discord.utils.get(m.guild.roles,name=m.content)
                         role = self.get_by_name_or_id(guild_roles, m.content)
-                        # print(f"[setup] ROLE: {role}")
                         if role:
                             return True
                         return False
@@ -1168,8 +1076,6 @@ class voice(commands.Cog):
                             self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=selected_guild_role.id)
                         else:
                             self.log.debug(guild_id, _method , f"GUILD CATEGORY SETTINGS FOUND")
-                            # print(f"[setup] GUILD CATEGORY SETTINGS FOUND")
-                            # print(json.dumps(guild_category_settings.__dict__))
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
                     except Exception as e:
                         self.log.error(guild_id, _method, str(e), traceback.format_exc())
@@ -1179,8 +1085,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention} only the owner or admins of the server can setup the bot!", delete_after=10)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1207,11 +1111,8 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, "Channel Settings", f"You must be in a voice channel to use this command", fields=None, delete_after=5)
             else:
                 self.log.debug(guild_id, _method , f"{ctx.author.mention} attempted to call get_default_role")
-                # print(f"[get_default_role] {ctx.author.mention} attempted to call get_default_role")
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             await ctx.message.delete()
@@ -1236,11 +1137,8 @@ class voice(commands.Cog):
                         await self.sendEmbed(ctx.channel, "Channel Category Settings", f"Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
                 else:
                     self.log.debug(guild_id, _method , f"unable to locate the expected category")
-                    # print(f"[set_default_role] unable to locate the expected category")
             except Exception as ex:
                 self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-                # print(ex)
-                # traceback.print_exc()
             finally:
                 self.db.close()
                 await ctx.message.delete()
@@ -1297,11 +1195,8 @@ class voice(commands.Cog):
 
                 else:
                     self.log.error(guild_id, _method, f"No Category found for '{category}'")
-                    # print(f"[settings] No Category found for '{category}'")
             except Exception as ex:
                 self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-                # print(ex)
-                # traceback.print_exc()
                 await self.notify_of_error(ctx)
             finally:
                 self.db.close()
@@ -1323,8 +1218,6 @@ class voice(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1342,8 +1235,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Reset User Settings", f"{author.mention}, I have reset your settings.", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1373,7 +1264,6 @@ class voice(commands.Cog):
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role or x.id == default_role ]) == 1
             if not validRole:
                 default_role = ctx.guild.default_role.id
-            # print(f"[lock] default role: {default_role}")
             owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
             is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
             if not is_owner and not self.isAdmin(ctx):
@@ -1399,8 +1289,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat locked! 🔒', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1430,7 +1318,6 @@ class voice(commands.Cog):
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role or x.id == default_role ]) == 1
             if not validRole:
                 default_role = ctx.guild.default_role.id
-            # print(f"[unlock] default role: {default_role}")
             owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
             is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
             if not is_owner and not self.isAdmin(ctx):
@@ -1457,8 +1344,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{ctx.author.mention} Voice chat unlocked! 🔓', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1495,8 +1380,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention} You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1541,8 +1424,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention} You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1585,8 +1466,6 @@ class voice(commands.Cog):
                 self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1640,8 +1519,6 @@ class voice(commands.Cog):
                 self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=category_settings.channel_limit, bitrate=br_set, defaultRole=temp_default_role.id, autoGame=False)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1670,7 +1547,6 @@ class voice(commands.Cog):
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
-            # print(f"[auto_game] default_role: {str(default_role or self.settings.default_role)}")
             if temp_default_role is None:
                 temp_default_role = self.get_by_name_or_id(ctx.guild.roles, "@everyone" )
             if user_settings:
@@ -1683,8 +1559,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Enable Auto Game", f'{author.mention} You have {state} the changing of your channel name based on your game.', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1714,66 +1588,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention} You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
-            # fields = list()
-            # titles = list()
-            # index = 0
             if owner:
-            #     if owner.activities:
-            #         game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-            #         stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-            #         watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
-
-            #         if game_activity:
-            #             for a in game_activity:
-            #                 titles.append(a.name)
-            #                 print(f"[game] game.name: {a.name}")
-            #             # name = game_activity[0].name
-            #         elif stream_activity:
-            #             for a in stream_activity:
-            #                 # name = stream_activity[0].name
-            #                 print(f"[game] stream.game: {a.game}")
-            #                 print(f"[game] stream.name: {a.name}")
-            #                 titles.append(a.game)
-            #                 titles.append(a.name)
-            #             # name = stream_activity[0].game
-            #         elif watch_activity:
-            #             for a in watch_activity:
-            #                 # name = watch_activity[0].name
-            #                 print(f"[game] watch.name: {a.name}")
-            #                 titles.append(a.name)
-            #         else:
-            #             print(f"Activities: {str(len(owner.activities))}")
-            #             for a in owner.activities:
-            #                 titles.append(a.name)
-            #                 print(f"[game] activity.name: {a.name}")
-
-            #         if len(titles) > 1:
-            #             index = 0
-            #             for t in titles:
-            #                 fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
-            #                 index += 1
-            #             await self.sendEmbed(ctx.channel, "Multiple Options", f'{ctx.author.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
-            #             try:
-            #                 titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
-            #             except asyncio.TimeoutError:
-            #                 await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
-            #             else:
-            #                 if titleResp.content.isnumeric():
-            #                     idx = int(titleResp.content) - 1
-            #                     if idx >= 0 and idx < len(titles):
-            #                         selected_title = titles[idx]
-            #                         if selected_title:
-            #                             await self.sendEmbed(ctx.channel, "Multiple Options", f"You selected: '{selected_title}'", delete_after=5)
-            #                 await titleResp.delete()
-            #         elif len(titles) == 1:
-            #             selected_title = titles[0]
-
-            #     else:
-            #         print(f"[game] owner.activity is None")
-
-            #     if selected_title:
-            #         await self._name(ctx, name=selected_title, saveSettings=False)
-            #         # message deleted by the name call.
                 selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title="Update Title To Game")
                 if selected_title:
                     self._name(ctx, selected_title, False)
@@ -1782,12 +1597,11 @@ class voice(commands.Cog):
                     await ctx.message.delete()
             else:
                 self.log.debug(guild_id, _method, f"Unable to locate the owner for 'game' call.")
-                # print(f"[game] Unable to locate the owner for 'game' call.")
                 await ctx.message.delete()
+        except discord.errors.NotFound as nf:
+            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
 
     @voice.command()
@@ -1840,8 +1654,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1875,7 +1687,6 @@ class voice(commands.Cog):
 
                 if channel:
                     self.log.debug(guild_id, _method, f"Edit the channel to: {channel.name} -> {name}")
-                    # print(f"[rename] edit the channel to: {channel.name} -> {name}")
                     await channel.edit(name=name)
                     await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
 
@@ -1885,11 +1696,8 @@ class voice(commands.Cog):
                     self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=guild_category_settings.channel_limit, bitrate=guild_category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
             else:
                 self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'rename'")
-                # print(f"[rename] {ctx.author} tried to run command 'rename'")
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1908,17 +1716,12 @@ class voice(commands.Cog):
                 owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel.id)
                 if owner_id:
                     owner = await self.get_or_fetch_member(ctx.guild, owner_id)
-                    # owner = ctx.guild.get_member(int(owner_id))
-                    # if not owner:
-                    #     owner = await ctx.guild.fetch_member(int(owner_id))
                     if owner:
                         await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
                     else:
                         await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention} The channel '{channel.name}' is owned by an unknown user (UserId: {owner_id})!", delete_after=30)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1947,8 +1750,6 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, {newOwner.mention} is now the owner of '{channel.name}'!", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -1983,8 +1784,6 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention} You are now the owner of the channel!", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-            # print(ex)
-            # traceback.print_exc()
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
@@ -2028,21 +1827,17 @@ class voice(commands.Cog):
 
                         if chan:
                             self.log.debug(guild_id, _method, f"Attempting to remove users in {chan}")
-                            # print(f"[delete] Attempting to remove users in {chan}")
                             for mem in chan.members:
                                 mem.disconnect()
                             await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
             except Exception as ex:
                 self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-                # print(ex)
-                # traceback.print_exc()
                 await self.notify_of_error(ctx)
             finally:
                 self.db.close()
                 await ctx.message.delete()
         else:
             self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'delete'")
-            # print(f"[delete] {ctx.author} tried to run command 'delete'")
 
     async def set_role_ask_category(self, ctx):
         _method = inspect.stack()[1][3]
@@ -2085,8 +1880,6 @@ class voice(commands.Cog):
                 return None
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
-            # print(e)
-            # traceback.print_exc(e)
         finally:
             await ctx.message.delete()
 
@@ -2113,31 +1906,23 @@ class voice(commands.Cog):
                     for a in game_activity:
                         titles.append(a.name)
                         self.log.debug(guild_id, _method, f"gane.name: {a.name}")
-                        # print(f"[ask_game] game.name: {a.name}")
-                    # name = game_activity[0].name
                 elif stream_activity:
                     for a in stream_activity:
                         # name = stream_activity[0].name
                         self.log.debug(guild_id, _method, f"stream.game: {a.game}")
                         self.log.debug(guild_id, _method, f"stream.name: {a.name}")
-                        # print(f"[ask_game] stream.game: {a.game}")
-                        # print(f"[ask_game] stream.name: {a.name}")
                         titles.append(a.game)
                         titles.append(a.name)
                     # name = stream_activity[0].game
                 elif watch_activity:
                     for a in watch_activity:
-                        # name = watch_activity[0].name
                         self.log.debug(guild_id, _method, f"watch.name: {a.name}")
-                        # print(f"[ask_game] watch.name: {a.name}")
                         titles.append(a.name)
                 else:
                     self.log.debug(guild_id, _method, f"Activities: {str(len(user.activities))}")
-                    # print(f"Activities: {str(len(user.activities))}")
                     for a in user.activities:
                         titles.append(a.name)
                         self.log.debug(guild_id, _method, f"activity.name: {a.name}")
-                        # print(f"[ask_game] activity.name: {a.name}")
 
                 if len(titles) > 1:
                     index = 0
@@ -2162,7 +1947,6 @@ class voice(commands.Cog):
 
             else:
                 self.log.debug(guild_id, _method, f"owner.activity is None")
-                # print(f"[game] owner.activity is None")
 
             return selected_title
 
@@ -2239,7 +2023,6 @@ class voice(commands.Cog):
             if roleResp.content.isnumeric():
                 idx = int(roleResp.content) - 1
                 if idx >= 0 and idx < len(guild_roles):
-                    # selected_guild_role = discord.utils.get(ctx.guild.roles, name=guild_roles[idx])
                     selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_roles[idx])
                     if selected_guild_role:
                         await self.sendEmbed(ctx.channel, title, f"You selected the role: '{selected_guild_role.name}'", delete_after=5)
