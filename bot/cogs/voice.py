@@ -97,7 +97,6 @@ class voice(commands.Cog):
             voice_channel = after.voice.channel
             voice_channel_id = voice_channel.id
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-            owner = await self.get_or_fetch_user(owner_id)
             if owner_id != after.id:
                 # user is in a channel, but not their channel
                 print("[on_member_update] User is in a channel, but not their own channel.")
@@ -107,6 +106,7 @@ class voice(commands.Cog):
                 print("[on_member_update] Before / After activity is the same")
                 pass
 
+            owner = await self.get_or_fetch_member(owner_id)
             user_settings = self.db.get_user_settings(guild_id, after.id)
             if user_settings and user_settings.auto_game:
                 print(f"[on_member_update] trigger auto game change")
@@ -114,13 +114,18 @@ class voice(commands.Cog):
                 if owner.activities:
                     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
                     stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
+                    watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
                     if game_activity:
                         if len(game_activity) > 1:
+                            print(f"[on_member_update] There are multiple choices. Ask?")
+                            channel_name = game_activity[0].name
                             pass
                         else:
                             channel_name = game_activity[0].name
                     elif stream_activity:
                         channel_name = stream_activity[0].game
+                    elif watch_activity:
+                        channel_name = watch_activity[0].name
                 if voice_channel.name != channel_name:
                     text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
                     if text_channel_id:
@@ -1599,6 +1604,8 @@ class voice(commands.Cog):
                                     if selected_title:
                                         await self.sendEmbed(ctx.channel, "Multiple Options", f"You selected: '{selected_title}'", delete_after=5)
                             await titleResp.delete()
+                    elif len(titles) == 1:
+                        selected_title = titles[0]
 
                 else:
                     print(f"[game] owner.activity is None")
