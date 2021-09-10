@@ -239,7 +239,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c = self.connection.cursor()
-            self.connect.guild.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": useStage } })
+            self.connection.guild.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": useStage } })
             return True
         except Exception as ex:
             print(ex)
