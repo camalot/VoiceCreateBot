@@ -9,6 +9,14 @@
 		"message": "Type in this channel `.voice name new channel name`",
 		"fields": [
 			{
+				"name": "**NEW**: Give your channel a random name",
+				"value": "`.voice name`"
+			},
+			{
+				"name": "**NEW**: Name your channel after the game you are playing",
+				"value": "`.voice game`"
+			},
+			{
 				"name": "View more commands to control your channel",
 				"value": "`.voice help`"
 			}
@@ -16,7 +24,7 @@
 	},
 	"commands": {
 		"name": {
-			"help": "**Change your channel name**",
+			"help": "**Change your channel name**\nLeaving the [name] blank will generate a random name.",
 			"usage": ".voice name [name]",
 			"example": ".voice name my awesome channel",
 			"admin": false,
@@ -31,10 +39,12 @@
 		},
 		"enable-auto-game": {
 			"help": "**Automatically change your channel to the name of the game you are playing**",
-			"usage": ".voice enable-auto-game [yes no]",
-			"example": ".voice enable-auto-game yes",
+			"usage": ".voice enable-auto-game [yes|no]",
+			"example": ".voice eag yes",
 			"admin": false,
-			"aliases": ["eag"]
+			"aliases": [
+				"eag"
+			]
 		},
 		"unlock": {
 			"help": "**Unlock your channel**",
@@ -111,7 +121,9 @@
 			"usage": ".voice permit <@person>",
 			"example": ".voice permit @DarthMinos#1161",
 			"admin": false,
-			"aliases": ["allow"]
+			"aliases": [
+				"allow"
+			]
 		},
 		"claim": {
 			"help": "**Claim ownership of channel once the owner has left**",
@@ -125,7 +137,9 @@
 			"usage": ".voice reject <@person>",
 			"example": ".voice reject @DarthMinos#1161",
 			"admin": false,
-			"aliases": ["deny"]
+			"aliases": [
+				"deny"
+			]
 		},
 		"setprefix": {
 			"help": "**Set the bot prefix**",
@@ -188,7 +202,9 @@
 			"usage": ".voice track-text-channel <#text-channel>",
 			"example": ".voice track-text-channel #my-text-channel",
 			"admin": true,
-			"aliases": ["ttc"]
+			"aliases": [
+				"ttc"
+			]
 		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels**",
@@ -202,7 +218,9 @@
 			"usage": ".voice set-default-role \"<role name>\"",
 			"example": ".voice set-default-role \"Role Name\"",
 			"admin": true,
-			"aliases": ["sdr"]
+			"aliases": [
+				"sdr"
+			]
 		},
 		"get-default-role": {
 			"help": "**Change the Default Role for a specific category**",
