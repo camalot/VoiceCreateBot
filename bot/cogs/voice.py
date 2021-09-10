@@ -136,7 +136,7 @@ class voice(commands.Cog):
                     # print(f"[on_member_update] [guild:{str(guild_id)}] Before / After activity is the same")
                     pass
 
-                owner = await self.get_or_fetch_member(guild_id, owner_id)
+                owner = await self.get_or_fetch_member(after.guild, owner_id)
                 user_settings = self.db.get_user_settings(guild_id, after.id)
 
                 if user_settings and user_settings.auto_game:
@@ -162,9 +162,9 @@ class voice(commands.Cog):
                     else:
                         self.log.debug(guild_id, _method , f"owner is none, or text_channel is none. Can't ask to choose game.")
                         # print(f"[on_member_update] [guild:{str(guild_id)}] owner is none, or text_channel is none. Can't ask to choose game.")
-                        game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
-                        stream_activity = [a for a in owner.activities if a.type == discord.ActivityType.streaming]
-                        watch_activity = [a for a in owner.activities if a.type == discord.ActivityType.watching]
+                        game_activity = [a for a in after.activities if a.type == discord.ActivityType.playing]
+                        stream_activity = [a for a in after.activities if a.type == discord.ActivityType.streaming]
+                        watch_activity = [a for a in after.activities if a.type == discord.ActivityType.watching]
                         if game_activity:
                             selected_title = game_activity[0].name
                         elif stream_activity:
