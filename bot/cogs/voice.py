@@ -275,8 +275,9 @@ class voice(commands.Cog):
                             else:
                                 self.db.insert_user_settings(guildId=guildID, userId=channelOwnerId, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
         except Exception as e:
-            print(e)
-            traceback.print_exc()
+            self.log.error(guildID, _method , str(e), traceback.format_exc())
+            # print(e)
+            # traceback.print_exc()
         finally:
             self.db.close()
 
@@ -402,7 +403,7 @@ class voice(commands.Cog):
                 self.log.warn(guildID, _method , str(nf))
                 # print(nf)
             except Exception as ex:
-                self.log.warn(guildID, _method , str(ex), traceback.format_exc())
+                self.log.error(guildID, _method , str(ex), traceback.format_exc())
                 # print(ex)
                 # traceback.print_exc()
 
@@ -1784,7 +1785,7 @@ class voice(commands.Cog):
                     await ctx.message.delete()
             else:
                 self.log.debug(guild_id, _method, f"Unable to locate the owner for 'game' call.")
-                print(f"[game] Unable to locate the owner for 'game' call.")
+                # print(f"[game] Unable to locate the owner for 'game' call.")
                 await ctx.message.delete()
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
@@ -1993,9 +1994,9 @@ class voice(commands.Cog):
     @voice.command()
     # @commands.has_role("Admin")
     async def delete(self, ctx):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
         if self.isAdmin(ctx):
-            _method = inspect.stack()[1][3]
-            guild_id = ctx.guild.id
             try:
                 self.db.open()
                 tracked_voice_channels_ids = [item for clist in self.db.get_tracked_voice_channel_ids(guildId=guild_id) for item in clist]
@@ -2028,7 +2029,7 @@ class voice(commands.Cog):
 
                         if chan:
                             self.log.debug(guild_id, _method, f"Attempting to remove users in {chan}")
-                            print(f"[delete] Attempting to remove users in {chan}")
+                            # print(f"[delete] Attempting to remove users in {chan}")
                             for mem in chan.members:
                                 mem.disconnect()
                             await self.sendEmbed(ctx.channel, "Channel Deleted", f'The channel {chan.name} has been deleted.', delete_after=5)
@@ -2041,7 +2042,8 @@ class voice(commands.Cog):
                 self.db.close()
                 await ctx.message.delete()
         else:
-            print(f"[delete] {ctx.author} tried to run command 'delete'")
+            self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'delete'")
+            # print(f"[delete] {ctx.author} tried to run command 'delete'")
 
     async def set_role_ask_category(self, ctx):
         _method = inspect.stack()[1][3]
@@ -2131,7 +2133,8 @@ class voice(commands.Cog):
                         # print(f"[ask_game] watch.name: {a.name}")
                         titles.append(a.name)
                 else:
-                    print(f"Activities: {str(len(user.activities))}")
+                    self.log.debug(guild_id, _method, f"Activities: {str(len(user.activities))}")
+                    # print(f"Activities: {str(len(user.activities))}")
                     for a in user.activities:
                         titles.append(a.name)
                         self.log.debug(guild_id, _method, f"activity.name: {a.name}")
