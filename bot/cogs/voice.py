@@ -155,7 +155,7 @@ class voice(commands.Cog):
                                     # print(f"[on_member_update] [guild:{str(guild_id)}] Change Text Channel Name: {selected_title}")
                                     await text_channel.edit(name=selected_title)
                                     await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {selected_title}!', delete_after=5)
-                                voice_channel.edit(name=selected_title)
+                                await voice_channel.edit(name=selected_title)
                         else:
                             self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
                             # print(f"[on_member_update] [guild:{str(guild_id)}] Unable to retrieve a valid title from game.")
@@ -180,7 +180,7 @@ class voice(commands.Cog):
                                     await text_channel.edit(name=selected_title)
                                 self.log.debug(guild_id, _method , f"Change Voice Channel Name: {selected_title}")
                                 # print(f"[on_member_update] [guild:{str(guild_id)}] Change Voice Channel Name: {selected_title}")
-                                voice_channel.edit(name=selected_title)
+                                await voice_channel.edit(name=selected_title)
 
                     # if owner.activities:
                     #     game_activity = [a for a in owner.activities if a.type == discord.ActivityType.playing]
