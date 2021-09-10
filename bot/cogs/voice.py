@@ -108,7 +108,10 @@ class voice(commands.Cog):
     @setup.error
     async def info_error(self, ctx, error):
         _method = inspect.stack()[1][3]
-        self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
+        if isinstance(error, discord.errors.NotFound):
+            self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
+        else:
+            self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_ready(self):
