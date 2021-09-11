@@ -210,7 +210,9 @@ class voice(commands.Cog):
                         else:
 
                             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-                            temp_default_role = self.get_by_name_or_id(after.guild.roles, default_role or self.settings.default_role)
+                            self.log.debug(guild_id, _method, f"default_role: {default_role}")
+                            temp_default_role = self.get_by_name_or_id(after.guild.roles, default_role)
+                            self.log.debug(guild_id, _method, f"temp_default_role: {temp_default_role}")
                             user_settings = self.db.get_user_settings(guild_id, owner_id)
 
                             self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
