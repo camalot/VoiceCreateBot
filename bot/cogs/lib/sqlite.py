@@ -594,7 +594,8 @@ class SqliteDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-
+    def get_all_guild_settings(self):
+        pass
     def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
         pass
     def clear_log(self, guildId: int):

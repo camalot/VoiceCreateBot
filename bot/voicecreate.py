@@ -15,6 +15,10 @@ from .cogs.lib import utils
 from .cogs.lib import settings
 from .cogs.lib import sqlite
 from .cogs.lib import mongo
+from .cogs.lib import logger
+from .cogs.lib import loglevel
+from .cogs.lib import dbprovider
+
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
     DBVERSION = 4 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
@@ -32,24 +36,41 @@ class VoiceCreate():
         self.initDB()
         self.client = discord.Client()
 
+        if self.settings.db_provider == dbprovider.DatabaseProvider.SQLITE:
+            self.db = sqlite.SqliteDatabase()
+        elif self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
+            self.db = mongo.MongoDatabase()
+        else:
+            self.db = mongo.MongoDatabase()
+
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, "voice.__init__", f"DB Provider {self.settings.db_provider.name}")
+        self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
+        self.bots = {}
         # loop all guilds and init per guild???
+        for guild in self.db.get_all_guild_settings():
 
-        self.bot = commands.Bot(
-            command_prefix=self.get_prefix,
-            case_insensitive=True,
-            intents=discord.Intents.all()
-        )
+            self.bots[f"guild_{str(guild.guild_id)}"] = commands.Bot(
+                command_prefix=guild.prefix or ".",
+                # command_prefix=self.get_prefix,
+                case_insensitive=True,
+                intents=discord.Intents.all()
+            )
 
-        initial_extensions = ['bot.cogs.events', 'bot.cogs.voice']
-        for extension in initial_extensions:
-            try:
-                self.bot.load_extension(extension)
-            except Exception as e:
-                print(f'Failed to load extension {extension}.', file=sys.stderr)
-                traceback.print_exc()
+            initial_extensions = ['bot.cogs.events', 'bot.cogs.voice']
+            for extension in initial_extensions:
+                try:
+                    self.bots[f"guild_{str(guild.guild_id)}"].load_extension(extension)
+                except Exception as e:
+                    print(f'Failed to load extension {extension}.', file=sys.stderr)
+                    traceback.print_exc()
 
-        self.bot.remove_command("help")
-        self.bot.run(self.DISCORD_TOKEN)
+            self.bots[f"guild_{str(guild.guild_id)}"].remove_command("help")
+            self.bots[f"guild_{str(guild.guild_id)}"].run(self.DISCORD_TOKEN)
 
     def initDB(self):
         sql3db = sqlite.SqliteDatabase()
