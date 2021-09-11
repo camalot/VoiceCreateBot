@@ -78,9 +78,10 @@ class Slash(commands.Cog):
         action_row = create_actionrow(select)
         ask_context = await ctx.send("Choose Wisely", components=[action_row])
         button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row)
-        await button_ctx.edit_origin(content=f"You selected {button_ctx.selected_options}")
-
+        await button_ctx.edit_origin(content=f"You selected {button_ctx.selected_options}", components=None)
+        await ask_context.delete()
         await ctx.message.delete()
+        await ctx.send(content=f"You selected {button_ctx.selected_options}")
         return True
 def setup(bot):
     bot.add_cog(Slash(bot))
