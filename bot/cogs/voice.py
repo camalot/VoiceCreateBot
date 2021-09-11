@@ -198,7 +198,7 @@ class voice(commands.Cog):
                     category_id = before.category.id or after.category.id or channel.category.id
                     owner_id = self.db.get_channel_owner_id(guild_id, after.id)
                     if owner_id:
-                        owner = await self.get_or_fetch_member(owner_id)
+                        owner = await self.get_or_fetch_member(before.guild, owner_id)
                         if not owner:
                             self.log.warn(guild_id, _method, f"Unable to find owner [user:{owner_id}] for the channel: {channel}")
                             pass
