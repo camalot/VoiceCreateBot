@@ -208,16 +208,11 @@ class voice(commands.Cog):
                             self.log.debug(guild_id, _method , "Channel Names are the same. Nothing to do")
                             pass
                         else:
-                            userSettings = self.db.get_user_settings(guild_id, owner_id)
-                            guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
 
-                            if userSettings:
-                                default_role = self.get_by_name_or_id(after.guild.roles, userSettings.default_role)
-                            else:
-                                if guildSettings:
-                                    default_role = self.get_by_name_or_id(after.guild.roles, guildSettings.default_role or self.settings.default_role)
-                                else:
-                                    default_role = self.get_by_name_or_id(after.guild.roles, self.settings.default_role or "@everyone")
+                            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                            temp_default_role = self.get_by_name_or_id(after.guild.roles, default_role or self.settings.default_role)
+                            user_settings = self.db.get_user_settings(guild_id, owner_id)
+
                             self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
 
                             if after.type == discord.ChannelType.voice:
@@ -240,10 +235,10 @@ class voice(commands.Cog):
                                     await self.sendEmbed(after, "Updated Channel Name", f'{owner.mention}, You have changed the channel name to {after.name}!', delete_after=5)
 
 
-                            if userSettings:
+                            if user_settings:
                                 self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=after.name)
                             else:
-                                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
+                                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=False)
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
