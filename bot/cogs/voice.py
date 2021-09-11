@@ -209,15 +209,16 @@ class voice(commands.Cog):
                             pass
                         else:
                             userSettings = self.db.get_user_settings(guild_id, owner_id)
-                            guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-
-                            if userSettings:
-                                default_role = self.get_by_name_or_id(after.guild.roles, userSettings.default_role)
-                            else:
-                                if guildSettings:
-                                    default_role = self.get_by_name_or_id(after.guild.roles, guildSettings.default_role or self.settings.default_role)
-                                else:
-                                    default_role = self.get_by_name_or_id(after.guild.roles, self.settings.default_role or "@everyone")
+                            # guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+                            default_role_id = self.db.get_default_role(guildId=guild_id)
+                            default_role = self.get_by_name_or_id(after.guild.roles, default_role_id or self.settings.default_role)
+                            # if userSettings:
+                            #     default_role = self.get_by_name_or_id(after.guild.roles, userSettings.default_role)
+                            # else:
+                            #     if guildSettings:
+                            #         default_role = self.get_by_name_or_id(after.guild.roles, guildSettings.default_role or self.settings.default_role)
+                            #     else:
+                            #         default_role = self.get_by_name_or_id(after.guild.roles, self.settings.default_role or "@everyone")
                             self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
 
                             if after.type == discord.ChannelType.voice:
@@ -255,97 +256,99 @@ class voice(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         self.db.open()
         _method = inspect.stack()[1][3]
-        guildID = member.guild.id
-        self.log.debug(guildID, _method , f"On Voice State Update")
-        await self.clean_up_tracked_channels(guildID)
+        guild_id = member.guild.id
+        self.log.debug(guild_id, _method , f"On Voice State Update")
+        await self.clean_up_tracked_channels(guild_id)
         await asyncio.sleep(2)
-        voiceChannels = self.db.get_guild_create_channels(guildID)
+        voiceChannels = self.db.get_guild_create_channels(guild_id)
         if voiceChannels is None:
-            self.log.debug(guildID, _method , f"No voice create channels found for GuildID: {guildID}")
+            self.log.debug(guild_id, _method , f"No voice create channels found for GuildID: {guild_id}")
             pass
         else:
             try:
-                self.log.debug(guildID, _method , f"Check for user in Create Channel")
+                self.log.debug(guild_id, _method , f"Check for user in Create Channel")
                 if after.channel is not None and after.channel.id in voiceChannels:
                     # User Joined the CREATE CHANNEL
-                    self.log.debug(guildID, _method , f"User requested to CREATE CHANNEL")
+                    self.log.debug(guild_id, _method , f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
                     source_channel_id = after.channel.id
-                    userSettings = self.db.get_user_settings(guildId=guildID, userId=member.id)
-                    guildSettings = self.db.get_guild_category_settings(guildId=guildID, categoryId=category_id)
-                    useStage = self.db.get_use_stage_on_create(guildId=guildID, channelId=source_channel_id, categoryId=category_id) or 0
+                    userSettings = self.db.get_user_settings(guildId=guild_id, userId=member.id)
+                    guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+                    useStage = self.db.get_use_stage_on_create(guildId=guild_id, channelId=source_channel_id, categoryId=category_id) or 0
                     # CHANNEL SETTINGS START
                     limit = 0
                     locked = False
                     bitrate = self.settings.BITRATE_DEFAULT
-                    stage = useStage >= 1
                     name = utils.get_random_name()
 
-                    default_role = self.get_by_name_or_id(member.guild.roles, self.settings.default_role)
+                    default_role_id = self.db.get_default_role(guildId=guild_id)
+                    default_role = self.get_by_name_or_id(after.guild.roles, default_role_id or self.settings.default_role)
+
+                    # default_role = self.get_by_name_or_id(member.guild.roles, self.settings.default_role)
                     if userSettings is None:
                         if guildSettings is not None:
                             limit = guildSettings.channel_limit
                             locked = guildSettings.channel_locked
                             bitrate = guildSettings.bitrate
-                            default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
+                            # default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
                     else:
                         name = userSettings.channel_name
                         if guildSettings is None:
                             limit = userSettings.channel_limit
                             bitrate = userSettings.bitrate
-                            default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or self.settings.default_role)
+                            # default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or self.settings.default_role)
                             locked = False
                         elif guildSettings is not None:
                             limit = userSettings.channel_limit or guildSettings.channel_limit
                             locked = guildSettings.channel_locked or False
                             bitrate = userSettings.bitrate or guildSettings.bitrate
-                            default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or guildSettings.default_role or self.settings.default_role)
+                            # default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or guildSettings.default_role or self.settings.default_role)
                         else:
                             limit = userSettings.channel_limit
                             locked = guildSettings.channel_locked
                             bitrate = guildSettings.bitrate
-                            default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
+                            # default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
                     # CHANNEL SETTINGS END
 
                     mid = member.id
                     category = discord.utils.get(member.guild.categories, id=category_id)
-                    self.log.debug(guildID, _method , f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
+                    self.log.debug(guild_id, _method , f"Creating channel {name} in {category} with bitrate {bitrate}kbps")
                     is_community = member.guild.features.count("COMMUNITY") > 0
-                    if(stage and is_community):
-                        self.log.debug(guildID, _method , f"Creating Stage Channel")
+                    if(useStage and is_community):
+                        self.log.debug(guild_id, _method , f"Creating Stage Channel")
                         stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
                         voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
                     else:
-                        self.log.debug(guildID, _method , f"Created Voice Channel")
+                        self.log.debug(guild_id, _method , f"Created Voice Channel")
                         voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     channelID = voiceChannel.id
 
-                    self.log.debug(guildID, _method , f"Moving {member} to {voiceChannel}")
+                    self.log.debug(guild_id, _method , f"Moving {member} to {voiceChannel}")
                     await member.move_to(voiceChannel)
                     # if the bot cant do this, dont fail...
                     try:
-                        self.log.debug(guildID, _method , f"Setting permissions on {voiceChannel}")
+                        self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
                         await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
-                        self.log.error(guildID, _method , str(ex), traceback.format_exc())
-                    self.log.debug(guildID, _method , f"Set user limit to {limit} on {voiceChannel}")
+                        self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+                    self.log.debug(guild_id, _method , f"Set user limit to {limit} on {voiceChannel}")
                     await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000))
 
-                    self.log.debug(guildID, _method , f"Track voiceChannel userID: {mid} channelID: {channelID}")
-                    self.log.debug(guildID, _method , f"Track Voice and Text Channels {name} in {category}")
+                    self.log.debug(guild_id, _method , f"Track voiceChannel userID: {mid} channelID: {channelID}")
+                    self.log.debug(guild_id, _method , f"Track Voice and Text Channels {name} in {category}")
 
-                    self.db.track_new_channel_set(guildId=guildID, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
+                    self.db.track_new_channel_set(guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
 
-                    sec_role = default_role or self.get_by_name_or_id(member.guild.roles, self.settings.default_role or "@everyone")
+                    # sec_role = default_role or self.get_by_name_or_id(member.guild.roles, self.settings.default_role or "@everyone")
                     try:
-                        if sec_role:
-                            self.log.debug(guildID, _method , f"Check if bot can set channel for {sec_role.name} {voiceChannel}")
-                            await textChannel.set_permissions(sec_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
-                            await voiceChannel.set_permissions(sec_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
+                        if default_role:
+                            self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
+                            await textChannel.set_permissions(default_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
+                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
                     except Exception as ex:
-                        self.log.error(guildID, _method , str(ex), traceback.format_exc())
+                        self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
                     await self.sendEmbed(textChannel, "Voice Text Channel", f'{member.mention}, This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
                     initMessage = self.settings.initMessage
@@ -353,9 +356,9 @@ class voice(commands.Cog):
                         # title, message, fields=None, delete_after=None, footer=None
                         await self.sendEmbed(textChannel, initMessage['title'], f"{member.mention}, {initMessage['message']}", initMessage['fields'], delete_after=None, footer='')
             except discord.errors.NotFound as nf:
-                self.log.warn(guildID, _method , str(nf))
+                self.log.warn(guild_id, _method , str(nf))
             except Exception as ex:
-                self.log.error(guildID, _method , str(ex), traceback.format_exc())
+                self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
 
     @voice.command()
@@ -369,11 +372,11 @@ class voice(commands.Cog):
     async def channels(self, ctx):
         _method = inspect.stack()[1][3]
         self.db.open()
-        guildID = ctx.author.guild.id
+        guild_id = ctx.author.guild.id
         author = ctx.author
         try:
             if self.isAdmin(ctx):
-                guild_channels = self.db.get_tracked_channels_for_guild(guildId=guildID)
+                guild_channels = self.db.get_tracked_channels_for_guild(guildId=guild_id)
                 channelFields = list()
                 for vc in guild_channels.voice_channels:
                     voice_channel = await self.get_or_fetch_channel(vc.voice_channel_id)
@@ -402,7 +405,7 @@ class voice(commands.Cog):
                 else:
                     await self.sendEmbed(ctx.channel, "Tracked Channels", f"{author.mention}, There are currently no tracked channels", delete_after=5)
         except Exception as ex:
-            self.log.error(guildID, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
