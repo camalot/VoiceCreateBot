@@ -1612,7 +1612,7 @@ class voice(commands.Cog):
             if owner:
                 selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title="Update Title To Game")
                 if selected_title:
-                    self._name(ctx, selected_title, False)
+                    await self._name(ctx, selected_title, False)
                 else:
                     await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention}, I was unable to determine the game title.', delete_after=5)
                     await ctx.message.delete()
