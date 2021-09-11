@@ -363,6 +363,7 @@ class voice(commands.Cog):
         await ctx.message.delete()
 
     @voice.command()
+    @has_permissions(administrator=True)
     async def channels(self, ctx):
         _method = inspect.stack()[1][3]
         self.db.open()
@@ -406,6 +407,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command(aliases=["track-text-channel", "ttc"])
+    @has_permissions(administrator=True)
     async def track_text_channel(self, ctx, channel: discord.TextChannel = None):
         _method = inspect.stack()[1][3]
         guildID = ctx.author.guild.id
@@ -626,6 +628,7 @@ class voice(commands.Cog):
             await self.notify_of_error(ctx)
         finally:
             self.db.close()
+
     @voice.command()
     async def hide(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         _method = inspect.stack()[1][3]
@@ -730,6 +733,7 @@ class voice(commands.Cog):
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
+
     @voice.command()
     async def mute(self, ctx, userOrRole: typing.Union[discord.Role, discord.Member] = None):
         guild_id = ctx.guild.id
@@ -837,17 +841,42 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command()
+    @has_permissions(administrator=True)
     async def setprefix(self, ctx, prefix="."):
         _method = inspect.stack()[1][3]
-        if self.isAdmin():
+        if self.isAdmin(ctx):
             if prefix:
-                self.bot.command_prefix = prefix
-                embed_fields = list()
-                embed_fields.append({
-                    "name": "Example",
-                    "value": f"{prefix}voice name CoD:MW US"
-                })
-                await self.sendEmbed(ctx.channel, "Voice Channel Prefix", f'{ctx.author.mention}, Command prefix is now "{prefix}".', delete_after=60)
+                self.db.set_guild_settings_prefix(ctx.guild.id, prefix)
+                # self.bot.command_prefix = self.get_prefix
+                await self.sendEmbed(ctx.channel, "Voice Channel Prefix", f'{ctx.author.mention}, Command prefix is now `{prefix}`.', delete_after=10)
+                await ctx.message.delete()
+
+    @voice.command()
+    async def prefix(self, ctx):
+        _method = inspect.stack()[1][3]
+
+        guild_settings = self.db.get_guild_settings(ctx.guild.id)
+        prefix = "."
+        if guild_settings:
+            prefix = guild_settings.prefix
+        await self.sendEmbed(ctx.channel, "Voice Channel Prefix", f'{ctx.author.mention}, Run commands by saying: `{prefix}voice <command>`.', delete_after=10)
+        await ctx.message.delete()
+
+    # def get_prefix(self, client, message):
+    #     self.db.open()
+    #     # get the prefix for the guild.
+    #     prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+    #     if message.guild:
+    #         guild_settings = self.db.get_guild_settings(message.guild.id)
+    #         if guild_settings:
+    #             prefixes = guild_settings.prefix or "."
+    #     elif not message.guild:
+    #         prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
+
+    #     # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
+    #     # Do `return prefixes` if you don't want to allow mentions instead of prefix.
+    #     return commands.when_mentioned_or(*prefixes)(client, message)
+
 
     @voice.command()
     async def help(self, ctx, command=""):

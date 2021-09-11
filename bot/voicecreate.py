@@ -4,6 +4,7 @@ import asyncio
 import aiohttp
 import json
 from discord.ext import commands
+
 from random import randint
 import traceback
 import sqlite3
@@ -18,6 +19,7 @@ from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
 from .cogs.lib import dbprovider
+from discord_slash import SlashCommand
 
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
@@ -50,27 +52,25 @@ class VoiceCreate():
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "voice.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
-        self.bots = {}
-        # loop all guilds and init per guild???
-        for guild in self.db.get_all_guild_settings():
 
-            self.bots[f"guild_{str(guild.guild_id)}"] = commands.Bot(
-                command_prefix=guild.prefix or ".",
-                # command_prefix=self.get_prefix,
-                case_insensitive=True,
-                intents=discord.Intents.all()
-            )
+        self.bot = commands.Bot(
+            command_prefix=self.get_prefix,
+            case_insensitive=True,
+            intents=discord.Intents.all()
+        )
 
-            initial_extensions = ['bot.cogs.events', 'bot.cogs.voice']
-            for extension in initial_extensions:
-                try:
-                    self.bots[f"guild_{str(guild.guild_id)}"].load_extension(extension)
-                except Exception as e:
-                    print(f'Failed to load extension {extension}.', file=sys.stderr)
-                    traceback.print_exc()
+        initial_extensions = ['bot.cogs.events', 'bot.cogs.voice', 'bot.cogs.slash']
+        for extension in initial_extensions:
+            try:
+                self.bot.load_extension(extension)
+            except Exception as e:
+                print(f'Failed to load extension {extension}.', file=sys.stderr)
+                traceback.print_exc()
 
-            self.bots[f"guild_{str(guild.guild_id)}"].remove_command("help")
-            self.bots[f"guild_{str(guild.guild_id)}"].run(self.DISCORD_TOKEN)
+        slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
+
+        self.bot.remove_command("help")
+        self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
         sql3db = sqlite.SqliteDatabase()
@@ -80,11 +80,16 @@ class VoiceCreate():
         mdb.UPDATE_SCHEMA(self.DBVERSION)
 
     def get_prefix(self, client, message):
+        self.db.open()
         # get the prefix for the guild.
-
         prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-        if not message.guild:
+        if message.guild:
+            guild_settings = self.db.get_guild_settings(message.guild.id)
+            if guild_settings:
+                prefixes = guild_settings.prefix or "."
+        elif not message.guild:
             prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
+
         # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
         # Do `return prefixes` if you don't want to allow mentions instead of prefix.
         return commands.when_mentioned_or(*prefixes)(client, message)

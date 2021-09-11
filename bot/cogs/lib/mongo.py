@@ -275,6 +275,16 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc(ex)
             return None
+    def set_guild_settings_prefix(self, guildId, prefix: str):
+        if not self.connection:
+            self.open()
+        gs = self.get_guild_settings(guildId=guildId)
+        if not gs:
+            return False
+        payload = {
+            "prefix": prefix
+        }
+        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
     def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
