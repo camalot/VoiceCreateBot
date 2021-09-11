@@ -119,7 +119,7 @@ class voice(commands.Cog):
             _method = inspect.stack()[1][3]
             guild_id = after.guild.id
             if not after:
-                pass
+                return
             is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
             if is_in_channel:
                 self.db.open()
@@ -130,11 +130,11 @@ class voice(commands.Cog):
                 if owner_id != after.id:
                     # user is in a channel, but not their channel
                     self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not their own channel.")
-                    pass
+                    return
                 if before.activity == after.activity:
                     # we are only looking at activity
                     self.log.debug(guild_id, _method , f"Before / After activity is the same")
-                    pass
+                    return
 
                 owner = await self.get_or_fetch_member(after.guild, owner_id)
                 user_settings = self.db.get_user_settings(guild_id, after.id)
@@ -177,7 +177,6 @@ class voice(commands.Cog):
                                 await voice_channel.edit(name=selected_title)
                 else:
                     self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
-            pass
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
@@ -198,7 +197,7 @@ class voice(commands.Cog):
                     category_id = before.category.id or after.category.id or channel.category.id
                     owner_id = self.db.get_channel_owner_id(guild_id, after.id)
                     if owner_id:
-                        owner = await self.get_or_fetch_member(owner_id)
+                        owner = await self.get_or_fetch_member(before.guild, owner_id)
                         if not owner:
                             self.log.warn(guild_id, _method, f"Unable to find owner [user:{owner_id}] for the channel: {channel}")
                             pass
@@ -208,17 +207,12 @@ class voice(commands.Cog):
                             self.log.debug(guild_id, _method , "Channel Names are the same. Nothing to do")
                             pass
                         else:
-                            userSettings = self.db.get_user_settings(guild_id, owner_id)
-                            # guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-                            default_role_id = self.db.get_default_role(guildId=guild_id)
-                            default_role = self.get_by_name_or_id(after.guild.roles, default_role_id or self.settings.default_role)
-                            # if userSettings:
-                            #     default_role = self.get_by_name_or_id(after.guild.roles, userSettings.default_role)
-                            # else:
-                            #     if guildSettings:
-                            #         default_role = self.get_by_name_or_id(after.guild.roles, guildSettings.default_role or self.settings.default_role)
-                            #     else:
-                            #         default_role = self.get_by_name_or_id(after.guild.roles, self.settings.default_role or "@everyone")
+                            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                            self.log.debug(guild_id, _method, f"default_role: {default_role}")
+                            temp_default_role = self.get_by_name_or_id(after.guild.roles, default_role)
+                            self.log.debug(guild_id, _method, f"temp_default_role: {temp_default_role}")
+                            user_settings = self.db.get_user_settings(guild_id, owner_id)
+
                             self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
 
                             if after.type == discord.ChannelType.voice:
@@ -241,10 +235,10 @@ class voice(commands.Cog):
                                     await self.sendEmbed(after, "Updated Channel Name", f'{owner.mention}, You have changed the channel name to {after.name}!', delete_after=5)
 
 
-                            if userSettings:
+                            if user_settings:
                                 self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=after.name)
                             else:
-                                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=default_role.id, autoGame=False)
+                                self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=after.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=False)
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
@@ -1615,7 +1609,7 @@ class voice(commands.Cog):
             if owner:
                 selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title="Update Title To Game")
                 if selected_title:
-                    self._name(ctx, selected_title, False)
+                    await self._name(ctx, selected_title, False)
                 else:
                     await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention}, I was unable to determine the game title.', delete_after=5)
                     await ctx.message.delete()
