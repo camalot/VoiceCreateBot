@@ -119,7 +119,7 @@ class voice(commands.Cog):
             _method = inspect.stack()[1][3]
             guild_id = after.guild.id
             if not after:
-                pass
+                return
             is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
             if is_in_channel:
                 self.db.open()
@@ -130,11 +130,11 @@ class voice(commands.Cog):
                 if owner_id != after.id:
                     # user is in a channel, but not their channel
                     self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not their own channel.")
-                    pass
+                    return
                 if before.activity == after.activity:
                     # we are only looking at activity
                     self.log.debug(guild_id, _method , f"Before / After activity is the same")
-                    pass
+                    return
 
                 owner = await self.get_or_fetch_member(after.guild, owner_id)
                 user_settings = self.db.get_user_settings(guild_id, after.id)
@@ -177,7 +177,6 @@ class voice(commands.Cog):
                                 await voice_channel.edit(name=selected_title)
                 else:
                     self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
-            pass
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
