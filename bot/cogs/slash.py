@@ -65,23 +65,28 @@ class Slash(commands.Cog):
         pass
     @voice2.command(alias="test2")
     async def _test2(self, ctx):
+        options = []
+        roles = [r for r in ctx.guild.roles if "Twitch Subscriber: Tier" not in r.name and not r.is_bot_managed()]
+        roles.sort(key=lambda r: r.name)
+        idx = 0
+        print(f"ROLES: {len(roles)}")
+        for r in roles[:25]:
+            print(f"[{idx}]:{r.name}")
+            idx += 1
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
         select = create_select(
-            options=[
-                create_select_option("Lab Coat", value="coat", emoji="🥼"),
-                create_select_option("Test Tube", value="tube", emoji="🧪"),
-                create_select_option("Petri Dish", value="dish", emoji="🧫")
-            ],
-            placeholder="Choose your option",
+            options=options,
+            placeholder="Choose default role",
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
         action_row = create_actionrow(select)
-        ask_context = await ctx.send("Choose Wisely", components=[action_row])
+        ask_context = await ctx.send("Choose Default Role", components=[action_row])
         button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row)
-        await button_ctx.edit_origin(content=f"You selected {button_ctx.selected_options}", components=None)
+        # await button_ctx.edit_origin(content=f"You selected {button_ctx.selected_options}", components=None)
         await ask_context.delete()
         await ctx.message.delete()
-        await ctx.send(content=f"You selected {button_ctx.selected_options}")
+        await ctx.send(content=f"You selected {button_ctx.selected_options[0]}")
         return True
 def setup(bot):
     bot.add_cog(Slash(bot))
