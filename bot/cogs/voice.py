@@ -2103,13 +2103,11 @@ class voice(commands.Cog):
         categories = [r for r in ctx.guild.categories]
         categories.sort(key=lambda r: r.name)
         # idx = 0
-        sub_message = ""
-        if len(categories) >= 24:
-            options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
-            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
-            sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
-        for r in categories[:24]:
-            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
+        options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
+        options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+        sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
+        for r in categories[:23]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="📇"))
 
         select = create_select(
             options=options,
@@ -2135,7 +2133,6 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
                 else:
                     await ask_existing_category.delete()
-                    # found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
                     cat_name_or_id = category.content
                     if cat_name_or_id.isnumeric():
                         cat_name_or_id = int(cat_name_or_id)
@@ -2170,44 +2167,6 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
                     return None
 
-    async def ask_category2(self, ctx):
-        guild_id = ctx.guild.id
-        _method = inspect.stack()[1][3]
-        if self.isAdmin(ctx):
-            def check(m):
-                same = m.author.id == ctx.author.id
-                return same
-            def check_yes_no(m):
-                msg = m.content
-                return utils.str2bool(msg)
-            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Enter the name of the category you wish to create the channels in:(e.g Voice Channels)**", delete_after=60, footer="**You have 60 seconds to answer**")
-            try:
-                category = await self.bot.wait_for('message', check=check, timeout=60.0)
-            except asyncio.TimeoutError:
-                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-            else:
-                found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
-                await category.delete()
-                if found_category:
-                    # found existing with that name.
-                    # do you want to create a new one?
-                    yes_or_no = False
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"**Found an existing category called '{str(found_category.name.upper())}'. Use that category?\n\nReply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
-                    try:
-                        yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
-                    except asyncio.TimeoutError:
-                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                    else:
-                        if yes_or_no:
-                            await yes_or_no.delete()
-                            return found_category
-                        else:
-                            return await ctx.guild.create_category_channel(category.content)
-                else:
-                    return await ctx.guild.create_category_channel(category.content)
-        else:
-            return None
-        await ctx.message.delete()
     def isInVoiceChannel(self, ctx):
         if isinstance(ctx, discord.Member):
             return ctx.voice.channel is not None
