@@ -269,7 +269,8 @@ class voice(commands.Cog):
                     self.log.debug(guild_id, _method , f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
                     source_channel_id = after.channel.id
-                    userSettings = self.db.get_user_settings(guildId=guild_id, userId=member.id)
+                    channel_owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=source_channel_id)
+                    userSettings = self.db.get_user_settings(guildId=guild_id, userId=channel_owner_id or member.id)
                     guildSettings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
                     useStage = self.db.get_use_stage_on_create(guildId=guild_id, channelId=source_channel_id, categoryId=category_id) or 0
                     # CHANNEL SETTINGS START
@@ -278,8 +279,8 @@ class voice(commands.Cog):
                     bitrate = self.settings.BITRATE_DEFAULT
                     name = utils.get_random_name()
 
-                    default_role_id = self.db.get_default_role(guildId=guild_id)
-                    default_role = self.get_by_name_or_id(after.guild.roles, default_role_id or self.settings.default_role)
+                    default_role_id = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=member.id)
+                    default_role = self.get_by_name_or_id(member.guild.roles, default_role_id or self.settings.default_role)
 
                     # default_role = self.get_by_name_or_id(member.guild.roles, self.settings.default_role)
                     if userSettings is None:
