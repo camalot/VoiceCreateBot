@@ -197,10 +197,10 @@ class voice(commands.Cog):
                     # This handles a manual channel rename. it changes the text channel name to match.
                     guild_id = before.guild.id or after.guild.id
                     channel = await self.get_or_fetch_channel(after.id)
-                    if not channel.category or not before.category or not after.category:
-                        self.log.warn(guild_id, _method, "Unable to locate category", traceback.format_exc())
+                    if not channel.category:
+                        self.log.debug(guild_id, _method, "Unable to locate category", traceback.format_exc())
                         return
-                    category_id = before.category.id or after.category.id or channel.category.id
+                    category_id = channel.category.id
                     owner_id = self.db.get_channel_owner_id(guild_id, after.id)
                     if owner_id:
                         owner = await self.get_or_fetch_member(before.guild, owner_id)
