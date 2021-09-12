@@ -1118,10 +1118,9 @@ class voice(commands.Cog):
 
                             selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Setup")
                             if not selected_guild_role:
-                                # selected_guild_role = discord.utils.get(ctx.guild.roles, name=guild_settings.default_role or self.settings.default_role or "@everyone").name
-                                selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role or self.settings.default_role or "everyone")
+                                selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role or self.settings.default_role)
 
-                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=selected_guild_role.id)
+                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=(selected_guild_role or ctx.guild.default_role).id)
                         else:
                             self.log.debug(guild_id, _method , f"GUILD CATEGORY SETTINGS FOUND")
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
@@ -1602,7 +1601,7 @@ class voice(commands.Cog):
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
             if temp_default_role is None:
-                temp_default_role = self.get_by_name_or_id(ctx.guild.roles, "@everyone" )
+                temp_default_role = ctx.guild.default_role
             if user_settings:
                 self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
             else:
@@ -2037,7 +2036,7 @@ class voice(commands.Cog):
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
                 # ask for role name or ID
-                role_id = discord.utils.get(ctx.guild.roles, name="@everyone").id
+                role_id = ctx.guild.default_role.id
 
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
@@ -2084,7 +2083,7 @@ class voice(commands.Cog):
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
                 # ask for role name or ID
-                role_id = discord.utils.get(ctx.guild.roles, name="@everyone").id
+                role_id = ctx.guild.default_role.id
 
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
