@@ -9,6 +9,9 @@ import sqlite3
 from urllib.parse import quote
 import validators
 from discord.ext.commands.cooldowns import BucketType
+from discord_slash import ComponentContext
+from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
+from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 from time import gmtime, strftime
 import os
@@ -2000,86 +2003,174 @@ class voice(commands.Cog):
     async def ask_admin_role(self, ctx, title: str = "Voice Channel Initialization"):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
-        # ask admin role
-        index = 0
-        idx = -1
-        fields = list()
-        admin_roles = [r.name for r in ctx.guild.roles if r.permissions.administrator]
-        # chunked = utils.chunk_list(admin_roles, 20)
-        # total_pages = math.ceil(len(admin_roles) / 20)
+        options = []
+        roles = [r for r in ctx.guild.roles if not r.is_bot_managed() and not r.managed and not r.is_integration() and r.permissions.administrator]
+        roles.sort(key=lambda r: r.name)
+        # idx = 0
+        sub_message = ""
+        if len(roles) >= 24:
+            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
+            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+            sub_message = "\n\nOnly 24 Roles Can Be Listed.\nIf Role Not Listed, Choose `->OTHER<-`"
+        for r in roles[:24]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
 
-        for r in admin_roles:
-            fields.append(EmbedField(f"{str(index+1)}: {r}", f"Enter {str(index+1)} to choose this role").__dict__)
-            index += 1
-        await self.sendEmbed(ctx.channel, title, '**What is your server admin role?\n\nChoose from the list:**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
+        select = create_select(
+            options=options,
+            placeholder="Choose Admin Role",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, '**What is your server admin role?**\n\nThese are voice create bot administrators.', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
         try:
-            roleResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
         else:
-            admin_role = None
-            if roleResp.content.isnumeric():
-                idx = int(roleResp.content) - 1
-                if idx >= 0 and idx < len(admin_roles):
-                    selected_admin_role_name = admin_roles[idx]
-                    # admin_role = discord.utils.get(ctx.guild.roles, name=selected_admin_role_name)
-                    admin_role = self.get_by_name_or_id(ctx.guild.roles, selected_admin_role_name)
-                    if admin_role:
-                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You chose the role: '{admin_role.name}'", delete_after=5)
+            role_id = int(button_ctx.selected_options[0])
+            if role_id == 0:
+                # ask for role name or ID
+                role_id = discord.utils.get(ctx.guild.roles, name="@everyone").id
 
-            await roleResp.delete()
-        if not admin_role:
-            await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord administrator role.', delete_after=5)
-            return None
-        return admin_role
+            selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if selected_role:
+                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the role: '{selected_role.name}'", delete_after=5)
+                return selected_role
+
+            else:
+                await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                return None
+        finally:
+            await ask_context.delete()
+
     async def ask_default_role(self, ctx, title: str = "Voice Channel Setup"):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
-        # ASK DEFAULT ROLE
+        options = []
+        roles = [r for r in ctx.guild.roles if not r.is_bot_managed() and not r.managed and not r.is_integration()]
+        roles.sort(key=lambda r: r.name)
+        # idx = 0
+        sub_message = ""
+        if len(roles) >= 24:
+            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
+            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+            sub_message = "\n\nOnly 24 Roles Can Be Listed.\nIf Role Not Listed, Choose `->OTHER<-`"
+        for r in roles[:24]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
+
+        select = create_select(
+            options=options,
+            placeholder="Choose Default Role",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+        else:
+            role_id = int(button_ctx.selected_options[0])
+            if role_id == 0:
+                # ask for role name or ID
+                role_id = discord.utils.get(ctx.guild.roles, name="@everyone").id
+
+            selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if selected_role:
+                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the role: '{selected_role.name}'", delete_after=5)
+                return selected_role
+            else:
+                await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord role.', delete_after=5)
+                return None
+        finally:
+            await ask_context.delete()
+
+    async def ask_category(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        options = []
+        categories = [r for r in ctx.guild.categories]
+        categories.sort(key=lambda r: r.name)
+        # idx = 0
+        sub_message = ""
+        if len(categories) >= 24:
+            options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
+            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+            sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
+        for r in categories[:24]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
 
-        index = 0
-        idx = -1
-        fields = list()
-        guild_roles = [r.name for r in ctx.guild.roles]
-        await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer="**You have 60 seconds to answer**")
-        selected_guild_role = None
-        chunked = utils.chunk_list(list(guild_roles), 20)
-        total_pages = math.ceil(len(guild_roles) / 20)
-        page = 1
-        selected_guild_role = None
-        for chunk in chunked:
-            fields = list()
-            for r in chunk:
-                fields.append(EmbedField(f"{str(index+1)}: {r}", f"Enter {str(index+1)} to choose this role").__dict__)
-                index += 1
+        select = create_select(
+            options=options,
+            placeholder="Choose Category",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
 
-            await self.sendEmbed(ctx.channel, title, f'**ROLES PAGE:{page}/{total_pages}**', fields=fields, delete_after=60, footer="**You have 60 seconds to answer**")
-            page += 1
+        action_row = create_actionrow(select)
+        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
         try:
-            roleResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
-            return None
         else:
-            if roleResp.content.isnumeric():
-                idx = int(roleResp.content) - 1
-                if idx >= 0 and idx < len(guild_roles):
-                    selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_roles[idx])
-                    if selected_guild_role:
-                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the role: '{selected_guild_role.name}'", delete_after=5)
+            category_id = int(button_ctx.selected_options[0])
+            await ask_context.delete()
+            if category_id == 0: # selected "OTHER"
+                try:
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                else:
+                    await ask_existing_category.delete()
+                    # found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
+                    cat_name_or_id = category.content
+                    if cat_name_or_id.isnumeric():
+                        cat_name_or_id = int(cat_name_or_id)
+                    found_category = self.get_by_name_or_id(ctx.guild.categories, cat_name_or_id)
+                    await category.delete()
+                    if found_category:
+                        await self.sendEmbed(ctx.channel, title, f"**Found an existing category named '{str(found_category.name)}'.**", delete_after=5)
+                        return found_category
+                    else:
+                        await self.sendEmbed(ctx.channel, title, f"**Unable to find a category named '{str(found_category.name)}'.**", delete_after=5)
+                        return None
+            elif category_id == -1: # selected "NEW"
+                try:
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                else:
+                    await ask_new_category.delete()
+                    selected_category = await ctx.guild.create_category_channel(new_category.content)
+                    await new_category.delete()
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You created the category: '{selected_category.name}'", delete_after=5)
 
-            await roleResp.delete()
-        if not selected_guild_role:
-            await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord role.', delete_after=5)
-            return None
-        return selected_guild_role
-    async def ask_category(self, ctx):
+                    return selected_category
+            else: # selected a category
+                selected_category = discord.utils.get(ctx.guild.categories, id=category_id)
+                if selected_category:
+                    self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the category '{selected_category.name}'")
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the category: '{selected_category.name}'", delete_after=5)
+                    return selected_category
+                else:
+                    await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
+                    return None
+
+    async def ask_category2(self, ctx):
         guild_id = ctx.guild.id
         _method = inspect.stack()[1][3]
         if self.isAdmin(ctx):
@@ -2093,7 +2184,7 @@ class voice(commands.Cog):
             try:
                 category = await self.bot.wait_for('message', check=check, timeout=60.0)
             except asyncio.TimeoutError:
-                await ctx.channel.send('Took too long to answer!', delete_after=5)
+                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
             else:
                 found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
                 await category.delete()
@@ -2138,7 +2229,7 @@ class voice(commands.Cog):
 
         return is_in_admin_role or admin_user or is_bot_owner or is_in_guild_admin_role
 
-    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None):
+    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
         # embed.set_author(name=f"{self.settings['name']}", url=self.settings['url'],
         #                 icon_url=self.settings['icon'])
@@ -2149,7 +2240,7 @@ class voice(commands.Cog):
             embed.set_footer(text=f'Developed by {self.settings.author}')
         else:
             embed.set_footer(text=footer)
-        await channel.send(embed=embed, delete_after=delete_after)
+        return await channel.send(embed=embed, delete_after=delete_after, components=components)
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, "Something Went Wrong", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry. 😢', delete_after=30)
 

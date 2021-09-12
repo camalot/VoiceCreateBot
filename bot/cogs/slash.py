@@ -66,31 +66,50 @@ class Slash(commands.Cog):
     @voice2.command(alias="test2")
     async def _test2(self, ctx):
         options = []
-        roles = [r for r in ctx.guild.roles if "Twitch Subscriber: Tier" not in r.name and not r.is_bot_managed()]
+        roles = [r for r in ctx.guild.roles if not r.is_bot_managed() and not r.managed and not r.is_integration()]
         roles.sort(key=lambda r: r.name)
         # idx = 0
-        print(f"ROLES: {len(roles)}")
         sub_message = ""
         if len(roles) >= 24:
+            self.log.warn(ctx.guild.id, "ask_default_role", f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
             options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
             sub_message = "\n\nOnly 24 Roles Can Be Listed.\nIf Role Not Listed, Choose `->OTHER<-`"
         for r in roles[:24]:
-            # print(f"[{idx}]:{r.name}")
-            # idx += 1
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
+
         select = create_select(
             options=options,
             placeholder="Choose Default Role",
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
+
         action_row = create_actionrow(select)
         ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
-        button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row)
-        # await button_ctx.edit_origin(content=f"You selected {button_ctx.selected_options}", components=None)
-        await ask_context.delete()
-        await ctx.message.delete()
-        await ctx.send(content=f"You selected {button_ctx.selected_options[0]}")
-        return True
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await ctx.send('Took too long to answer!', delete_after=5)
+        else:
+            role_id = int(button_ctx.selected_options[0])
+            if role_id == 0:
+                # ask for role name or ID
+                role_id = discord.utils.get(ctx.guild.roles, name="@everyone").id
+
+            selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if selected_role:
+                await ctx.send(content=f"You selected `@{selected_role.name}`")
+        finally:
+            await ask_context.delete()
+            await ctx.message.delete()
+
+
+    def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
+        if isinstance(nameOrId, str):
+            return discord.utils.get(iterable, name=str(nameOrId))
+        elif isinstance(nameOrId, int):
+            return discord.utils.get(iterable, id=int(nameOrId))
+        else:
+            return None
 def setup(bot):
     bot.add_cog(Slash(bot))
