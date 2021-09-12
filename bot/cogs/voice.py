@@ -280,7 +280,7 @@ class voice(commands.Cog):
                     name = utils.get_random_name()
 
                     default_role_id = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=member.id)
-                    default_role = self.get_by_name_or_id(after.guild.roles, default_role_id or self.settings.default_role)
+                    default_role = self.get_by_name_or_id(member.guild.roles, default_role_id or self.settings.default_role)
 
                     # default_role = self.get_by_name_or_id(member.guild.roles, self.settings.default_role)
                     if userSettings is None:
