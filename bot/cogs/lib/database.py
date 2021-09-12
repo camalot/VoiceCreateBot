@@ -37,6 +37,8 @@ class Database():
         pass
     def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         pass
+    def set_guild_settings_prefix(self, guildId, prefix: str):
+        pass
     def get_guild_create_channel_settings(self, guildId):
         pass
     def delete_guild_create_channel(self, guildId, channelId, categoryId):
@@ -94,7 +96,8 @@ class Database():
         pass
     def get_all_from_voice_channel_table(self):
         pass
-
+    def get_all_guild_settings(self):
+        pass
     def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
         pass
     def clear_log(self, guildId: int):

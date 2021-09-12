@@ -16,3 +16,8 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 ## HOW TO RUN THE BOT LOCALLY
 
 ## HOW TO RUN THE BOT VIA DOCKER
+
+
+## INVITE TO DISCORD
+
+https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&permissions=8&scope=bot

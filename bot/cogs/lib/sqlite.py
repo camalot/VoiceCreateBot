@@ -144,6 +144,8 @@ class SqliteDatabase(database.Database):
         pass
     def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         pass
+    def set_guild_settings_prefix(self, guildId, prefix: str):
+        pass
     def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:
@@ -594,7 +596,8 @@ class SqliteDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-
+    def get_all_guild_settings(self):
+        pass
     def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
         pass
     def clear_log(self, guildId: int):

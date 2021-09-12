@@ -275,6 +275,16 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc(ex)
             return None
+    def set_guild_settings_prefix(self, guildId, prefix: str):
+        if not self.connection:
+            self.open()
+        gs = self.get_guild_settings(guildId=guildId)
+        if not gs:
+            return False
+        payload = {
+            "prefix": prefix
+        }
+        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
     def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
         try:
             if not self.connection:
@@ -402,7 +412,8 @@ class MongoDatabase(database.Database):
                 "channelLimit": channelLimit,
                 "bitrate": bitrate,
                 "defaultRole": defaultRole,
-                "auto_game": autoGame
+                "auto_game": autoGame,
+                "timestamp": utils.get_timestamp()
             }
             self.connection.userSettings.insert_one(payload)
         except Exception as ex:
@@ -649,7 +660,14 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-
+    def get_all_guild_settings(self):
+        if self.connection is None:
+            self.open()
+        c = self.connection.guild_settings.find()
+        result = []
+        for g in c:
+            result.append(settings.GuildSettings(g['guild_id'], g['prefix'], g['default_role'], g['admin_role']))
+        return result
     def get_all_from_guild_table(self):
         pass
     def get_all_from_guild_category_settings_table(self):
