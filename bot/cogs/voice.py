@@ -1955,7 +1955,7 @@ class voice(commands.Cog):
                 if game_activity:
                     for a in game_activity:
                         titles.append(a.name)
-                        self.log.debug(guild_id, _method, f"gane.name: {a.name}")
+                        self.log.debug(guild_id, _method, f"game.name: {a.name}")
                 elif stream_activity:
                     for a in stream_activity:
                         # name = stream_activity[0].name
