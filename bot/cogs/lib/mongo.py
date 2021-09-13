@@ -7,7 +7,7 @@ from . import database
 from . import settings
 from . import utils
 from . import sqlite
-
+from .mongodb import migration
 class MongoDatabase(database.Database):
     def __init__(self):
         self.settings = settings.Settings()
@@ -42,21 +42,25 @@ class MongoDatabase(database.Database):
             if not self.connection:
                 self.open()
             db_version = self.connection.migration.find_one({"user_version": newDBVersion})
+
+            migrator = migration.MongoMigration()
+            migrator.run()
+            
             if not db_version:
                 # need to migrate
 
-                # v5 migration start
-                if self.connection['guild']:
-                    self.connection['guild'].rename("create_channels")
-                if self.connection['guildCategorySettings']:
-                    self.connection['guildCategorySettings'].rename("category_settings")
-                if self.connection['userSettings']:
-                    self.connection['userSettings'].rename("user_settings")
-                if self.connection['textChannel']:
-                    self.connection['textChannel'].rename("text_channels")
-                if self.connection['voiceChannel']:
-                    self.connection['voiceChannel'].rename("voice_channels")
-                # v5 migration end
+                # # v5 migration start
+                # if self.connection['guild']:
+                #     self.connection['guild'].rename("create_channels")
+                # if self.connection['guildCategorySettings']:
+                #     self.connection['guildCategorySettings'].rename("category_settings")
+                # if self.connection['userSettings']:
+                #     self.connection['userSettings'].rename("user_settings")
+                # if self.connection['textChannel']:
+                #     self.connection['textChannel'].rename("text_channels")
+                # if self.connection['voiceChannel']:
+                #     self.connection['voiceChannel'].rename("voice_channels")
+                # # v5 migration end
 
                 pass
                 # disable the migration because this has already been done...
