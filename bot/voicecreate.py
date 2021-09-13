@@ -23,7 +23,7 @@ from discord_slash import SlashCommand
 
 class VoiceCreate():
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
-    DBVERSION = 4 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    DBVERSION = 5 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     # 0 = NO SCHEMA APPLIED
 
     # VERSION HISTORY:
@@ -31,6 +31,8 @@ class VoiceCreate():
     # v2: 07/01/2020
     # v3: 09/01/2021
     # v4: 9/9/2021 - added auto_game column to userSettings
+    # v5: 9/13/2021 - rename the collections 
+    
     def __init__(self):
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
