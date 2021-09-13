@@ -492,27 +492,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ? AND channelID = ?", (guildId, voiceChannelId, textChannelId,))
-            # tracked = self.connection.tracked_channels.find_one({"textChannel": { "id": textChannelId }, "voiceChannel": { "id" : voiceChannelId }})
-            # tracked_text = self.connection.text_channels.find_one({"channelID": textChannelId, "guildID": guildId, "voiceID": voiceChannelId })
-            # tracked_voice = self.connection.voice_channels.fine_one({ "voiceID": voiceChannelId, "guildID": guildId })
-            # tt_payload = None
-            # tv_payload = None
-            # if tracked_text:
-            #     tt_payload = {
-            #         "id": tracked_text['channelID'],
-            #         "user_id": tracked_text['userID']
-            #     }
-            # if tracked_voice:
-            #     tv_payload = {
-            #         "id": tracked_voice['voiceID']
-            #     }
-            # payload = {
-            #     "guild_id": guildId,
-            #     "text_channel": tt_payload,
-            #     "voice_channel": tv_payload
-            # }
-
             tracked = self.connection.text_channels.find_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
             if tracked:
                 payload = {
@@ -531,7 +510,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
             payload = {
                 "guildID": guildId,
@@ -548,7 +526,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
             # c.execute("INSERT INTO textChannel VALUES (?, ?, ?, ?)", (guildId, ownerId, textChannelId, voiceChannelId,))
             result = self.track_new_voice_channel(guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId)
@@ -605,7 +582,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
             self.connection.user_settings.delete_many({"guildID": guildId})
             return True
@@ -688,6 +664,7 @@ class MongoDatabase(database.Database):
         for g in c:
             result.append(settings.GuildSettings(g['guild_id'], g['prefix'], g['default_role'], g['admin_role']))
         return result
+
     def get_all_from_guild_table(self):
         pass
     def get_all_from_guild_category_settings_table(self):
