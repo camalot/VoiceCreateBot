@@ -1,8 +1,10 @@
 # VoiceCreateBot
 
 
-[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml)
+[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) [![join the discord](https://badgen.net/badge/icon/Join%20Discord?icon=discord&label)](http://discord.darthminos.tv/)
 
+<!-- ![](https://dcbadge.vercel.app/api/shield/262031734260891648)  -->
+<!-- ![](https://dcbadge.vercel.app/api/shield/bot/571011576618811402) -->
 
 A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
@@ -10,7 +12,6 @@ A dedicated bot for creating dynamic voice channels. Keep your voice channel cou
 - Supports changing voice bitrate
 - Dynamic channel names. Uses a custom api to dynamically generate a channel name
 - Support for **Stage Channels** in *Community Discords*
-- 
 
 For help with the code, or the bot [join the discord](http://discord.darthminos.tv)
 # INSTALL
