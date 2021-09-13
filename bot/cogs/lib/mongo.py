@@ -247,7 +247,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("DELETE FROM guild WHERE guildID = ? AND voiceChannelID = ? AND voiceCategoryID = ?", (guildId, channelId, categoryId,))
             self.connection.create_channels.delete_many({"guildID": guildId, "voiceChannelID": channelId, "voiceCategoryID": categoryId})
         except Exception as ex:
@@ -258,7 +257,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             self.connection.create_channels.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": useStage } })
             return True
         except Exception as ex:
@@ -352,7 +350,6 @@ class MongoDatabase(database.Database):
         try:
             if not self.connection:
                 self.open()
-            # c = self.connection.cursor()
             cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if cat_settings:
                 payload = { "channelLimit": channelLimit, "channelLocked": channelLocked, "bitrate": bitrate, "defaultRole": defaultRole }
@@ -393,7 +390,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelName": channelName }})
         except Exception as ex:
@@ -403,7 +399,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelLimit": limit }})
         except Exception as ex:
@@ -413,7 +408,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "bitrate": bitrate }})
         except Exception as ex:
@@ -423,7 +417,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             payload = {
                 "guildID": guildId,
