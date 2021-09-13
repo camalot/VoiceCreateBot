@@ -18,6 +18,7 @@ class Settings:
         except Exception as e:
             print(e, file=sys.stderr)
         self.db_url = utils.dict_get(os.environ, "VCB_MONGODB_URL", default_value="")
+        self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
@@ -28,23 +29,22 @@ class Settings:
 
 
         # DEPRECATED
-        self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
-        self.admin_roles = utils.dict_get(os.environ, 'ADMIN_ROLES', default_value = 'Admin').split(',')
-        self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = '').split(' ')
-        self.default_role = utils.dict_get(os.environ, 'DEFAULT_ROLE', default_value= '@everyone')
+        # self.admin_roles = utils.dict_get(os.environ, 'ADMIN_ROLES', default_value = 'Admin').split(',')
+        # self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = '').split(' ')
 
 
 
 class GuildCategorySettings:
-    def __init__(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
+    def __init__(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: typing.Union[str, int] ):
         self.guild_id = guildId
         self.category_id = categoryId
         self.channel_limit = channelLimit
         self.channel_locked = channelLocked >= 1
         self.bitrate = bitrate
         self.default_role = defaultRole
+
 class UserSettings():
-    def __init__(self, guildId, userId, channelName, channelLimit, bitrate, defaultRole, autoGame):
+    def __init__(self, guildId: int, userId: int, channelName: str, channelLimit: int, bitrate: int, defaultRole: typing.Union[str, int], autoGame: bool):
         self.user_id = userId
         self.channel_name = channelName
         self.channel_limit = channelLimit
@@ -54,34 +54,36 @@ class UserSettings():
         pass
 
 class GuildSettings:
-    def __init__(self, guildId, prefix, defaultRole, adminRole):
+    def __init__(self, guildId: int, prefix, defaultRole: int, adminRole: int):
         self.guild_id = guildId
         self.default_role = defaultRole
         self.admin_role = adminRole
         self.prefix = prefix
+
 class GuildCreateChannelSettings:
-    def __init__(self, guildId):
+    def __init__(self, guildId: int):
         self.guild_id = guildId
         self.channels = []
-        pass
+
 class GuildCategoryChannel:
-    def __init__(self, ownerId, categoryId, channelId, useStage):
+    def __init__(self, ownerId: int, categoryId: int, channelId: int, useStage: bool):
         self.owner_id = int(ownerId)
         self.category_id = int(categoryId)
         self.channel_id = int(channelId)
         self.use_stage = useStage >= 1
+
 class TrackedVoiceChannel:
-    def __init__(self, guildId, ownerId, voiceChannelId):
+    def __init__(self, guildId: int, ownerId: int, voiceChannelId: int):
         self.guild_id = int(guildId)
         self.owner_id = int(ownerId)
         self.voice_channel_id = int(voiceChannelId)
 
 class TrackedTextChannel(TrackedVoiceChannel):
-    def __init__(self, guildId, ownerId, voiceChannelId, textChannelId):
+    def __init__(self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int):
         super(TrackedTextChannel, self).__init__(guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId)
         self.text_channel_id = int(textChannelId)
 
 class TrackedChannels:
-    def __init__(self, voiceChannels, textChannels):
+    def __init__(self, voiceChannels: list[TrackedVoiceChannel], textChannels: list[TrackedTextChannel]):
         self.voice_channels = voiceChannels
         self.text_channels = textChannels

@@ -283,32 +283,26 @@ class voice(commands.Cog):
                     name = utils.get_random_name()
 
                     default_role_id = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=member.id)
-                    default_role = self.get_by_name_or_id(member.guild.roles, default_role_id or self.settings.default_role)
-
-                    # default_role = self.get_by_name_or_id(member.guild.roles, self.settings.default_role)
+                    default_role = self.get_by_name_or_id(member.guild.roles, default_role_id) or member.guild.default_role
                     if userSettings is None:
                         if guildSettings is not None:
                             limit = guildSettings.channel_limit
                             locked = guildSettings.channel_locked
                             bitrate = guildSettings.bitrate
-                            # default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
                     else:
                         name = userSettings.channel_name
                         if guildSettings is None:
                             limit = userSettings.channel_limit
                             bitrate = userSettings.bitrate
-                            # default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or self.settings.default_role)
                             locked = False
                         elif guildSettings is not None:
                             limit = userSettings.channel_limit or guildSettings.channel_limit
                             locked = guildSettings.channel_locked or False
                             bitrate = userSettings.bitrate or guildSettings.bitrate
-                            # default_role = self.get_by_name_or_id(member.guild.roles, userSettings.default_role or guildSettings.default_role or self.settings.default_role)
                         else:
                             limit = userSettings.channel_limit
                             locked = guildSettings.channel_locked
                             bitrate = guildSettings.bitrate
-                            # default_role = self.get_by_name_or_id(member.guild.roles, guildSettings.default_role or self.settings.default_role)
                     # CHANNEL SETTINGS END
 
                     mid = member.id
@@ -342,7 +336,6 @@ class voice(commands.Cog):
 
                     self.db.track_new_channel_set(guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
 
-                    # sec_role = default_role or self.get_by_name_or_id(member.guild.roles, self.settings.default_role or "@everyone")
                     try:
                         if default_role:
                             self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
@@ -596,7 +589,7 @@ class voice(commands.Cog):
             owner_user = await self.get_or_fetch_user(owner_id)
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -664,7 +657,7 @@ class voice(commands.Cog):
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -715,8 +708,7 @@ class voice(commands.Cog):
                 return
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -768,7 +760,7 @@ class voice(commands.Cog):
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -819,7 +811,7 @@ class voice(commands.Cog):
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
-            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
                 text_channel = await self.get_or_fetch_channel(text_channel_id)
@@ -1014,8 +1006,7 @@ class voice(commands.Cog):
                             m_guild_settings = self.db.get_guild_settings(m.guild.id)
                             if m_guild_settings:
                                 return self.get_by_name_or_id(guild_roles, m_guild_settings.default_role)
-                            # return discord.utils.get(guild_roles, name=self.settings.default_role or "everyone")
-                            return self.get_by_name_or_id(guild_roles, self.settings.default_role or "everyone")
+                            return ctx.guild.default_role
                         # is valid role?
                         # role = discord.utils.get(m.guild.roles,name=m.content)
                         role = self.get_by_name_or_id(guild_roles, m.content)
@@ -1118,7 +1109,7 @@ class voice(commands.Cog):
 
                             selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Setup")
                             if not selected_guild_role:
-                                selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role or self.settings.default_role)
+                                selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role)
 
                             self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=(selected_guild_role or ctx.guild.default_role).id)
                         else:
@@ -1220,7 +1211,7 @@ class voice(commands.Cog):
                         temp_default_role = default_role.name
                     new_default_role = temp_default_role
                     if not new_default_role:
-                        new_default_role = discord.utils.get(ctx.guild.roles, self.settings.default_role)
+                        new_default_role = ctx.guild.default_role
 
                     self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=int(limit), channelLocked=utils.str2bool(locked), bitrate=int(br), defaultRole=new_default_role.id)
                     embed_fields = list()
@@ -1366,7 +1357,7 @@ class voice(commands.Cog):
             if self.isAdmin(ctx):
                 owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=current_voice_channel_id)
                 owner = await self.get_or_fetch_user(owner_id)
-            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or self.settings.default_role
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
 
             validRole = len([ x for x in ctx.guild.roles if x.name == default_role or x.id == default_role ]) == 1
             if not validRole:
@@ -1509,8 +1500,8 @@ class voice(commands.Cog):
 
             await voice_channel.edit(user_limit=limit)
             await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention}, You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
-            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or ctx.guild.default_role
+            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role)
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
             if user_settings:
@@ -1563,7 +1554,7 @@ class voice(commands.Cog):
             await voice_channel.edit(bitrate=br)
             await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
             if user_settings:
@@ -1599,7 +1590,7 @@ class voice(commands.Cog):
             enable_auto = utils.str2bool(enabled)
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
-            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role)
             if temp_default_role is None:
                 temp_default_role = ctx.guild.default_role
             if user_settings:
@@ -1685,7 +1676,7 @@ class voice(commands.Cog):
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+            temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel_id]) >= 1
             if not is_tracked_channel:
                 await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, this channel is not tracked by me.', delete_after=5)
@@ -1735,7 +1726,7 @@ class voice(commands.Cog):
                     return
                 user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
                 default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-                temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role or self.settings.default_role)
+                temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
                 # text channel rename is automatically handled by the change event on the voice channel.
 
                 if channel:
@@ -2247,17 +2238,17 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         self.db.open()
         guild_settings = self.db.get_guild_settings(ctx.guild.id)
-        admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower().strip() for s in self.settings.admin_roles), ctx.message.guild.roles)
+        # admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower().strip() for s in self.settings.admin_roles), ctx.message.guild.roles)
         is_in_guild_admin_role = False
         # see if there are guild settings for admin role
         if guild_settings:
             guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
             is_in_guild_admin_role = guild_admin_role in ctx.author.roles
-        is_in_admin_role = admin_role in ctx.author.roles
-        admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
+        # is_in_admin_role = admin_role in ctx.author.roles
+        # admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
         is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
-
-        return is_in_admin_role or admin_user or is_bot_owner or is_in_guild_admin_role
+        # is_in_admin_role or admin_user or
+        return is_bot_owner or is_in_guild_admin_role
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
