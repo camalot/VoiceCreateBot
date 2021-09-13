@@ -1939,69 +1939,137 @@ class voice(commands.Cog):
     async def ask_game_for_user(self, targetChannel: discord.TextChannel, user: discord.Member, title: str):
         _method = inspect.stack()[1][3]
         guild_id = targetChannel.guild.id
-        def check_user(m):
-            same = m.author.id == user.id
-            return same
-        def check_numeric(m):
-            if check_user(m):
-                return m.content.isnumeric()
-            return False
-        selected_title = None
-        titles = list()
-        fields = list()
-        if user:
-            if user.activities:
-                game_activity = [a for a in user.activities if a.type == discord.ActivityType.playing]
-                stream_activity = [a for a in user.activities if a.type == discord.ActivityType.streaming]
-                watch_activity = [a for a in user.activities if a.type == discord.ActivityType.watching]
+        options = []
+        games = []
 
-                if game_activity:
-                    for a in game_activity:
-                        titles.append(a.name)
-                        self.log.debug(guild_id, _method, f"game.name: {a.name}")
-                elif stream_activity:
-                    for a in stream_activity:
-                        # name = stream_activity[0].name
-                        self.log.debug(guild_id, _method, f"stream.game: {a.game}")
-                        self.log.debug(guild_id, _method, f"stream.name: {a.name}")
-                        titles.append(a.game)
-                        titles.append(a.name)
-                    # name = stream_activity[0].game
-                elif watch_activity:
-                    for a in watch_activity:
-                        self.log.debug(guild_id, _method, f"watch.name: {a.name}")
-                        titles.append(a.name)
-                else:
-                    self.log.debug(guild_id, _method, f"Activities: {str(len(user.activities))}")
-                    for a in user.activities:
-                        titles.append(a.name)
-                        self.log.debug(guild_id, _method, f"activity.name: {a.name}")
+        if user.activities:
+            game_activity = [a for a in user.activities if a.type == discord.ActivityType.playing]
+            stream_activity = [a for a in user.activities if a.type == discord.ActivityType.streaming]
+            watch_activity = [a for a in user.activities if a.type == discord.ActivityType.watching]
 
-                if len(titles) > 1:
-                    index = 0
-                    for t in titles:
-                        fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
-                        index += 1
-                    await self.sendEmbed(targetChannel, title, f'{user.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
-                    try:
-                        titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
-                    except asyncio.TimeoutError:
-                        await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
-                    else:
-                        if titleResp.content.isnumeric():
-                            idx = int(titleResp.content) - 1
-                            if idx >= 0 and idx < len(titles):
-                                selected_title = titles[idx]
-                                if selected_title:
-                                    await self.sendEmbed(targetChannel, title, f"{user.mention}, You selected: '{selected_title}'", delete_after=5)
-                        await titleResp.delete()
-                elif len(titles) == 1:
-                    selected_title = titles[0]
+            for a in game_activity:
+                if a.name not in games:
+                    self.log.debug(guild_id, _method, f"game.name: {a.name}")
+                    games.append(a.name)
+            for a in stream_activity:
+                self.log.debug(guild_id, _method, f"stream.game: {a.game}")
+                self.log.debug(guild_id, _method, f"stream.name: {a.name}")
+                if a.game not in games:
+                    games.append(a.game)
+                if a.name not in games:
+                    games.append(a.name)
+            for a in watch_activity:
+                self.log.debug(guild_id, _method, f"watch.name: {a.name}")
+                if a.name not in games:
+                    games.append(a.name)
+            for a in user.activities:
+                self.log.debug(guild_id, _method, f"activity.name: {a.name}")
+                if a.name not in games:
+                    games.append(a.name)
 
+            if len(games) == 1:
+                return games[0]
+            elif len(games) == 0:
+                return None
+
+
+            # idx = 0
+            sub_message = ""
+            if len(games) >= 24:
+                self.log.warn(user.guild.id, _method, f"There are more than 24 games: {str(len(user))}")
+                sub_message = "\n\nOnly 24 Games Can Be Listed."
+            for g in games[:24]:
+                options.append(create_select_option(label=g, value=g, emoji="🎮"))
+
+            select = create_select(
+                options=options,
+                placeholder="Choose Game",
+                min_values=1, # the minimum number of options a user must select
+                max_values=1 # the maximum number of options a user can select
+            )
+
+            action_row = create_actionrow(select)
+            # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
+            ask_context = await self.sendEmbed(targetChannel, title, '**There are multiple games detected. Which would you like to use?', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+            try:
+                button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            except asyncio.TimeoutError:
+                await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
             else:
-                self.log.debug(guild_id, _method, f"owner.activity is None")
+                selected_game = button_ctx.selected_options[0]
+                if selected_game:
+                    await self.sendEmbed(targetChannel, title, f"{user.mention}, You selected: '{selected_game}'", delete_after=5)
+                    return selected_game
+                else:
+                    return None
+            finally:
+                await ask_context.delete()
+        else:
+            return None
 
-            return selected_title
+        # def check_user(m):
+        #     same = m.author.id == user.id
+        #     return same
+        # def check_numeric(m):
+        #     if check_user(m):
+        #         return m.content.isnumeric()
+        #     return False
+        # selected_title = None
+        # titles = list()
+        # fields = list()
+        # if user:
+        #     if user.activities:
+        #         game_activity = [a for a in user.activities if a.type == discord.ActivityType.playing]
+        #         stream_activity = [a for a in user.activities if a.type == discord.ActivityType.streaming]
+        #         watch_activity = [a for a in user.activities if a.type == discord.ActivityType.watching]
+
+        #         if game_activity:
+        #             for a in game_activity:
+        #                 titles.append(a.name)
+        #                 self.log.debug(guild_id, _method, f"game.name: {a.name}")
+        #         elif stream_activity:
+        #             for a in stream_activity:
+        #                 # name = stream_activity[0].name
+        #                 self.log.debug(guild_id, _method, f"stream.game: {a.game}")
+        #                 self.log.debug(guild_id, _method, f"stream.name: {a.name}")
+        #                 titles.append(a.game)
+        #                 titles.append(a.name)
+        #             # name = stream_activity[0].game
+        #         elif watch_activity:
+        #             for a in watch_activity:
+        #                 self.log.debug(guild_id, _method, f"watch.name: {a.name}")
+        #                 titles.append(a.name)
+        #         else:
+        #             self.log.debug(guild_id, _method, f"Activities: {str(len(user.activities))}")
+        #             for a in user.activities:
+        #                 titles.append(a.name)
+        #                 self.log.debug(guild_id, _method, f"activity.name: {a.name}")
+
+        #         if len(titles) > 1:
+        #             index = 0
+        #             for t in titles:
+        #                 fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
+        #                 index += 1
+        #             await self.sendEmbed(targetChannel, title, f'{user.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
+        #             try:
+        #                 titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
+        #             except asyncio.TimeoutError:
+        #                 await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
+        #             else:
+        #                 if titleResp.content.isnumeric():
+        #                     idx = int(titleResp.content) - 1
+        #                     if idx >= 0 and idx < len(titles):
+        #                         selected_title = titles[idx]
+        #                         if selected_title:
+        #                             await self.sendEmbed(targetChannel, title, f"{user.mention}, You selected: '{selected_title}'", delete_after=5)
+        #                 await titleResp.delete()
+        #         elif len(titles) == 1:
+        #             selected_title = titles[0]
+
+        #     else:
+        #         self.log.debug(guild_id, _method, f"owner.activity is None")
+
+            # return selected_title
 
     async def ask_admin_role(self, ctx, title: str = "Voice Channel Initialization"):
         _method = inspect.stack()[1][3]
