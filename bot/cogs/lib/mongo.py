@@ -20,11 +20,11 @@ class MongoDatabase(database.Database):
             if not self.connection:
                 self.open()
             print("RESET MIGRATION STATUS")
-            self.connection.guild.delete_many({})
-            self.connection.guildCategorySettings.delete_many({})
-            self.connection.userSettings.delete_many({})
-            self.connection.textChannel.delete_many({})
-            self.connection.voiceChannel.delete_many({})
+            self.connection.create_channels.delete_many({})
+            self.connection.category_settings.delete_many({})
+            self.connection.user_settings.delete_many({})
+            self.connection.text_channels.delete_many({})
+            self.connection.voice_channels.delete_many({})
             self.connection.migration.delete_many({})
             print("ALL DATA PURGED")
         except Exception as ex:
@@ -44,32 +44,44 @@ class MongoDatabase(database.Database):
             db_version = self.connection.migration.find_one({"user_version": newDBVersion})
             if not db_version:
                 # need to migrate
+
+                if self.connection['guild']:
+                    self.connection['guild'].rename("create_channels")
+                if self.connection['guildCategorySettings']:
+                    self.connection['guildCategorySettings'].rename("category_settings")
+                if self.connection['userSettings']:
+                    self.connection['userSettings'].rename("user_settings")
+                if self.connection['textChannel']:
+                    self.connection['textChannel'].rename("text_channels")
+                if self.connection['voiceChannel']:
+                    self.connection['voiceChannel'].rename("voice_channels")
+
                 pass
                 # disable the migration because this has already been done...
                 # print("NEEDS SQLITE -> MONGO MIGRATION")
                 # sql3 = sqlite.SqliteDatabase()
                 # gd = sql3.get_all_from_guild_table()
                 # if gd:
-                #     self.connection.guild.insert_many(gd)
+                #     self.connection.create_channels.insert_many(gd)
                 # gcsd = sql3.get_all_from_guild_category_settings_table()
                 # if gcsd:
-                #     self.connection.guildCategorySettings.insert_many(gcsd)
+                #     self.connection.category_settings.insert_many(gcsd)
                 # usd = sql3.get_all_from_user_settings_table()
                 # if usd:
-                #     self.connection.userSettings.insert_many(usd)
+                #     self.connection.user_settings.insert_many(usd)
                 # vcd = sql3.get_all_from_voice_channel_table()
                 # if vcd:
-                #     self.connection.voiceChannel.insert_many(vcd)
+                #     self.connection.voice_channels.insert_many(vcd)
                 # tcd = sql3.get_all_from_text_channel_table()
                 # if tcd:
-                #     self.connection.textChannel.insert_many(tcd)
+                #     self.connection.text_channels.insert_many(tcd)
                 self.connection.migration.insert_one({"user_version": newDBVersion})
             else:
                 self.connection.migration.update_one({"user_version": db_version['user_version']}, { "$set": { "user_version": newDBVersion } })
                 print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
 
             # setup missing guild category settings...
-            guild_channels = self.connection.guild.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
+            guild_channels = self.connection.create_channels.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
             for g in guild_channels:
                 gcs = self.get_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'])
                 if not gcs:
@@ -104,7 +116,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            cursor = self.connection.voiceChannel.find({"guildID": guildId}, { "voiceID": 1 })
+            cursor = self.connection.voice_channels.find({"guildID": guildId}, { "voiceID": 1 })
             items = [ i['voiceID'] for i in cursor ]
             return items
         except Exception as ex:
@@ -114,7 +126,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.textChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId})
+            result = self.connection.text_channels.find_one({"guildID": guildId, "voiceID": voiceChannelId})
             if result:
                 return result['channelID']
             return None
@@ -125,7 +137,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.textChannel.find_one({"guildId": guildId, "channelID": textChannelId})
+            result = self.connection.text_channels.find_one({"guildId": guildId, "channelID": textChannelId})
             if result:
                 return result['voiceID']
             return None
@@ -136,9 +148,9 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            tracked_voice = self.connection.voiceChannel.find_one({ "guildID": guildId, "voiceID": voiceChannelId})
+            tracked_voice = self.connection.voice_channels.find_one({ "guildID": guildId, "voiceID": voiceChannelId})
             if tracked_voice:
-                tracked_text = self.connection.textChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
+                tracked_text = self.connection.text_channels.find_one({"guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
                 text_channel_id = None
                 if tracked_text:
                     text_channel_id = tracked_text['channelID']
@@ -150,8 +162,8 @@ class MongoDatabase(database.Database):
                     "timestamp": utils.get_timestamp()
                 }
                 self.connection.tracked_channels_history.insert_one(payload)
-            self.connection.voiceChannel.delete_one({"guildID": guildId, "voiceID": voiceChannelId})
-            self.connection.textChannel.delete_one({"guildID": guildId, "channelID": textChannelId})
+            self.connection.voice_channels.delete_one({"guildID": guildId, "voiceID": voiceChannelId})
+            self.connection.text_channels.delete_one({"guildID": guildId, "channelID": textChannelId})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -160,7 +172,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
-            self.connection.userSettings.delete_many({"guildID": guildId})
+            self.connection.user_settings.delete_many({"guildID": guildId})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -169,7 +181,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("DELETE FROM `userSettings` WHERE guildID = ? AND userID = ?", (guildId, userId,))
-            self.connection.userSettings.delete_many({"guildID": guildId, "userID": userId})
+            self.connection.user_settings.delete_many({"guildID": guildId, "userID": userId})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -178,7 +190,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("SELECT voiceID FROM voiceChannel WHERE guildID = ? AND userID = ?", (guildId, ownerId,))
-            items = self.connection.voiceChannel.find({"guildID": guildId, "userID": ownerId}, {"voiceID": 1})
+            items = self.connection.voice_channels.find({"guildID": guildId, "userID": ownerId}, {"voiceID": 1})
             channel_ids = [item['voiceID'] for item in items]
             return channel_ids
         except Exception as ex:
@@ -190,10 +202,10 @@ class MongoDatabase(database.Database):
                 self.open()
             # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, channelId,))
             # c.execute("SELECT userID FROM textChannel WHERE guildID = ? AND channelID = ?", (guildId, channelId,))
-            item = self.connection.voiceChannel.find_one({"guildID": guildId, "voiceID": channelId}, {"userID": 1})
+            item = self.connection.voice_channels.find_one({"guildID": guildId, "voiceID": channelId}, {"userID": 1})
             if item:
                 return int(item['userID'])
-            item = self.connection.textChannel.find_one({"guildID": guildId, "channelID": channelId}, {"userID": 1})
+            item = self.connection.text_channels.find_one({"guildID": guildId, "channelID": channelId}, {"userID": 1})
             if item:
                 return int(item['userID'])
             return None
@@ -205,7 +217,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("SELECT channelName, channelLimit, bitrate, defaultRole FROM userSettings WHERE userID = ? AND guildID = ?", (userId, guildId,))
-            r = self.connection.userSettings.find_one({"guildID": guildId, "userID": userId})
+            r = self.connection.user_settings.find_one({"guildID": guildId, "userID": userId})
             if r:
                 return settings.UserSettings(guildId=guildId, userId=userId, channelName=r['channelName'], channelLimit=int(r['channelLimit']), bitrate=int(r['bitrate']), defaultRole=r['defaultRole'], autoGame=r['auto_game'])
             else:
@@ -217,7 +229,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            rows = self.connection.guild.find({"guildID": guildId})
+            rows = self.connection.create_channels.find({"guildID": guildId})
             if rows:
                 result = settings.GuildCreateChannelSettings(guildId=guildId)
                 for r in rows:
@@ -233,7 +245,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # c = self.connection.cursor()
             # c.execute("DELETE FROM guild WHERE guildID = ? AND voiceChannelID = ? AND voiceCategoryID = ?", (guildId, channelId, categoryId,))
-            self.connection.guild.delete_many({"guildID": guildId, "voiceChannelID": channelId, "voiceCategoryID": categoryId})
+            self.connection.create_channels.delete_many({"guildID": guildId, "voiceChannelID": channelId, "voiceCategoryID": categoryId})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -243,7 +255,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c = self.connection.cursor()
-            self.connection.guild.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": useStage } })
+            self.connection.create_channels.find_one_and_update({"guildID": guildId, "voiceChannelID": createChannelId}, { "$set": { "ownerID": ownerId, "voiceCategoryID": categoryId, "useStage": useStage } })
             return True
         except Exception as ex:
             print(ex)
@@ -260,7 +272,7 @@ class MongoDatabase(database.Database):
             "voiceCategoryID": categoryId,
             "useStage": useStage
         }
-        result = self.connection.guild.insert_one(payload)
+        result = self.connection.create_channels.insert_one(payload)
         # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
         return result is not None
     def get_guild_settings(self, guildId):
@@ -337,7 +349,7 @@ class MongoDatabase(database.Database):
             cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if cat_settings:
                 payload = { "channelLimit": channelLimit, "channelLocked": channelLocked, "bitrate": bitrate, "defaultRole": defaultRole }
-                self.connection.guildCategorySettings.find_one_and_update({"guildID": guildId, "voiceCategoryID": categoryId}, { "$set": payload })
+                self.connection.category_settings.find_one_and_update({"guildID": guildId, "voiceCategoryID": categoryId}, { "$set": payload })
                 # c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
             else:
                 # c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
@@ -349,7 +361,7 @@ class MongoDatabase(database.Database):
                     "bitrate": bitrate,
                     "defaultRole": defaultRole
                 }
-                self.connection.guildCategorySettings.insert_one(payload)
+                self.connection.category_settings.insert_one(payload)
             return True
         except Exception as ex:
             print(ex)
@@ -359,7 +371,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            row = self.connection.guildCategorySettings.find_one({ "guildID": guildId, "voiceCategoryID": categoryId})
+            row = self.connection.category_settings.find_one({ "guildID": guildId, "voiceCategoryID": categoryId})
             if row:
                 result = settings.GuildCategorySettings(guildId=guildId, categoryId=categoryId, channelLimit=row['channelLimit'], channelLocked=row['channelLocked'], bitrate=row['bitrate'], defaultRole=row['defaultRole'])
                 return result
@@ -375,7 +387,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
-            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelName": channelName }})
+            self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelName": channelName }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -385,7 +397,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
-            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelLimit": limit }})
+            self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "channelLimit": limit }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -395,7 +407,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # c = self.connection.cursor()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
-            self.connection.userSettings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "bitrate": bitrate }})
+            self.connection.user_settings.find_one_and_update({ "guildID": guildId, "userID": userId }, { "$set": { "bitrate": bitrate }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -415,7 +427,7 @@ class MongoDatabase(database.Database):
                 "auto_game": autoGame,
                 "timestamp": utils.get_timestamp()
             }
-            self.connection.userSettings.insert_one(payload)
+            self.connection.user_settings.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -424,13 +436,13 @@ class MongoDatabase(database.Database):
             self.open()
         existing = self.get_user_settings(guildId=guildId, userId=userId)
         if existing:
-            self.connection.userSettings.update_one({"guildID": guildId, "userID": userId}, { "$set": { "auto_game": autoGame }})
+            self.connection.user_settings.update_one({"guildID": guildId, "userID": userId}, { "$set": { "auto_game": autoGame }})
     def get_guild_create_channels(self, guildId):
         try:
             if self.connection is None:
                 self.open()
             # c.execute("SELECT voiceChannelID FROM guild WHERE guildID = ?", (guildId,))
-            cursor = self.connection.guild.find({"guildID": guildId}, { "voiceChannelID": 1 })
+            cursor = self.connection.create_channels.find({"guildID": guildId}, { "voiceChannelID": 1 })
             result = []
             for c in cursor:
                 result.append(c['voiceChannelID'])
@@ -442,7 +454,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.guild.find_one({ "guildID": guildId, "voiceCategoryID": categoryId, "voiceChannelID": channelId }, { "useStage": 1 })
+            result = self.connection.create_channels.find_one({ "guildID": guildId, "voiceCategoryID": categoryId, "voiceChannelID": channelId }, { "useStage": 1 })
             if result:
                 return result['useStage']
             return None
@@ -462,7 +474,7 @@ class MongoDatabase(database.Database):
                 "channelID": textChannelId,
                 "voiceID": voiceChannelId
             }
-            self.connection.textChannel.insert_one(payload)
+            self.connection.text_channels.insert_one(payload)
             return True
         except Exception as ex:
             print(ex)
@@ -474,8 +486,8 @@ class MongoDatabase(database.Database):
                 self.open()
             # c.execute("DELETE FROM textChannel WHERE guildID = ? AND voiceID = ? AND channelID = ?", (guildId, voiceChannelId, textChannelId,))
             # tracked = self.connection.tracked_channels.find_one({"textChannel": { "id": textChannelId }, "voiceChannel": { "id" : voiceChannelId }})
-            # tracked_text = self.connection.textChannel.find_one({"channelID": textChannelId, "guildID": guildId, "voiceID": voiceChannelId })
-            # tracked_voice = self.connection.voiceChannel.fine_one({ "voiceID": voiceChannelId, "guildID": guildId })
+            # tracked_text = self.connection.text_channels.find_one({"channelID": textChannelId, "guildID": guildId, "voiceID": voiceChannelId })
+            # tracked_voice = self.connection.voice_channels.fine_one({ "voiceID": voiceChannelId, "guildID": guildId })
             # tt_payload = None
             # tv_payload = None
             # if tracked_text:
@@ -493,7 +505,7 @@ class MongoDatabase(database.Database):
             #     "voice_channel": tv_payload
             # }
 
-            tracked = self.connection.textChannel.find_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
+            tracked = self.connection.text_channels.find_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
             if tracked:
                 payload = {
                     "guild_id": guildId,
@@ -503,7 +515,7 @@ class MongoDatabase(database.Database):
                     "timestamp": utils.get_timestamp()
                 }
                 self.connection.tracked_channels_history.insert_one(payload)
-            self.connection.textChannel.delete_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
+            self.connection.text_channels.delete_one({ "guildID": guildId, "voiceID": voiceChannelId, "channelID": textChannelId })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -518,7 +530,7 @@ class MongoDatabase(database.Database):
                 "userID": ownerId,
                 "voiceID": voiceChannelId
             }
-            self.connection.voiceChannel.insert_one(payload)
+            self.connection.voice_channels.insert_one(payload)
             return True
         except Exception as ex:
             print(ex)
@@ -547,10 +559,10 @@ class MongoDatabase(database.Database):
             # c.execute("SELECT voiceID, channelID, userID FROM textChannel WHERE guildID = ?", (guildId,))
             voice_channels = []
             text_channels = []
-            data = self.connection.voiceChannel.find({"guildID": guildId}, { "voiceID": 1, "userID": 1 })
+            data = self.connection.voice_channels.find({"guildID": guildId}, { "voiceID": 1, "userID": 1 })
             for item in data:
                 voice_channels.append(settings.TrackedVoiceChannel(guildId=guildId, ownerId=item['userID'], voiceChannelId=item['voiceID']))
-            data = self.connection.textChannel.find({"guildID": guildId}, {"voiceID": 1, "channelID": 1, "userID": 1})
+            data = self.connection.text_channels.find({"guildID": guildId}, {"voiceID": 1, "channelID": 1, "userID": 1})
             for item in data:
                 text_channels.append(settings.TrackedTextChannel(guildId=guildId, ownerId=item['userID'], voiceChannelId=item['voiceID'], textChannelId=item['channelID']))
             tracked = settings.TrackedChannels(voiceChannels=voice_channels, textChannels=text_channels)
@@ -563,7 +575,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             # c.execute("SELECT userID FROM voiceChannel WHERE guildID = ? AND voiceID = ?", (guildId, voiceChannelId,))
-            owner = self.connection.voiceChannel.find_one({"guildID": guildId, "voiceID": voiceChannelId}, { "userID": 1 })
+            owner = self.connection.voice_channels.find_one({"guildID": guildId, "voiceID": voiceChannelId}, { "userID": 1 })
             if owner:
                 return owner['userID']
             return None
@@ -576,8 +588,8 @@ class MongoDatabase(database.Database):
                 self.open()
             # c.execute("UPDATE voiceChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
             # c.execute("UPDATE textChannel SET userID = ? WHERE guildId = ? AND voiceID = ? AND userID = ?", (newOwnerId, guildId, voiceChannelId, ownerId,))
-            self.connection.voiceChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
-            self.connection.textChannel.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
+            self.connection.voice_channels.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
+            self.connection.text_channels.update_one({"guildID": guildId, "voiceID": voiceChannelId, "userID": ownerId}, {"$set": { "userID": newOwnerId }})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -587,7 +599,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # c = self.connection.cursor()
             # c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
-            self.connection.userSettings.delete_many({"guildID": guildId})
+            self.connection.user_settings.delete_many({"guildID": guildId})
             return True
         except Exception as ex:
             print(ex)
@@ -616,7 +628,7 @@ class MongoDatabase(database.Database):
             user_settings = self.get_user_settings(guildId=guildId, userId=userId)
             if user_settings:
                 # c.execute("UPDATE userSettings SET defaultRole = ? WHERE WHERE guildID = ? and userId = ?", (defaultRole, guildId, userId))
-                self.connection.userSettings.update_one({ "guildID": guildId, "userID": userId }, { "$set": { "defaultRole": defaultRole }})
+                self.connection.user_settings.update_one({ "guildID": guildId, "userID": userId }, { "$set": { "defaultRole": defaultRole }})
                 return True
             else:
                 return False
@@ -629,7 +641,7 @@ class MongoDatabase(database.Database):
                 self.open()
             category_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if category_settings:
-                self.connection.guildCategorySettings.update_many({ "guildID": guildId, "voiceCategoryID": categoryId}, { "$set": { "defaultRole": defaultRole }})
+                self.connection.category_settings.update_many({ "guildID": guildId, "voiceCategoryID": categoryId}, { "$set": { "defaultRole": defaultRole }})
                 return True
             return False
         except Exception as ex:
