@@ -45,6 +45,7 @@ class MongoDatabase(database.Database):
             if not db_version:
                 # need to migrate
 
+                # v5 migration start
                 if self.connection['guild']:
                     self.connection['guild'].rename("create_channels")
                 if self.connection['guildCategorySettings']:
@@ -55,6 +56,7 @@ class MongoDatabase(database.Database):
                     self.connection['textChannel'].rename("text_channels")
                 if self.connection['voiceChannel']:
                     self.connection['voiceChannel'].rename("voice_channels")
+                # v5 migration end
 
                 pass
                 # disable the migration because this has already been done...
@@ -75,9 +77,11 @@ class MongoDatabase(database.Database):
                 # tcd = sql3.get_all_from_text_channel_table()
                 # if tcd:
                 #     self.connection.text_channels.insert_many(tcd)
-                self.connection.migration.insert_one({"user_version": newDBVersion})
+                self.connection.migration.delete_many({})
+                self.connection.migration.insert_one({"user_version": newDBVersion, "timestamp": utils.get_timestamp()})
+                print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
+
             else:
-                self.connection.migration.update_one({"user_version": db_version['user_version']}, { "$set": { "user_version": newDBVersion } })
                 print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
 
             # setup missing guild category settings...
@@ -270,7 +274,8 @@ class MongoDatabase(database.Database):
             "ownerID": ownerId,
             "voiceChannelID": createChannelId,
             "voiceCategoryID": categoryId,
-            "useStage": useStage
+            "useStage": useStage,
+            "timestamp": utils.get_timestamp()
         }
         result = self.connection.create_channels.insert_one(payload)
         # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
@@ -318,7 +323,8 @@ class MongoDatabase(database.Database):
                 "guild_id": guildId,
                 "prefix": prefix,
                 "default_role": defaultRole,
-                "admin_role": adminRole
+                "admin_role": adminRole,
+                "timestamp": utils.get_timestamp()
             }
             self.connection.guild_settings.insert_one(payload)
             return True
@@ -333,7 +339,8 @@ class MongoDatabase(database.Database):
             payload = {
                 "prefix": prefix,
                 "default_role": defaultRole,
-                "admin_role": adminRole
+                "admin_role": adminRole,
+                "timestamp": utils.get_timestamp()
             }
             self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
             return True
@@ -359,7 +366,8 @@ class MongoDatabase(database.Database):
                     "channelLimit": channelLimit,
                     "channelLocked": channelLocked,
                     "bitrate": bitrate,
-                    "defaultRole": defaultRole
+                    "defaultRole": defaultRole,
+                    "timestamp": utils.get_timestamp()
                 }
                 self.connection.category_settings.insert_one(payload)
             return True
