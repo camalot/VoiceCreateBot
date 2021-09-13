@@ -84,6 +84,6 @@ class TrackedTextChannel(TrackedVoiceChannel):
         self.text_channel_id = int(textChannelId)
 
 class TrackedChannels:
-    def __init__(self, voiceChannels: list[TrackedVoiceChannel], textChannels: list[TrackedTextChannel]):
+    def __init__(self, voiceChannels, textChannels):
         self.voice_channels = voiceChannels
         self.text_channels = textChannels
