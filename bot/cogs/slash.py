@@ -46,7 +46,12 @@ class Slash(commands.Cog):
     async def on_component_callback(self, ctx: ComponentContext, callback):
         self.log.debug(ctx.guild.id, "on_component_callback", )
         pass
-    @cog_ext.cog_slash(name="test", guild_ids=[592430260713422863])
+    @commands.group()
+    async def voice2(self, ctx):
+        pass
+    
+    @voice2.command(alias="test")
+    # @cog_ext.cog_slash(name="test", guild_ids=[592430260713422863])
     # @slash.slash(name="test", guild_ids=[592430260713422863])
     async def _test(self, ctx: SlashContext):
         embed = Embed(title="Embed Test")
@@ -60,9 +65,7 @@ class Slash(commands.Cog):
         # await ctx.send(embed=embed, components=[action_row])
         await ctx.send(content=f"You selected {button_ctx.selected_options}")
 
-    @commands.group()
-    async def voice2(self, ctx):
-        pass
+
     @voice2.command(alias="test2")
     async def _test2(self, ctx):
         options = []

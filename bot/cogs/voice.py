@@ -271,6 +271,7 @@ class voice(commands.Cog):
                     # User Joined the CREATE CHANNEL
                     self.log.debug(guild_id, _method , f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
+                    source_channel = after.channel
                     source_channel_id = after.channel.id
                     channel_owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=source_channel_id)
                     userSettings = self.db.get_user_settings(guildId=guild_id, userId=channel_owner_id or member.id)
@@ -315,8 +316,11 @@ class voice(commands.Cog):
                         voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
                     else:
                         self.log.debug(guild_id, _method , f"Created Voice Channel")
-                        voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
+                        voiceChannel = await source_channel.clone(name=name, reason="Create Channel Request by {member}")
+                        # voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
+                        await voiceChannel.edit(sync_permissions=True)
                     textChannel = await member.guild.create_text_channel(name, category=category)
+                    await textChannel.edit(sync_permissions=True)
                     channelID = voiceChannel.id
 
                     self.log.debug(guild_id, _method , f"Moving {member} to {voiceChannel}")
@@ -324,7 +328,8 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+                        # if use_voice_activity is not True, some cases where people cant speak, unless they use P2T
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, use_voice_activation=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -340,7 +345,7 @@ class voice(commands.Cog):
                         if default_role:
                             self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
                             await textChannel.set_permissions(default_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
-                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
+                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked), use_voice_activation=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
@@ -615,9 +620,9 @@ class voice(commands.Cog):
                 for r in denyRoles:
                     await text_channel.set_permissions(r, connect=False, read_messages=False, view_channel=True, read_message_history=False, send_messages=False)
             await voice_channel.edit(sync_permissions=True)
-            await voice_channel.set_permissions(owner_user, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False )
+            await voice_channel.set_permissions(owner_user, speak=True, view_channel=True, connect=True, use_voice_activation=True, stream=False )
             for r in permRoles:
-                await voice_channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False)
+                await voice_channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=True, stream=False)
             # deny everyone else
             for r in denyRoles:
                 await voice_channel.set_permissions(r, speak=False, view_channel=True, connect=False)
@@ -1032,17 +1037,21 @@ class voice(commands.Cog):
                 useStage = False
                 is_community = ctx.guild.features.count("COMMUNITY") > 0
                 if is_community:
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like to use a Stage Channel?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                    buttons = [
+                        create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
+                        create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
+                    ]
+                    action_row = create_actionrow(*buttons)
+                    use_stage_req = await self.sendEmbed(ctx.channel, "Voice Channel Setup", "**Would you like to use a Stage Channel?**", components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
                     try:
-                        useStageResp = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                        button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
                     except asyncio.TimeoutError:
-                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                        return
+                        await ctx.send('Took too long to answer!', delete_after=5)
                     else:
-                        useStage = utils.str2bool(useStageResp.content)
-                        await useStageResp.delete()
-
-                await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
+                        useStage = utils.str2bool(button_ctx.custom_id)
+                    finally:
+                        await use_stage_req.delete()
+                name_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
                 except asyncio.TimeoutError:
@@ -1051,6 +1060,7 @@ class voice(commands.Cog):
                     try:
                         channel = await ctx.guild.create_voice_channel(channelName.content, category=category)
                         await channelName.delete()
+                        await name_ask.delete()
 
                         guild_cc_settings = self.db.get_guild_create_channel_settings(guildId=guild_id)
 
@@ -1067,7 +1077,7 @@ class voice(commands.Cog):
 
                             # ASK SET DEFAULT CHANNEL LIMIT
                             defaultLimit = 0
-                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Set the default channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            limit_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Set the default channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
                             try:
                                 defaultLimitResp = await self.bot.wait_for('message', check=check_limit, timeout=60)
                             except asyncio.TimeoutError:
@@ -1075,26 +1085,31 @@ class voice(commands.Cog):
                                 return
                             else:
                                 defaultLimit = int(defaultLimitResp.content)
+                            finally:
                                 await defaultLimitResp.delete()
-
+                                await limit_ask.delete()
                             # ASK SET DEFAULT CHANNEL LOCKED
                             defaultLocked = False
-                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Would you like the channels LOCKED 🔒 by default?\n\nReply: YES or NO.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            buttons = [
+                                create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
+                                create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
+                            ]
+                            action_row = create_actionrow(*buttons)
+                            lock_req = await self.sendEmbed(ctx.channel, "Voice Channel Setup", "**Would you like the channels LOCKED 🔒 by default?**", components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
                             try:
-                                defaultLockedResponse = await self.bot.wait_for('message', check=check_yes_no, timeout=60)
+                                button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
                             except asyncio.TimeoutError:
-                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                                return
+                                await ctx.send('Took too long to answer!', delete_after=5)
                             else:
-                                defaultLocked = utils.str2bool(defaultLockedResponse.content)
-                                await defaultLockedResponse.delete()
-
+                                defaultLocked = utils.str2bool(button_ctx.custom_id)
+                            finally:
+                                await lock_req.delete()
                             # ASK SET DEFAULT BITRATE
                             defaultBitrate = 64
 
                             bitrate_min = 8
                             bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
-                            await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'**Set the default channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.**', delete_after=60, footer="**You have 60 seconds to answer**")
+                            bitrate_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'**Set the default channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.**', delete_after=60, footer="**You have 60 seconds to answer**")
                             try:
                                 bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
                             except asyncio.TimeoutError:
@@ -1104,8 +1119,9 @@ class voice(commands.Cog):
                                 defaultBitrate = int(bitrateResp.content)
                                 if defaultBitrate == 0:
                                     defaultBitrate = self.settings.BITRATE_DEFAULT
+                            finally:
                                 await bitrateResp.delete()
-
+                                await bitrate_ask.delete()
 
                             selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Setup")
                             if not selected_guild_role:
