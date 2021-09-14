@@ -46,8 +46,6 @@ class MongoDatabase(database.Database):
             migrator = migration.MongoMigration(newDBVersion)
             migrator.run()
 
-
-
             # setup missing guild category settings...
             guild_channels = self.connection.create_channels.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
             for g in guild_channels:
