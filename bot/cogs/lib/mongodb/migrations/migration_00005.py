@@ -20,3 +20,4 @@ class Migration_00005(Migration):
         if 'voiceChannel' in collections:
             self.connection['voiceChannel'].rename("voice_channels")
         # v5 migration end
+        self.log("Migration_00005.execute", f"COMPLETE MIGRATION 00005")
