@@ -11,7 +11,9 @@ class Migration_00000(Migration):
         self.log("Migration_00000.execute", f"EXECUTE MIGRATION 00000")
         # v0 migration start
 
-        # disable the migration because this has already been done...
+        # disable the DB migration because this has already been done...
+        # THIS COPIED FROM SQLITE DB -> MONGODB
+
         # print("NEEDS SQLITE -> MONGO MIGRATION")
         # sql3 = sqlite.SqliteDatabase()
         # gd = sql3.get_all_from_guild_table()
