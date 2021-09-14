@@ -40,7 +40,6 @@ def get_random_name(noun_count = 1, adjective_count = 1):
         adjectives = load_from_gist("adjectives", adjective_count)
         nouns = load_from_gist("nouns", noun_count)
         results = adjectives + nouns
-        print("FROM GIST")
         return " ".join(w.title() for w in results)
     except Exception as ex:
         print(ex)
