@@ -271,6 +271,7 @@ class voice(commands.Cog):
                     # User Joined the CREATE CHANNEL
                     self.log.debug(guild_id, _method , f"User requested to CREATE CHANNEL")
                     category_id = after.channel.category_id
+                    source_channel = after.channel
                     source_channel_id = after.channel.id
                     channel_owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=source_channel_id)
                     userSettings = self.db.get_user_settings(guildId=guild_id, userId=channel_owner_id or member.id)
@@ -315,8 +316,11 @@ class voice(commands.Cog):
                         voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
                     else:
                         self.log.debug(guild_id, _method , f"Created Voice Channel")
-                        voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
+                        voiceChannel = await source_channel.clone(name=name, reason="Create Channel Request by {member}")
+                        # voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
+                        await voiceChannel.edit(sync_permissions=True)
                     textChannel = await member.guild.create_text_channel(name, category=category)
+                    await textChannel.edit(sync_permissions=True)
                     channelID = voiceChannel.id
 
                     self.log.debug(guild_id, _method , f"Moving {member} to {voiceChannel}")
@@ -324,6 +328,7 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
+                        # if use_voice_activity is not True, some cases where people cant speak, unless they use P2T
                         await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, use_voice_activation=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
