@@ -4,34 +4,36 @@ from pymongo import MongoClient
 import traceback
 import json
 from .migrations import *
-import importlib
+
 class MongoMigration:
 
-    def __init__(self):
+    def __init__(self, schemaVersion: int = 0):
         self.settings = settings.Settings()
         self.client = None
         self.connection = None
-        print(f"INITIALIZE MIGRATOR")
+        self.schema_version = schemaVersion
+        self.log("MongoMigration.__init__", "INITIALIZE MIGRATOR")
         pass
 
     def run(self):
         self.open()
         try:
             for mig in migrations.__all__:
-                print(f"{mig}")
-                module = getattr(migrations, mig)
-                class_ = getattr(module, f"{mig.title()}")
-                obj = class_(self.connection)
-                obj.execute()
+                schemaIdx = int("".join(filter(str.isdigit, mig)))
+                if schemaIdx not in range(0, self.schema_version+1):
+                    self.log("migration.run", f"Skipping: {mig}: Out of range of current schema")
+                    continue
+
+                if self.schema_version == 0 or self.schema_version > schemaIdx:
+                    module = getattr(migrations, mig)
+                    class_ = getattr(module, f"{mig.title()}")
+                    obj = class_(self.connection)
+                    obj.execute()
+                else:
+                    self.log("migration.run", f"SKIPPING {mig.title()}: For Previous or Current Schema")
             pass
-            # mod = __import__(".migrations.migration_00005", fromlist=['.'])
-            # fp, path, desc = imp.find_module(".migrations")
-            # mig = imp.load_module(".migrations.migration_00005.Migration_00005", fp, path, desc)
-            # mod.Migration_00005().execute()
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-            # print ("module not found: " + ".migrations.migration_00005")
+            self.log("migration.run", str(ex), traceback.format_exc())
         self.close()
         pass
 
@@ -45,9 +47,13 @@ class MongoMigration:
             if self.client:
                 self.client.close()
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-    
+           self.log("migration.close", str(ex), traceback.format_exc())
+
+    def log(self, method: str, message: str, stackTrace: str = None):
+        print(f"[DEBUG] [{method}] [guild:0] {message}")
+        if stackTrace:
+            print(stackTrace)
+
 class MigrationAction:
     def __init__(self):
         pass

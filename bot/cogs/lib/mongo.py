@@ -8,6 +8,7 @@ from . import settings
 from . import utils
 from . import sqlite
 from .mongodb import migration
+
 class MongoDatabase(database.Database):
     def __init__(self):
         self.settings = settings.Settings()
@@ -43,9 +44,9 @@ class MongoDatabase(database.Database):
                 self.open()
             db_version = self.connection.migration.find_one({"user_version": newDBVersion})
 
-            migrator = migration.MongoMigration()
+            migrator = migration.MongoMigration(newDBVersion)
             migrator.run()
-            
+
             if not db_version:
                 # need to migrate
 
