@@ -3,7 +3,8 @@ from .. import settings
 from pymongo import MongoClient
 import traceback
 import json
-
+from .migrations import *
+import importlib
 class MongoMigration:
 
     def __init__(self):
@@ -16,6 +17,12 @@ class MongoMigration:
     def run(self):
         self.open()
         try:
+            for mig in migrations.__all__:
+                print(f"{mig}")
+                module = getattr(migrations, mig)
+                class_ = getattr(module, f"{mig.title()}")
+                obj = class_(self.connection)
+                obj.execute()
             pass
             # mod = __import__(".migrations.migration_00005", fromlist=['.'])
             # fp, path, desc = imp.find_module(".migrations")
