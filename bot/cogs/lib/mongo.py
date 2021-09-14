@@ -42,52 +42,11 @@ class MongoDatabase(database.Database):
             # if not, open sqlitedb and migate the data
             if not self.connection:
                 self.open()
-            db_version = self.connection.migration.find_one({"user_version": newDBVersion})
 
             migrator = migration.MongoMigration(newDBVersion)
             migrator.run()
 
-            if not db_version:
-                # need to migrate
 
-                # # v5 migration start
-                # if self.connection['guild']:
-                #     self.connection['guild'].rename("create_channels")
-                # if self.connection['guildCategorySettings']:
-                #     self.connection['guildCategorySettings'].rename("category_settings")
-                # if self.connection['userSettings']:
-                #     self.connection['userSettings'].rename("user_settings")
-                # if self.connection['textChannel']:
-                #     self.connection['textChannel'].rename("text_channels")
-                # if self.connection['voiceChannel']:
-                #     self.connection['voiceChannel'].rename("voice_channels")
-                # # v5 migration end
-
-                pass
-                # disable the migration because this has already been done...
-                # print("NEEDS SQLITE -> MONGO MIGRATION")
-                # sql3 = sqlite.SqliteDatabase()
-                # gd = sql3.get_all_from_guild_table()
-                # if gd:
-                #     self.connection.create_channels.insert_many(gd)
-                # gcsd = sql3.get_all_from_guild_category_settings_table()
-                # if gcsd:
-                #     self.connection.category_settings.insert_many(gcsd)
-                # usd = sql3.get_all_from_user_settings_table()
-                # if usd:
-                #     self.connection.user_settings.insert_many(usd)
-                # vcd = sql3.get_all_from_voice_channel_table()
-                # if vcd:
-                #     self.connection.voice_channels.insert_many(vcd)
-                # tcd = sql3.get_all_from_text_channel_table()
-                # if tcd:
-                #     self.connection.text_channels.insert_many(tcd)
-                self.connection.migration.delete_many({})
-                self.connection.migration.insert_one({"user_version": newDBVersion, "timestamp": utils.get_timestamp()})
-                print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
-
-            else:
-                print(f"[mongo.UPDATE_SCHEMA] DATABASE MIGRATION VERSION {str(newDBVersion)}")
 
             # setup missing guild category settings...
             guild_channels = self.connection.create_channels.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
