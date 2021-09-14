@@ -324,7 +324,7 @@ class voice(commands.Cog):
                     # if the bot cant do this, dont fail...
                     try:
                         self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, use_voice_activation=True, stream=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -337,12 +337,10 @@ class voice(commands.Cog):
                     self.db.track_new_channel_set(guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
 
                     try:
-                        await voiceChannel.edit(sync_permissions=True)
-                        await textChannel.edit(sync_permissions=True)
                         if default_role:
                             self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
                             await textChannel.set_permissions(default_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
-                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked))
+                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked), use_voice_activation=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
