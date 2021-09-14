@@ -337,6 +337,8 @@ class voice(commands.Cog):
                     self.db.track_new_channel_set(guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id)
 
                     try:
+                        await voiceChannel.edit(sync_permissions=True)
+                        await textChannel.edit(sync_permissions=True)
                         if default_role:
                             self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
                             await textChannel.set_permissions(default_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
@@ -615,9 +617,9 @@ class voice(commands.Cog):
                 for r in denyRoles:
                     await text_channel.set_permissions(r, connect=False, read_messages=False, view_channel=True, read_message_history=False, send_messages=False)
             await voice_channel.edit(sync_permissions=True)
-            await voice_channel.set_permissions(owner_user, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False )
+            await voice_channel.set_permissions(owner_user, speak=True, view_channel=True, connect=True, use_voice_activation=True, stream=False )
             for r in permRoles:
-                await voice_channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=False, stream=False)
+                await voice_channel.set_permissions(r, speak=True, view_channel=True, connect=True, use_voice_activation=True, stream=False)
             # deny everyone else
             for r in denyRoles:
                 await voice_channel.set_permissions(r, speak=False, view_channel=True, connect=False)
