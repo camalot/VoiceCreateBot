@@ -929,28 +929,32 @@ class voice(commands.Cog):
                             return True
                         return False
 
-                selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Initialization")
+                selected_guild_role = await self.ask_default_role(ctx, self.settings.strings['title_guild_init'])
                 if not selected_guild_role:
                     return
 
-                selected_admin_role = await self.ask_admin_role(ctx, "Voice Channel Initialization")
+                selected_admin_role = await self.ask_admin_role(ctx, self.settings.strings['title_guild_init'])
                 if not selected_admin_role:
                     return
 
+                language = await self.ask_language(ctx, self.settings.strings['title_guild_init'])
+                if not language:
+                    language = "en-us"
+
                 # ask bot prefix?
                 prefix = "."
-                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What would you like to set for the bot prefix?\n\nExample: `.`**', delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], self.settings.strings['ask_prefix'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                 try:
                     prefixResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", self.settings.strings['took_too_long'], delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], self.settings.strings['took_too_long'], delete_after=5)
                 else:
                     prefix = prefixResp.content
                     await prefixResp.delete()
 
 
-                self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=selected_guild_role.id, adminRole=selected_admin_role.id)
-                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", f'{author.mention}, You have successfully initialized the bot for this discord.', delete_after=5)
+                self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=selected_guild_role.id, adminRole=selected_admin_role.id, language=language)
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], f"{author.mention}, {self.settings.strings['info_init_success']}", delete_after=5)
             except Exception as ex:
                 self.log.error(guild_id, _method , str(ex), traceback.format_exc())
                 await self.notify_of_error(ctx)
@@ -1708,7 +1712,7 @@ class voice(commands.Cog):
         self.db.open()
         guild_id = ctx.guild.id
         if not self.isInVoiceChannel(ctx):
-            await self.sendEmbed(ctx.channel, "Not In Voice Channel", f'{ctx.author.mention}, You must be in a voice channel to use this command.', delete_after=5)
+            await self.sendEmbed(ctx.channel, self.settings.strings['title_not_in_channel'], f'{ctx.author.mention}, {self.settings.strings["info_not_in_channel"]}', delete_after=5)
             return
         try:
             channel = ctx.author.voice.channel
@@ -1716,18 +1720,18 @@ class voice(commands.Cog):
 
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel.id)
             if not owner_id and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, You can't own that channel!", delete_after=5)
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_update_owner'], f"{ctx.author.mention}, You can't own that channel!", delete_after=5)
             else:
                 for data in channel.members:
                     if data.id == owner_id:
                         # owner = ctx.guild.get_member(owner_id)
                         owner = await self.get_or_fetch_member(ctx.guild, owner_id)
-                        await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, This channel is already owned by {owner.mention}!", delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_update_owner'], f"{ctx.author.mention}, This channel is already owned by {owner.mention}!", delete_after=5)
                         found_as_owner = True
                         break
                 if not found_as_owner:
                     self.db.update_tracked_channel_owner(guildId=guild_id, voiceChannelId=channel.id, ownerId=owner_id, newOwnerId=aid)
-                    await self.sendEmbed(ctx.channel, "Updated Channel Owner", f"{ctx.author.mention}, You are now the owner of the channel!", delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_update_owner'], f"{ctx.author.mention}, You are now the owner of the channel!", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1735,6 +1739,7 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
+    # TODO: REFACTOR
     @voice.command()
     # @commands.has_role("Admin")
     async def delete(self, ctx):
@@ -2025,7 +2030,7 @@ class voice(commands.Cog):
 
         select = create_select(
             options=options,
-            placeholder=self.settings.string['placeholder_admin_role'],
+            placeholder=self.settings.strings['placeholder_admin_role'],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
@@ -2076,7 +2081,7 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, self.settings.string['ask_default_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_default_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2171,6 +2176,8 @@ class voice(commands.Cog):
                 else:
                     await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, {self.settings.strings["info_unverified_category"]}', delete_after=5)
                     return None
+
+
     async def ask_language(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
             same = m.author.id == ctx.author.id
@@ -2178,9 +2185,9 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         options = []
-
-
-        languages = []
+        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../languages", "*.json"))
+        languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
+        options.append(create_select_option(label="DEFAULT (en-US)", value="en-us", emoji="🗣"))
         for r in languages[:23]:
             options.append(create_select_option(label=r, value=r, emoji="🗣"))
 
@@ -2192,6 +2199,7 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
+        language_id = "en-us"
         ask_language = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_language'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
@@ -2200,6 +2208,7 @@ class voice(commands.Cog):
         else:
             language_id = button_ctx.selected_options[0]
             await ask_language.delete()
+        return language_id
 
     def isInVoiceChannel(self, ctx):
         if isinstance(ctx, discord.Member):
