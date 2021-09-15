@@ -943,7 +943,7 @@ class voice(commands.Cog):
                 try:
                     prefixResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Voice Channel Initialization", self.settings.strings['took_too_long'], delete_after=5)
                 else:
                     prefix = prefixResp.content
                     await prefixResp.delete()
@@ -1796,7 +1796,7 @@ class voice(commands.Cog):
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await ctx.send('Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             yes_no = utils.str2bool(button_ctx.custom_id)
         finally:
@@ -1820,7 +1820,7 @@ class voice(commands.Cog):
         try:
             limitResp = await self.bot.wait_for('message', check=check_numeric, timeout=60)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
             return
         else:
             defaultLimit = int(limitResp.content)
@@ -1852,7 +1852,7 @@ class voice(commands.Cog):
         try:
             bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
             return
         else:
             defaultBitrate = int(bitrateResp.content)
@@ -1995,7 +1995,7 @@ class voice(commands.Cog):
             try:
                 button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
             except asyncio.TimeoutError:
-                await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
+                await self.sendEmbed(targetChannel, title, self.settings.strings['took_too_long'], delete_after=5)
             else:
                 selected_game = button_ctx.selected_options[0]
                 if selected_game:
@@ -2036,7 +2036,7 @@ class voice(commands.Cog):
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
@@ -2080,7 +2080,7 @@ class voice(commands.Cog):
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
@@ -2126,7 +2126,7 @@ class voice(commands.Cog):
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             category_id = int(button_ctx.selected_options[0])
             await ask_context.delete()
@@ -2135,7 +2135,7 @@ class voice(commands.Cog):
                     ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
                 else:
                     await ask_existing_category.delete()
                     cat_name_or_id = category.content
@@ -2154,7 +2154,7 @@ class voice(commands.Cog):
                     ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
                 else:
                     await ask_new_category.delete()
                     selected_category = await ctx.guild.create_category_channel(new_category.content)
@@ -2171,6 +2171,35 @@ class voice(commands.Cog):
                 else:
                     await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
                     return None
+    async def ask_language(self, ctx, title: str = "Voice Channel Setup"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        options = []
+
+
+        languages = []
+        for r in languages[:23]:
+            options.append(create_select_option(label=r, value=r, emoji="🗣"))
+
+        select = create_select(
+            options=options,
+            placeholder="Choose Language",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        ask_language = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_language'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
+        else:
+            language_id = button_ctx.selected_options[0]
+            await ask_language.delete()
 
     def isInVoiceChannel(self, ctx):
         if isinstance(ctx, discord.Member):
