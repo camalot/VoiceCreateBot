@@ -31,13 +31,12 @@ class VoiceCreate():
     # v2: 07/01/2020
     # v3: 09/01/2021
     # v4: 9/9/2021 - added auto_game column to userSettings
-    # v5: 9/13/2021 - rename the collections 
-    
+    # v5: 9/13/2021 - rename the collections
+
     def __init__(self):
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
         print(f"DBPath: {self.settings.db_path}")
-        self.initDB()
         self.client = discord.Client()
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.SQLITE:
@@ -46,6 +45,7 @@ class VoiceCreate():
             self.db = mongo.MongoDatabase()
         else:
             self.db = mongo.MongoDatabase()
+        self.initDB()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -75,11 +75,12 @@ class VoiceCreate():
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
-        sql3db = sqlite.SqliteDatabase()
-        sql3db.UPDATE_SCHEMA(self.DBVERSION)
-        mdb = mongo.MongoDatabase()
-        # mdb.RESET_MIGRATION()
-        mdb.UPDATE_SCHEMA(self.DBVERSION)
+        self.db.UPDATE_SCHEMA(self.DBVERSION)
+        # sql3db = sqlite.SqliteDatabase()
+        # sql3db.UPDATE_SCHEMA(self.DBVERSION)
+        # mdb = mongo.MongoDatabase()
+        # # mdb.RESET_MIGRATION()
+        # mdb.UPDATE_SCHEMA(self.DBVERSION)
 
     def get_prefix(self, client, message):
         self.db.open()
