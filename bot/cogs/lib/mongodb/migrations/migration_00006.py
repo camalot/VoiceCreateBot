@@ -9,15 +9,8 @@ class Migration_00006(Migration):
         self.log("Migration_00006.execute", f"EXECUTE MIGRATION 00006")
         # v6 migration start
         collections = self.connection.list_collection_names()
-        # if 'guild' in collections:
-        #     self.connection['guild'].rename("create_channels")
-        # if 'guildCategorySettings' in collections:
-        #     self.connection['guildCategorySettings'].rename("category_settings")
-        # if 'userSettings' in collections:
-        #     self.connection['userSettings'].rename("user_settings")
-        # if 'textChannel' in collections:
-        #     self.connection['textChannel'].rename("text_channels")
-        # if 'voiceChannel' in collections:
-        #     self.connection['voiceChannel'].rename("voice_channels")
-        # v6 migration end
+
+        if "guild_settings" in collections:
+            self.connection.guild_settings.update_many({}, { "$set": { "language": "en-us" } })
+
         self.log("Migration_00006.execute", f"COMPLETE MIGRATION 00006")

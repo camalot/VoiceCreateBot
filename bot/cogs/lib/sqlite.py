@@ -136,15 +136,15 @@ class SqliteDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def get_guild_settings(self, guildId):
+    def get_guild_settings(self, guildId: int):
         pass
-    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def insert_or_update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         pass
-    def insert_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def insert_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         pass
-    def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         pass
-    def set_guild_settings_prefix(self, guildId, prefix: str):
+    def set_guild_settings_prefix(self, guildId: int, prefix: str):
         pass
     def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:

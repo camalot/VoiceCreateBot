@@ -69,11 +69,12 @@ class UserSettings():
         pass
 
 class GuildSettings:
-    def __init__(self, guildId: int, prefix, defaultRole: int, adminRole: int):
+    def __init__(self, guildId: int, prefix, defaultRole: int, adminRole: int, language: str):
         self.guild_id = guildId
         self.default_role = defaultRole
         self.admin_role = adminRole
         self.prefix = prefix
+        self.language = language
 
 class GuildCreateChannelSettings:
     def __init__(self, guildId: int):

@@ -240,19 +240,19 @@ class MongoDatabase(database.Database):
         result = self.connection.create_channels.insert_one(payload)
         # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
         return result is not None
-    def get_guild_settings(self, guildId):
+    def get_guild_settings(self, guildId: int):
         try:
             if not self.connection:
                 self.open()
             c = self.connection.guild_settings.find_one({"guild_id": guildId})
             if c:
-                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'], adminRole=c['admin_role'])
+                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'], adminRole=c['admin_role'], language=c['language'])
             return None
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return None
-    def set_guild_settings_prefix(self, guildId, prefix: str):
+    def set_guild_settings_prefix(self, guildId: int, prefix: str):
         if not self.connection:
             self.open()
         gs = self.get_guild_settings(guildId=guildId)
@@ -262,20 +262,20 @@ class MongoDatabase(database.Database):
             "prefix": prefix
         }
         self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
-    def insert_or_update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def insert_or_update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         try:
             if not self.connection:
                 self.open()
             gs = self.get_guild_settings(guildId=guildId)
             if gs:
-                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
+                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole, language=language)
             else:
-                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole)
+                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole, language=language)
         except Exception as ex:
             print(ex)
             traceback.print_exc(ex)
             return False
-    def insert_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def insert_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         try:
             if not self.connection:
                 self.open()
@@ -284,6 +284,7 @@ class MongoDatabase(database.Database):
                 "prefix": prefix,
                 "default_role": defaultRole,
                 "admin_role": adminRole,
+                "language": language,
                 "timestamp": utils.get_timestamp()
             }
             self.connection.guild_settings.insert_one(payload)
@@ -292,7 +293,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             return False
-    def update_guild_settings(self, guildId, prefix, defaultRole, adminRole):
+    def update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         try:
             if not self.connection:
                 self.open()
@@ -300,6 +301,7 @@ class MongoDatabase(database.Database):
                 "prefix": prefix,
                 "default_role": defaultRole,
                 "admin_role": adminRole,
+                "language": language,
                 "timestamp": utils.get_timestamp()
             }
             self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })

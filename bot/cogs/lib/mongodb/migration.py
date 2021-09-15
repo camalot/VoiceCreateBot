@@ -28,7 +28,7 @@ class MongoMigration:
                 for migration_index in range(0, self.schema_version + 1):
                     mig_name = f"migration_{migration_index:05d}"
                     if mig_name in migrations.__all__:
-                        if self.schema_version == 0 or self.schema_version < migration_index:
+                        if self.schema_version == 0 or self.schema_version <= migration_index:
                             self.log("migration.run", f"Schema Version: {self.schema_version}")
                             self.log("migration.run", f"Migration Index: {migration_index}")
                             module = getattr(migrations, mig_name)
@@ -36,7 +36,7 @@ class MongoMigration:
                             obj = class_(self.connection)
                             obj.execute()
                         else:
-                            self.log("migration.run", f"SKIPPING {mig_name.title()}: For Previous or Current Schema")
+                            self.log("migration.run", f"SKIPPING {mig_name.title()}: Migration outside of scope.")
                     else:
                         self.log("migration.run", f"NO MIGRATION FOR {mig_name}")
 
