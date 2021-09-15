@@ -1787,8 +1787,8 @@ class voice(commands.Cog):
 
     async def ask_yes_no(self, ctx, question: str, title: str = "Voice Channel Setup"):
         buttons = [
-            create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
-            create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
+            create_button(style=ButtonStyle.green, label=self.settings.strings['yes'], custom_id="YES"),
+            create_button(style=ButtonStyle.red, label=self.settings.strings['no'], custom_id="NO")
         ]
         yes_no = False
         action_row = create_actionrow(*buttons)
@@ -1816,7 +1816,7 @@ class voice(commands.Cog):
 
         defaultLimit = 0
 
-        limit_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+        limit_ask = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_limit'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
         try:
             limitResp = await self.bot.wait_for('message', check=check_numeric, timeout=60)
         except asyncio.TimeoutError:
@@ -1877,21 +1877,21 @@ class voice(commands.Cog):
         categories = [r for r in ctx.guild.categories]
         categories.sort(key=lambda r: r.name)
         # idx = 0
-        options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
-        options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
-        sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
+        options.append(create_select_option(label=self.settings.strings['new'], value="-1", emoji="✨"))
+        options.append(create_select_option(label=self.settings.strings['other'], value="0", emoji="⛔"))
+        sub_message = self.settings.strings['ask_category_submessage']
         for r in categories[:23]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="📇"))
 
         select = create_select(
             options=options,
-            placeholder="Choose Category",
+            placeholder=self.settings.strings['placeholder_category'],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, f"{self.settings.strings['ask_category']} {sub_message}", delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -1901,7 +1901,7 @@ class voice(commands.Cog):
             await ask_context.delete()
             if category_id == 0: # selected "OTHER"
                 try:
-                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_category_name'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
@@ -1920,7 +1920,7 @@ class voice(commands.Cog):
                         return None
             elif category_id == -1: # selected "NEW"
                 try:
-                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_new_category_name'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
@@ -1938,7 +1938,7 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the category: '{selected_category.name}'", delete_after=5)
                     return selected_category
                 else:
-                    await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.settings.strings['info_unverified_category']}", delete_after=5)
                     return None
 
     async def ask_game_for_user(self, targetChannel: discord.TextChannel, user: discord.Member, title: str):
@@ -1991,7 +1991,7 @@ class voice(commands.Cog):
             )
 
             action_row = create_actionrow(select)
-            ask_context = await self.sendEmbed(targetChannel, title, '**There are multiple games detected. Which would you like to use?', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+            ask_context = await self.sendEmbed(targetChannel, title, self.settings.strings['ask_multiple_games'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
             try:
                 button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
             except asyncio.TimeoutError:
@@ -2018,21 +2018,21 @@ class voice(commands.Cog):
         sub_message = ""
         if len(roles) >= 24:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
-            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
-            sub_message = "\n\nOnly 24 Roles Can Be Listed.\nIf Role Not Listed, Choose `->OTHER<-`"
+            options.append(create_select_option(label=self.settings.strings['other'], value="0", emoji="⛔"))
+            sub_message = self.settings.strings['ask_admin_role_submessage']
         for r in roles[:24]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
 
         select = create_select(
             options=options,
-            placeholder="Choose Admin Role",
+            placeholder=self.settings.string['placeholder_admin_role'],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
 
         action_row = create_actionrow(select)
         # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
-        ask_context = await self.sendEmbed(ctx.channel, title, '**What is your server admin role?**\n\nThese are voice create bot administrators.', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_admin_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2050,7 +2050,7 @@ class voice(commands.Cog):
                 return selected_role
 
             else:
-                await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord administrator role.', delete_after=5)
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.settings.strings['info_unverified_admin_role']}", delete_after=5)
                 return None
         finally:
             await ask_context.delete()
@@ -2064,19 +2064,19 @@ class voice(commands.Cog):
         # idx = 0
         if len(roles) >= 24:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
-            options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+            options.append(create_select_option(label=self.settings.strings['other'], value="0", emoji="⛔"))
         for r in roles[:24]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
 
         select = create_select(
             options=options,
-            placeholder="Choose Default Role",
+            placeholder=self.settings.strings['placeholder_default_role'],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, self.settings.string['ask_default_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2093,7 +2093,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the role: '{selected_role.name}'", delete_after=5)
                 return selected_role
             else:
-                await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that role as a valid discord role.', delete_after=5)
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.settings.strings['info_unverified_role']}", delete_after=5)
                 return None
         finally:
             await ask_context.delete()
@@ -2108,21 +2108,21 @@ class voice(commands.Cog):
         categories = [r for r in ctx.guild.categories]
         categories.sort(key=lambda r: r.name)
         # idx = 0
-        options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
-        options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
-        sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
+        options.append(create_select_option(label=self.settings.strings['new'], value="-1", emoji="✨"))
+        options.append(create_select_option(label=self.settings.strings['other'], value="0", emoji="⛔"))
+        sub_message = self.settings.strings['ask_category_submessage']
         for r in categories[:23]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="📇"))
 
         select = create_select(
             options=options,
-            placeholder="Choose Category",
+            placeholder=self.settings.strings['placeholder_category'],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, f"{self.settings.strings['ask_category']}{sub_message}", delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2132,7 +2132,7 @@ class voice(commands.Cog):
             await ask_context.delete()
             if category_id == 0: # selected "OTHER"
                 try:
-                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_category_name'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
@@ -2151,7 +2151,7 @@ class voice(commands.Cog):
                         return None
             elif category_id == -1: # selected "NEW"
                 try:
-                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_new_category_name'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
@@ -2169,7 +2169,7 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the category: '{selected_category.name}'", delete_after=5)
                     return selected_category
                 else:
-                    await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, {self.settings.strings["info_unverified_category"]}', delete_after=5)
                     return None
     async def ask_language(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
@@ -2186,7 +2186,7 @@ class voice(commands.Cog):
 
         select = create_select(
             options=options,
-            placeholder="Choose Language",
+            placeholder=self.settings.strings["placeholder_language"],
             min_values=1, # the minimum number of options a user must select
             max_values=1 # the maximum number of options a user can select
         )
@@ -2229,7 +2229,7 @@ class voice(commands.Cog):
             embed.set_footer(text=footer)
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
     async def notify_of_error(self, ctx):
-        await self.sendEmbed(ctx.channel, "Something Went Wrong", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry. 😢', delete_after=30)
+        await self.sendEmbed(ctx.channel, self.settings.strings['title_error'], f'{ctx.author.mention}, {self.settings.strings["info_error"]}', delete_after=30)
 
     def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
         if isinstance(nameOrId, str):
