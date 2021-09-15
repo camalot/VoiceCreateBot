@@ -1,0 +1,27 @@
+{
+	"took_too_long": "Took too long to answer!",
+	"footer_60_seconds": "**You have 60 seconds to answer**",
+
+	"title_delete_voice_channel": "Delete Voice Channel",
+	"title_voice_channel_setup": "Voice Channel Setup",
+	"title_update_to_game": "Update Title To Game",
+	"title_update_channel_name": "Updated Channel Name",
+	"title_new_voice_text_channel": "Voice Text Channel",
+	"title_version": "Version Information",
+	"title_tracked_channels": "Tracked Channels",
+	"title_track_text_channel": "Track Text Channel",
+	"title_track_voice_channel": "Track Voice Channel",
+	"info_not_in_channel": "You are not in a voice channel.",
+	"info_channel_already_tracked": "This channel is already tracked.",
+	"info_no_channel_to_track": "You must specific a channel to track.",
+	"info_new_voice_text_channel": "This channel will be deleted when everyone leaves the associated voice chat.",
+	"info_tracked_channels": "Here are the currently tracked channels:",
+	"info_no_tracked_channels": "There are currently no tracked channels",
+	"ready_to_go": "Congratulations, you are all setup and ready to go!",
+	"setup_not_configured": "Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**",
+	"ask_create_channel_name": "**Enter the name of the voice channel: (example: + CREATE CHANNEL)**",
+	"ask_use_stage": "**Would you like to use a Stage Channel?**",
+	"ask_default_locked": "**Would you like the channels `LOCKED` by default?**",
+	"setup_no_permission": "Only the owner or admins of the server can setup the bot!"
+
+}

@@ -149,13 +149,13 @@ class voice(commands.Cog):
                     self.log.debug(guild_id, _method , f"trigger auto game change")
                     selected_title = voice_channel.name
                     if owner and text_channel:
-                        selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title="Update Title To Game")
+                        selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title=self.settings.strings['title_update_to_game'])
                         if selected_title:
                             if voice_channel.name != selected_title:
                                 if text_channel:
                                     self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
                                     await text_channel.edit(name=selected_title)
-                                    await self.sendEmbed(text_channel, "Updated Channel Name", f'{after.mention}, You have changed the channel name to {selected_title}!', delete_after=5)
+                                    await self.sendEmbed(text_channel, self.settings.strings['title_update_channel_name'], f'{after.mention}, You have changed the channel name to {selected_title}', delete_after=5)
                                 await voice_channel.edit(name=selected_title)
                         else:
                             self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
@@ -229,7 +229,7 @@ class voice(commands.Cog):
                                 if text_channel:
                                     self.log.debug(guild_id, _method , f"Change Text Channel Name: {after.name}")
                                     await text_channel.edit(name=after.name)
-                                    await self.sendEmbed(text_channel, "Updated Channel Name", f'{owner.mention}, You have changed the channel name to {text_channel.name}!', delete_after=5)
+                                    await self.sendEmbed(text_channel, self.settings.strings['title_update_channel_name'], f'{owner.mention}, You have changed the channel name to {text_channel.name}!', delete_after=5)
                             if after.type == discord.ChannelType.text:
                                 voiceChannel = None
                                 voice_channel_id = self.db.get_voice_channel_id_from_text_channel(guildId=guild_id, textChannelId=after.id)
@@ -238,7 +238,7 @@ class voice(commands.Cog):
                                 if voiceChannel:
                                     self.log.debug(guild_id, _method , f"Change Voice Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
-                                    await self.sendEmbed(after, "Updated Channel Name", f'{owner.mention}, You have changed the channel name to {after.name}!', delete_after=5)
+                                    await self.sendEmbed(after, self.settings.strings['title_update_channel_name'], f'{owner.mention}, You have changed the channel name to {after.name}!', delete_after=5)
 
 
                             if user_settings:
@@ -349,7 +349,7 @@ class voice(commands.Cog):
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
-                    await self.sendEmbed(textChannel, "Voice Text Channel", f'{member.mention}, This channel will be deleted when everyone leaves the associated voice chat.', delete_after=None, footer='')
+                    await self.sendEmbed(textChannel, self.settings.strings['title_new_voice_text_channel'], f"{member.mention}, {self.settings.strings['info_new_voice_text_channel']}", delete_after=None, footer='')
                     initMessage = self.settings.initMessage
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
@@ -364,7 +364,7 @@ class voice(commands.Cog):
     async def version(self, ctx):
         author = ctx.author
         appName = utils.dict_get(self.settings.__dict__, "name", default_value = "Voice Create Bot")
-        await self.sendEmbed(ctx.channel, "Version Information", f"{author.mention}, {appName} version: {self.settings.APP_VERSION}", delete_after=10)
+        await self.sendEmbed(ctx.channel, self.settings.strings['title_version'], f"{author.mention}, {appName} version: {self.settings.APP_VERSION}", delete_after=10)
         await ctx.message.delete()
 
     @voice.command()
@@ -401,9 +401,9 @@ class voice(commands.Cog):
                         "value": userName
                     })
                 if len(channelFields) > 0:
-                    await self.sendEmbed(ctx.channel, "Tracked Channels", f"{author.mention}, Here are the currently tracked channels", fields=channelFields, delete_after=30)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_tracked_channels'], f"{author.mention}, {self.settings.strings['info_tracked_channels']}", fields=channelFields, delete_after=30)
                 else:
-                    await self.sendEmbed(ctx.channel, "Tracked Channels", f"{author.mention}, There are currently no tracked channels", delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_tracked_channels'], f"{author.mention}, {self.settings.strings['info_no_tracked_channels']}", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -425,7 +425,7 @@ class voice(commands.Cog):
                     voiceChannel = ctx.author.voice.channel
 
                 if channel is None:
-                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You must specific a channel to track.", fields=None, delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, {self.settings.strings['info_no_channel_to_track']}", fields=None, delete_after=5)
                     await ctx.message.delete()
                     return
 
@@ -441,10 +441,10 @@ class voice(commands.Cog):
                             if channel.category_id == voiceChannel.category_id:
                                 # text channel is in the same category as the voice channel
                                 self.db.add_tracked_text_channel(guildId=guildID, ownerId=tracked_voice.owner_id, voiceChannelId=voiceChannel.id, textChannelId=channel.id)
-                                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, I am now tracking '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
+                                await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, I am now tracking '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
                             else:
                                 # not in the same category
-                                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, {channel} is in a different category than '{voiceChannel}'. Tracking this channel is not supported.", fields=None, delete_after=5)
+                                await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, {channel} is in a different category than '{voiceChannel}'. Tracking this channel is not supported.", fields=None, delete_after=5)
                         else:
                             tracked_text = tracked_text_filter[0]
                             # channel already has a textChannel associated with it.
@@ -453,25 +453,25 @@ class voice(commands.Cog):
 
                             if tc_lookup:
                                 # channel exists. so we just exit
-                                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, The voice channel '{voiceChannel}' already has a channel associated with it", fields=None, delete_after=5)
+                                await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, The voice channel '{voiceChannel}' already has a channel associated with it", fields=None, delete_after=5)
                             else:
                                 # old tracked channel missing
                                 self.db.delete_tracked_text_channel(guildId=guildID, voiceChannelId=voiceChannel.id, textChannelId=tracked_text.text_channel_id)
                                 if channel.category_id == voiceChannel.category_id:
                                     # text channel is in the same category as the voice channel
                                     self.db.add_tracked_text_channel(guildId=guildID, ownerId=tracked_voice.owner_id, voiceChannelId=voiceChannel.id, textChannelId=channel.id)
-                                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, I am now tracking '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
+                                    await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, I am now tracking '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
                                 else:
                                     # not in the same category
-                                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, {channel} is in a different category than '{voiceChannel}'. Tracking this channel is not supported.", fields=None, delete_after=5)
+                                    await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, {channel} is in a different category than '{voiceChannel}'. Tracking this channel is not supported.", fields=None, delete_after=5)
 
                     else:
                         # not tracked
-                        await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, The voice channel you are in is not currently tracked, so I can't track '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, The voice channel you are in is not currently tracked, so I can't track '{channel}' with '{voiceChannel}'.", fields=None, delete_after=5)
                 else:
-                    await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}", f"You are not in a voice channel to link '{channel}' to.", fields=None, delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}", f"You are not in a voice channel to link '{channel}' to.", fields=None, delete_after=5)
             else:
-                await self.sendEmbed(ctx.channel, "Track Text Channel", f"{ctx.author.mention}, You do not have permission to add '{channel}' as a tracked channel", fields=None, delete_after=5)
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_track_text_channel'], f"{ctx.author.mention}, You do not have permission to add '{channel}' as a tracked channel", fields=None, delete_after=5)
         except Exception as ex:
             self.log.error(guildID, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -488,16 +488,16 @@ class voice(commands.Cog):
             message_author_id = ctx.author.id
             channel = ctx.author.voice.channel
             if not channel:
-                await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention}, you're not in a voice channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_track_voice_channel'], f"{ctx.author.mention}, {self.settings.strings['info_not_in_channel']}", delete_after=5)
             else:
                 if self.isAdmin(ctx):
                     tracked_channels = self.db.get_tracked_channels_for_guild(guildId=guild_id)
                     filtered = [t for t in tracked_channels.voice_channels if t.voice_channel_id == channel.id]
                     if filtered:
-                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention}, This channel is already tracked.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_track_voice_channel'], f"{ctx.author.mention}, {self.settings.strings['info_channel_already_tracked']}", delete_after=5)
                     else:
                         self.db.track_new_voice_channel(guildId=guild_id, ownerId=message_author_id, voiceChannelId=channel.id)
-                        await self.sendEmbed(ctx.channel, "Track Channel", f"{ctx.author.mention}, The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_track_voice_channel'], f"{ctx.author.mention}, The channel '{channel.name}' is now tracked.\n\nUse the `.voice track-text-channel #channel-name` command to track the associated text channel.", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -939,7 +939,7 @@ class voice(commands.Cog):
 
                 # ask bot prefix?
                 prefix = "."
-                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What would you like to set for the bot prefix?\n\nExample: `.`**', delete_after=60, footer="**You have 60 seconds to answer**")
+                await self.sendEmbed(ctx.channel, "Voice Channel Initialization", '**What would you like to set for the bot prefix?\n\nExample: `.`**', delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                 try:
                     prefixResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
@@ -983,7 +983,7 @@ class voice(commands.Cog):
                             return False
                 guild_settings = self.db.get_guild_settings(guildId=guild_id)
                 if not guild_settings:
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'{author.mention}, Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**', delete_after=10)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], f"{author.mention}, {self.settings.strings['setup_not_configured']}", delete_after=10)
                     return
                 # Ask them for the category name
                 category = await self.ask_category(ctx)
@@ -992,13 +992,13 @@ class voice(commands.Cog):
                 useStage = False
                 is_community = ctx.guild.features.count("COMMUNITY") > 0
                 if is_community:
-                    useStage = await self.ask_yes_no(ctx, question="**Would you like to use a Stage Channel?**", title="Voice Channel Setup")
+                    useStage = await self.ask_yes_no(ctx, question=self.settings.strings['ask_use_stage'], title=self.settings.strings['title_voice_channel_setup'])
 
-                name_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
+                name_ask = await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], self.settings.strings['ask_create_channel_name'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                 try:
                     channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], self.settings.strings['took_too_long'], delete_after=5)
                 else:
                     try:
                         channel = await ctx.guild.create_voice_channel(channelName.content, category=category)
@@ -1018,26 +1018,26 @@ class voice(commands.Cog):
                         guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
                         if not guild_category_settings:
 
-                            defaultLimit = await self.ask_limit(ctx, "Voice Channel Setup")
+                            defaultLimit = await self.ask_limit(ctx, self.settings.strings['title_voice_channel_setup'])
 
-                            locked = await self.ask_yes_no(ctx, question="**Would you like the channels LOCKED 🔒 by default?**", title="Voice Channel Setup")
+                            locked = await self.ask_yes_no(ctx, question=self.settings.strings['ask_default_locked'], title=self.settings.strings['title_voice_channel_setup'])
 
-                            defaultBitrate = await self.ask_bitrate(ctx, title="Voice Channel Setup")
+                            defaultBitrate = await self.ask_bitrate(ctx, title=self.settings.strings['title_voice_channel_setup'])
 
-                            selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Setup")
+                            selected_guild_role = await self.ask_default_role(ctx, self.settings.strings['title_voice_channel_setup'])
                             if not selected_guild_role:
                                 selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role)
 
                             self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=locked, bitrate=defaultBitrate, defaultRole=(selected_guild_role or ctx.guild.default_role).id)
                         else:
                             self.log.debug(guild_id, _method , f"GUILD CATEGORY SETTINGS FOUND")
-                        await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], f"{ctx.author.mention}, {self.settings.strings['ready_to_go']}", delete_after=10)
                     except Exception as e:
                         self.log.error(guild_id, _method, str(e), traceback.format_exc())
                         # traceback.print_exc()
-                        await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention}, You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], f"{ctx.author.mention}, You didn't enter the names properly.\nUse `.voice setup` again!", delete_after=5)
             else:
-                await self.sendEmbed(ctx.channel, "Voice Channel Setup", f"{ctx.author.mention}, only the owner or admins of the server can setup the bot!", delete_after=10)
+                await self.sendEmbed(ctx.channel, self.settings.strings['title_voice_channel_setup'], f"{ctx.author.mention}, {self.settings.strings['setup_no_permission']}", delete_after=10)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1745,7 +1745,7 @@ class voice(commands.Cog):
                 self.db.open()
                 tracked_voice_channels_ids = [item for clist in self.db.get_tracked_voice_channel_ids(guildId=guild_id) for item in clist]
                 tracked_voice_channels = [chan for chan in ctx.guild.channels if chan.id in tracked_voice_channels_ids]
-                embed = discord.Embed(title=f"Delete Voice Channel", description="Choose Which Voice Channel To Delete.", color=0x7289da)
+                embed = discord.Embed(title=self.settings.strings['title_delete_voice_channel'], description="Choose Which Voice Channel To Delete.", color=0x7289da)
                 embed.set_author(name=f"{self.settings.name} v{self.settings.APP_VERSION}", url=self.settings.url,
                                 icon_url=self.settings.icon)
                 channel_array = []
@@ -1754,7 +1754,7 @@ class voice(commands.Cog):
                     channel_array.append(c.id)
                     embed.add_field(name=f'{index+1}: {c.category.name}/{c.name}', value=f"Enter: {index+1} to delete.", inline='false')
                     index += 1
-                embed.set_footer(text=f'--- You have 60 seconds to respond. ---')
+                embed.set_footer(text=self.settings.strings['footer_60_seconds'])
                 await ctx.channel.send(embed=embed, delete_after=65)
                 selected_index = -1
                 try:
@@ -1764,7 +1764,7 @@ class voice(commands.Cog):
                         return result
                     result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, "Timeout", f'You took too long to answer.', delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Timeout", self.settings.strings["took_too_long"], delete_after=5)
                 else:
                     selected_index = int(result_message.content)
                     await result_message.delete()
@@ -1775,7 +1775,7 @@ class voice(commands.Cog):
                             self.log.debug(guild_id, _method, f"Attempting to remove users in {chan}")
                             for mem in chan.members:
                                 mem.disconnect()
-                            await self.sendEmbed(ctx.channel, "Channel Deleted", f'{ctx.author.mention}, The channel {chan.name} has been deleted.', delete_after=5)
+                            await self.sendEmbed(ctx.channel, self.settings.strings['title_delete_voice_channel'], f'{ctx.author.mention}, The channel {chan.name} has been deleted.', delete_after=5)
             except Exception as ex:
                 self.log.error(guild_id, _method, str(ex), traceback.format_exc())
                 await self.notify_of_error(ctx)
@@ -1792,7 +1792,7 @@ class voice(commands.Cog):
         ]
         yes_no = False
         action_row = create_actionrow(*buttons)
-        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
+        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -1816,7 +1816,7 @@ class voice(commands.Cog):
 
         defaultLimit = 0
 
-        limit_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
+        limit_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer=self.settings.strings['footer_60_seconds'])
         try:
             limitResp = await self.bot.wait_for('message', check=check_numeric, timeout=60)
         except asyncio.TimeoutError:
@@ -1848,7 +1848,7 @@ class voice(commands.Cog):
 
         bitrate_min = 8
         bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
-        bitrate_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.\n\nI will ignore any other values.**', delete_after=60, footer="**You have 60 seconds to answer**")
+        bitrate_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.\n\nI will ignore any other values.**', delete_after=60, footer=self.settings.strings['footer_60_seconds'])
         try:
             bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
         except asyncio.TimeoutError:
@@ -1891,20 +1891,20 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
         else:
             category_id = int(button_ctx.selected_options[0])
             await ask_context.delete()
             if category_id == 0: # selected "OTHER"
                 try:
-                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
                 else:
                     await ask_existing_category.delete()
                     cat_name_or_id = category.content
@@ -1920,10 +1920,10 @@ class voice(commands.Cog):
                         return None
             elif category_id == -1: # selected "NEW"
                 try:
-                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
                 else:
                     await ask_new_category.delete()
                     selected_category = await ctx.guild.create_category_channel(new_category.content)
@@ -1991,7 +1991,7 @@ class voice(commands.Cog):
             )
 
             action_row = create_actionrow(select)
-            ask_context = await self.sendEmbed(targetChannel, title, '**There are multiple games detected. Which would you like to use?', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+            ask_context = await self.sendEmbed(targetChannel, title, '**There are multiple games detected. Which would you like to use?', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
             try:
                 button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
             except asyncio.TimeoutError:
@@ -2032,7 +2032,7 @@ class voice(commands.Cog):
 
         action_row = create_actionrow(select)
         # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
-        ask_context = await self.sendEmbed(ctx.channel, title, '**What is your server admin role?**\n\nThese are voice create bot administrators.', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, '**What is your server admin role?**\n\nThese are voice create bot administrators.', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2076,7 +2076,7 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2122,7 +2122,7 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -2132,7 +2132,7 @@ class voice(commands.Cog):
             await ask_context.delete()
             if category_id == 0: # selected "OTHER"
                 try:
-                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
@@ -2151,7 +2151,7 @@ class voice(commands.Cog):
                         return None
             elif category_id == -1: # selected "NEW"
                 try:
-                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                     new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)

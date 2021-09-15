@@ -17,11 +17,26 @@ class Settings:
                 self.__dict__.update(json.load(json_file))
         except Exception as e:
             print(e, file=sys.stderr)
+
         self.db_url = utils.dict_get(os.environ, "VCB_MONGODB_URL", default_value="")
         self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
+        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
+
+        self.strings = {}
+        try:
+            lang_json = os.path.join("languages", f"{self.language}.json")
+            if not os.path.exists(lang_json) or not os.path.isfile(lang_json):
+                lang_json = os.path.join("languages", f"en-us.json")
+
+            with open(lang_json) as lang_file:
+                self.strings.update(json.load(lang_file))
+        except Exception as e:
+            print(e, file=sys.stderr)
+            raise e
+
         dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
         self.db_provider = dbprovider.DatabaseProvider[dbp]
         if not self.db_provider:
