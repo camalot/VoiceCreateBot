@@ -39,8 +39,8 @@
 		},
 		"enable-auto-game": {
 			"help": "**Automatically change your channel to the name of the game you are playing**",
-			"usage": ".voice enable-auto-game [yes|no]",
-			"example": ".voice eag yes",
+			"usage": ".voice enable-auto-game",
+			"example": ".voice eag",
 			"admin": false,
 			"aliases": [
 				"eag"
@@ -55,7 +55,7 @@
 		},
 		"lock": {
 			"help": "**Lock your channel**",
-			"usage": ".voice lock [allowed_roles]",
+			"usage": ".voice lock [locked_role]",
 			"example": ".voice lock",
 			"admin": false,
 			"aliases": []
@@ -208,8 +208,8 @@
 		},
 		"settings": {
 			"help": "**Change the Group Settings for Channels**",
-			"usage": ".voice settings \"<category name>\" <locked = False> <limit = 0> \"<default role = @everyone>\"",
-			"example": ".voice settings \"Voice Channels\" no 5 \"Role Name\"",
+			"usage": ".voice settings",
+			"example": ".voice settings",
 			"admin": true,
 			"aliases": []
 		},

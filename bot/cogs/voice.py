@@ -764,7 +764,6 @@ class voice(commands.Cog):
                 return
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
             everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
@@ -815,7 +814,6 @@ class voice(commands.Cog):
                 return
 
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
-            # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
             everyone = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
@@ -865,22 +863,6 @@ class voice(commands.Cog):
             prefix = guild_settings.prefix
         await self.sendEmbed(ctx.channel, "Voice Channel Prefix", f'{ctx.author.mention}, Run commands by saying: `{prefix}voice <command>`.', delete_after=10)
         await ctx.message.delete()
-
-    # def get_prefix(self, client, message):
-    #     self.db.open()
-    #     # get the prefix for the guild.
-    #     prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-    #     if message.guild:
-    #         guild_settings = self.db.get_guild_settings(message.guild.id)
-    #         if guild_settings:
-    #             prefixes = guild_settings.prefix or "."
-    #     elif not message.guild:
-    #         prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
-
-    #     # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
-    #     # Do `return prefixes` if you don't want to allow mentions instead of prefix.
-    #     return commands.when_mentioned_or(*prefixes)(client, message)
-
 
     @voice.command()
     async def help(self, ctx, command=""):
@@ -992,11 +974,6 @@ class voice(commands.Cog):
             if self.isAdmin(ctx):
                 def check(m):
                     return m.author.id == author_id
-                def check_yes_no(m):
-                    if(check(m)):
-                        msg = m.content
-                        result = utils.str2bool(msg)
-                        return result == True or result == False
                 def check_limit(m):
                     if check(m):
                         if m.content.isnumeric():
@@ -1004,28 +981,6 @@ class voice(commands.Cog):
                             return val >= 0 and val <= 100
                         else:
                             return False
-                def check_role(m):
-                    if(check(m)):
-                        guild_roles = m.guild.roles
-                        if m.content == "DEFAULT":
-                            m_guild_settings = self.db.get_guild_settings(m.guild.id)
-                            if m_guild_settings:
-                                return self.get_by_name_or_id(guild_roles, m_guild_settings.default_role)
-                            return ctx.guild.default_role
-                        # is valid role?
-                        # role = discord.utils.get(m.guild.roles,name=m.content)
-                        role = self.get_by_name_or_id(guild_roles, m.content)
-                        if role:
-                            return True
-                        return False
-                def check_bitrate(m):
-                    if check(m):
-                        if m.content.isnumeric():
-                            bitrate_min = 8
-                            bitrate_limit = int(round(m.guild.bitrate_limit / 1000))
-                            set_br = int(m.content)
-                            return set_br == 0 or (set_br >= bitrate_min and set_br <= bitrate_limit)
-                        return False
                 guild_settings = self.db.get_guild_settings(guildId=guild_id)
                 if not guild_settings:
                     await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'{author.mention}, Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**', delete_after=10)
@@ -1037,20 +992,8 @@ class voice(commands.Cog):
                 useStage = False
                 is_community = ctx.guild.features.count("COMMUNITY") > 0
                 if is_community:
-                    buttons = [
-                        create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
-                        create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
-                    ]
-                    action_row = create_actionrow(*buttons)
-                    use_stage_req = await self.sendEmbed(ctx.channel, "Voice Channel Setup", "**Would you like to use a Stage Channel?**", components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
-                    try:
-                        button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
-                    except asyncio.TimeoutError:
-                        await ctx.send('Took too long to answer!', delete_after=5)
-                    else:
-                        useStage = utils.str2bool(button_ctx.custom_id)
-                    finally:
-                        await use_stage_req.delete()
+                    useStage = await self.ask_yes_no(ctx, question="**Would you like to use a Stage Channel?**", title="Voice Channel Setup")
+
                 name_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Enter the name of the voice channel: (e.g Join To Create)**', delete_after=60, footer="**You have 60 seconds to answer**")
                 try:
                     channelName = await self.bot.wait_for('message', check=check, timeout=60.0)
@@ -1075,59 +1018,17 @@ class voice(commands.Cog):
                         guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
                         if not guild_category_settings:
 
-                            # ASK SET DEFAULT CHANNEL LIMIT
-                            defaultLimit = 0
-                            limit_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", '**Set the default channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
-                            try:
-                                defaultLimitResp = await self.bot.wait_for('message', check=check_limit, timeout=60)
-                            except asyncio.TimeoutError:
-                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                                return
-                            else:
-                                defaultLimit = int(defaultLimitResp.content)
-                            finally:
-                                await defaultLimitResp.delete()
-                                await limit_ask.delete()
-                            # ASK SET DEFAULT CHANNEL LOCKED
-                            defaultLocked = False
-                            buttons = [
-                                create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
-                                create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
-                            ]
-                            action_row = create_actionrow(*buttons)
-                            lock_req = await self.sendEmbed(ctx.channel, "Voice Channel Setup", "**Would you like the channels LOCKED 🔒 by default?**", components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
-                            try:
-                                button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
-                            except asyncio.TimeoutError:
-                                await ctx.send('Took too long to answer!', delete_after=5)
-                            else:
-                                defaultLocked = utils.str2bool(button_ctx.custom_id)
-                            finally:
-                                await lock_req.delete()
-                            # ASK SET DEFAULT BITRATE
-                            defaultBitrate = 64
+                            defaultLimit = await self.ask_limit(ctx, "Voice Channel Setup")
 
-                            bitrate_min = 8
-                            bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
-                            bitrate_ask = await self.sendEmbed(ctx.channel, "Voice Channel Setup", f'**Set the default channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.**', delete_after=60, footer="**You have 60 seconds to answer**")
-                            try:
-                                bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
-                            except asyncio.TimeoutError:
-                                await self.sendEmbed(ctx.channel, "Voice Channel Setup", 'Took too long to answer!', delete_after=5)
-                                return
-                            else:
-                                defaultBitrate = int(bitrateResp.content)
-                                if defaultBitrate == 0:
-                                    defaultBitrate = self.settings.BITRATE_DEFAULT
-                            finally:
-                                await bitrateResp.delete()
-                                await bitrate_ask.delete()
+                            locked = await self.ask_yes_no(ctx, question="**Would you like the channels LOCKED 🔒 by default?**", title="Voice Channel Setup")
+
+                            defaultBitrate = await self.ask_bitrate(ctx, title="Voice Channel Setup")
 
                             selected_guild_role = await self.ask_default_role(ctx, "Voice Channel Setup")
                             if not selected_guild_role:
                                 selected_guild_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.default_role)
 
-                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=defaultLocked, bitrate=defaultBitrate, defaultRole=(selected_guild_role or ctx.guild.default_role).id)
+                            self.db.set_guild_category_settings(guildId=guild_id, categoryId=category.id, channelLimit=defaultLimit, channelLocked=locked, bitrate=defaultBitrate, defaultRole=(selected_guild_role or ctx.guild.default_role).id)
                         else:
                             self.log.debug(guild_id, _method , f"GUILD CATEGORY SETTINGS FOUND")
                         await ctx.channel.send("**You are all setup and ready to go!**", delete_after=5)
@@ -1174,21 +1075,21 @@ class voice(commands.Cog):
             self.db.close()
 
     @voice.command(aliases=['set-default-role', 'sdr'])
-    async def set_default_role(self, ctx, default_role: typing.Union[discord.Role, str]):
+    async def set_default_role(self, ctx):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         author = ctx.author
         if self.isAdmin(ctx):
-            temp_default_role = default_role
-            if not isinstance(temp_default_role, discord.Role):
-                temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
             self.db.open()
             try:
+                selected_default_role = await self.ask_default_role(ctx, "Channel Category Settings")
+                if not selected_default_role:
+                        selected_default_role = ctx.guild.default_role
                 category = await self.set_role_ask_category(ctx)
                 if category:
                     category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category.id)
                     if category_settings:
-                        self.db.set_default_role_for_category(guildId=guild_id, categoryId=category.id, defaultRole=temp_default_role.id)
+                        self.db.set_default_role_for_category(guildId=guild_id, categoryId=category.id, defaultRole=selected_default_role.id)
                     else:
                         await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
                 else:
@@ -1200,36 +1101,24 @@ class voice(commands.Cog):
                 await ctx.message.delete()
 
     @voice.command()
-    async def settings(self, ctx, category: str = None, locked: str = "False", limit: int = 0, bitrate: int = 64, default_role: typing.Union[discord.Role, str] = None):
+    async def settings(self, ctx):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         author = ctx.author
         if self.isAdmin(ctx):
             self.db.open()
             try:
-                if category is None:
-                    category = await self.set_role_ask_category(ctx)
-                found_category = next((x for x in ctx.guild.categories if x.name == category), None)
+                found_category = await self.set_role_ask_category(ctx)
+
                 if found_category:
-                    bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
-                    bitrate_min = 8
-                    br = int(bitrate)
-
-                    if br > bitrate_limit:
-                        br = bitrate_limit
-                    elif br < bitrate_min:
-                        br = bitrate_min
-
-                    temp_default_role = default_role
-                    if not isinstance(temp_default_role, discord.Role):
-                        temp_default_role = discord.utils.get(ctx.guild.roles, name=temp_default_role)
-                    else:
-                        temp_default_role = default_role.name
-                    new_default_role = temp_default_role
+                    bitrate_value = await self.ask_bitrate(ctx, title="Voice Channel Settings")
+                    locked = await self.ask_yes_no(ctx, question="**Would you like the channels LOCKED 🔒 by default?**", title="Voice Channel Settings")
+                    limit = await self.ask_limit(ctx, "Voice Channel Settings")
+                    new_default_role = await self.ask_default_role(ctx, "Voice Channel Settings")
                     if not new_default_role:
                         new_default_role = ctx.guild.default_role
 
-                    self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=int(limit), channelLocked=utils.str2bool(locked), bitrate=int(br), defaultRole=new_default_role.id)
+                    self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=limit, channelLocked=locked, bitrate=bitrate_value, defaultRole=new_default_role.id)
                     embed_fields = list()
                     embed_fields.append({
                         "name": "Locked",
@@ -1241,17 +1130,17 @@ class voice(commands.Cog):
                     })
                     embed_fields.append({
                         "name": "Bitrate",
-                        "value": f"{str(bitrate)}kbps"
+                        "value": f"{str(bitrate_value)}kbps"
                     })
                     embed_fields.append({
                         "name": "Default Role",
                         "value": f"{new_default_role.name}"
                     })
 
-                    await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, Category '{category}' settings have been set.", fields=embed_fields, delete_after=5)
+                    await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, Category '{found_category}' settings have been set.", fields=embed_fields, delete_after=5)
 
                 else:
-                    self.log.error(guild_id, _method, f"No Category found for '{category}'")
+                    self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
             except Exception as ex:
                 self.log.error(guild_id, _method, str(ex), traceback.format_exc())
                 await self.notify_of_error(ctx)
@@ -1328,7 +1217,6 @@ class voice(commands.Cog):
             if not is_owner and not self.isAdmin(ctx):
                 await self.sendEmbed(ctx.channel, "Channel Lock", f'{author.mention}, You do not own this channel, and do not have permissions to lock it.', delete_after=5)
             else:
-                # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 everyone = self.get_by_name_or_id(ctx.guild.roles, default_role)
                 text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=current_voice_channel_id)
                 if text_channel_id:
@@ -1585,7 +1473,7 @@ class voice(commands.Cog):
             await ctx.message.delete()
 
     @voice.command(aliases=["enable-auto-game", "eag"])
-    async def auto_game(self, ctx, enabled: str):
+    async def auto_game(self, ctx):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         try:
@@ -1603,7 +1491,8 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention}, You are not an admin, nor are you the owner of this channel.', delete_after=5)
                 return
 
-            enable_auto = utils.str2bool(enabled)
+            enable_auto = await self.ask_yes_no(ctx, "**Would you like me to change your channel title when your game status changes?**", "Enable Game Auto Change")
+
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role)
@@ -1616,7 +1505,7 @@ class voice(commands.Cog):
             state = "disabled"
             if enable_auto:
                 state = "enabled"
-            await self.sendEmbed(ctx.channel, "Enable Auto Game", f'{author.mention}, You have {state} the changing of your channel name based on your game.', delete_after=5)
+            await self.sendEmbed(ctx.channel, "Enable Game Auto Change", f'{author.mention}, You have {state} the changing of your channel name based on your game.', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1899,49 +1788,161 @@ class voice(commands.Cog):
         else:
             self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'delete'")
 
-    async def set_role_ask_category(self, ctx):
+    async def ask_yes_no(self, ctx, question: str, title: str = "Voice Channel Setup"):
+        buttons = [
+            create_button(style=ButtonStyle.green, label="YES", custom_id="YES"),
+            create_button(style=ButtonStyle.red, label="NO", custom_id="NO")
+        ]
+        yes_no = False
+        action_row = create_actionrow(*buttons)
+        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer="**You have 60 seconds to answer**")
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await ctx.send('Took too long to answer!', delete_after=5)
+        else:
+            yes_no = utils.str2bool(button_ctx.custom_id)
+        finally:
+            await yes_no_req.delete()
+        return yes_no
+
+    async def ask_limit(self, ctx, title: str = "Voice Channel Setup"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        def check_numeric(m):
+            if check_user(m):
+                if m.content.isnumeric():
+                    val = int(m.content)
+                return val >= 0 and val <= 100
+            return False
+
+        defaultLimit = 0
+
+        limit_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel limit.\n\nReply: 0 - 100.**', delete_after=60, footer="**You have 60 seconds to answer**")
+        try:
+            limitResp = await self.bot.wait_for('message', check=check_numeric, timeout=60)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            return
+        else:
+            defaultLimit = int(limitResp.content)
+        finally:
+            await limitResp.delete()
+            await limit_ask.delete()
+        return defaultLimit
+
+
+    async def ask_bitrate(self, ctx, title: str = "Voice Channel Setup"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        def check_bitrate(m):
+            if check_user(m):
+                if m.content.isnumeric():
+                    bitrate_min = 8
+                    bitrate_limit = int(round(m.guild.bitrate_limit / 1000))
+                    set_br = int(m.content)
+                    return set_br == 0 or (set_br >= bitrate_min and set_br <= bitrate_limit)
+                return False
+
+        # ASK SET DEFAULT BITRATE
+        defaultBitrate = 64
+
+        bitrate_min = 8
+        bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+        bitrate_ask = await self.sendEmbed(ctx.channel, title, f'**Set the channel bitrate.\n\nReply: {str(bitrate_min)} - {str(bitrate_limit)}\n\n\nUse 0 for default bitrate.\n\nI will ignore any other values.**', delete_after=60, footer="**You have 60 seconds to answer**")
+        try:
+            bitrateResp = await self.bot.wait_for('message', check=check_bitrate, timeout=60)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+            return
+        else:
+            defaultBitrate = int(bitrateResp.content)
+            if defaultBitrate == 0:
+                defaultBitrate = self.settings.BITRATE_DEFAULT
+        finally:
+            await bitrateResp.delete()
+            await bitrate_ask.delete()
+        return defaultBitrate
+
+
+    async def set_role_ask_category(self, ctx, title: str = "Set Default Role"):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
+        if not self.isAdmin(ctx):
+            raise PermissionError()
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+
+        options = []
+        categories = [r for r in ctx.guild.categories]
+        categories.sort(key=lambda r: r.name)
+        # idx = 0
+        options.append(create_select_option(label="->NEW<-", value="-1", emoji="✨"))
+        options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
+        sub_message = "\n\nIf category not listed, choose `->OTHER<-`\n\nTo create a new category, choose `->NEW<-`"
+        for r in categories[:23]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="📇"))
+
+        select = create_select(
+            options=options,
+            placeholder="Choose Category",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        ask_context = await self.sendEmbed(ctx.channel, title, f'**What category do you want to use.{sub_message}', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
         try:
-            found_category = None
-            if self.isAdmin(ctx):
-                def check(m):
-                    same = m.author.id == ctx.author.id
-                    return same
-                def check_yes_no(m):
-                    msg = m.content
-                    return utils.str2bool(msg)
-                await self.sendEmbed(ctx.channel, "Set Default Role", f"**Enter the name of the category you wish to set the default role for**", delete_after=60, footer="**You have 60 seconds to answer**")
+            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+        else:
+            category_id = int(button_ctx.selected_options[0])
+            await ask_context.delete()
+            if category_id == 0: # selected "OTHER"
                 try:
-                    category = await self.bot.wait_for('message', check=check, timeout=60.0)
+                    ask_existing_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name or id of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
                 except asyncio.TimeoutError:
-                    await ctx.channel.send('Took too long to answer!', delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
                 else:
-                    found_category = next((x for x in ctx.guild.categories if x.name.lower() == category.content.lower()), None)
+                    await ask_existing_category.delete()
+                    cat_name_or_id = category.content
+                    if cat_name_or_id.isnumeric():
+                        cat_name_or_id = int(cat_name_or_id)
+                    found_category = self.get_by_name_or_id(ctx.guild.categories, cat_name_or_id)
                     await category.delete()
                     if found_category:
-                        # found existing with that name.
-                        # do you want to create a new one?
-                        yes_or_no = False
-                        await self.sendEmbed(ctx.channel, "Set Default Role", f"**Is this the correct category? '{str(found_category.name.upper())}'.\n\nReply: YES or NO.**", delete_after=60, footer="**You have 60 seconds to answer**")
-                        try:
-                            yes_or_no = await self.bot.wait_for('message', check=check_yes_no, timeout=60.0)
-                        except asyncio.TimeoutError:
-                            await self.sendEmbed(ctx.channel, "Set Default Role", 'Took too long to answer!', delete_after=5)
-                        else:
-                            if yes_or_no:
-                                await yes_or_no.delete()
-                                return found_category
-                            else:
-                                return None
+                        await self.sendEmbed(ctx.channel, title, f"**Found an existing category named '{str(found_category.name)}'.**", delete_after=5)
+                        return found_category
                     else:
+                        await self.sendEmbed(ctx.channel, title, f"**Unable to find a category named '{str(found_category.name)}'.**", delete_after=5)
                         return None
-            else:
-                return None
-        except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
-        finally:
-            await ctx.message.delete()
+            elif category_id == -1: # selected "NEW"
+                try:
+                    ask_new_category = await self.sendEmbed(ctx.channel, title, f"**Enter the name of the category**", delete_after=60, footer="**You have 60 seconds to answer**")
+                    new_category = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                except asyncio.TimeoutError:
+                    await self.sendEmbed(ctx.channel, title, 'Took too long to answer!', delete_after=5)
+                else:
+                    await ask_new_category.delete()
+                    selected_category = await ctx.guild.create_category_channel(new_category.content)
+                    await new_category.delete()
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You created the category: '{selected_category.name}'", delete_after=5)
+
+                    return selected_category
+            else: # selected a category
+                selected_category = discord.utils.get(ctx.guild.categories, id=category_id)
+                if selected_category:
+                    self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the category '{selected_category.name}'")
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the category: '{selected_category.name}'", delete_after=5)
+                    return selected_category
+                else:
+                    await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, I was unable to verify that category as a valid discord category in this guild.', delete_after=5)
+                    return None
 
     async def ask_game_for_user(self, targetChannel: discord.TextChannel, user: discord.Member, title: str):
         _method = inspect.stack()[1][3]
@@ -2014,70 +2015,6 @@ class voice(commands.Cog):
         else:
             return None
 
-        # def check_user(m):
-        #     same = m.author.id == user.id
-        #     return same
-        # def check_numeric(m):
-        #     if check_user(m):
-        #         return m.content.isnumeric()
-        #     return False
-        # selected_title = None
-        # titles = list()
-        # fields = list()
-        # if user:
-        #     if user.activities:
-        #         game_activity = [a for a in user.activities if a.type == discord.ActivityType.playing]
-        #         stream_activity = [a for a in user.activities if a.type == discord.ActivityType.streaming]
-        #         watch_activity = [a for a in user.activities if a.type == discord.ActivityType.watching]
-
-        #         if game_activity:
-        #             for a in game_activity:
-        #                 titles.append(a.name)
-        #                 self.log.debug(guild_id, _method, f"game.name: {a.name}")
-        #         elif stream_activity:
-        #             for a in stream_activity:
-        #                 # name = stream_activity[0].name
-        #                 self.log.debug(guild_id, _method, f"stream.game: {a.game}")
-        #                 self.log.debug(guild_id, _method, f"stream.name: {a.name}")
-        #                 titles.append(a.game)
-        #                 titles.append(a.name)
-        #             # name = stream_activity[0].game
-        #         elif watch_activity:
-        #             for a in watch_activity:
-        #                 self.log.debug(guild_id, _method, f"watch.name: {a.name}")
-        #                 titles.append(a.name)
-        #         else:
-        #             self.log.debug(guild_id, _method, f"Activities: {str(len(user.activities))}")
-        #             for a in user.activities:
-        #                 titles.append(a.name)
-        #                 self.log.debug(guild_id, _method, f"activity.name: {a.name}")
-
-        #         if len(titles) > 1:
-        #             index = 0
-        #             for t in titles:
-        #                 fields.append(EmbedField(f"{str(index+1)}: {t}", f"Enter {index+1} to choose this title").__dict__)
-        #                 index += 1
-        #             await self.sendEmbed(targetChannel, title, f'{user.mention}, please choose from the game/stream/activity titles.', fields=fields,delete_after=60, footer="**You have 60 seconds to answer**")
-        #             try:
-        #                 titleResp = await self.bot.wait_for('message', check=check_numeric, timeout=60.0)
-        #             except asyncio.TimeoutError:
-        #                 await self.sendEmbed(targetChannel, title, 'Took too long to answer!', delete_after=5)
-        #             else:
-        #                 if titleResp.content.isnumeric():
-        #                     idx = int(titleResp.content) - 1
-        #                     if idx >= 0 and idx < len(titles):
-        #                         selected_title = titles[idx]
-        #                         if selected_title:
-        #                             await self.sendEmbed(targetChannel, title, f"{user.mention}, You selected: '{selected_title}'", delete_after=5)
-        #                 await titleResp.delete()
-        #         elif len(titles) == 1:
-        #             selected_title = titles[0]
-
-        #     else:
-        #         self.log.debug(guild_id, _method, f"owner.activity is None")
-
-            # return selected_title
-
     async def ask_admin_role(self, ctx, title: str = "Voice Channel Initialization"):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
@@ -2132,11 +2069,9 @@ class voice(commands.Cog):
         roles = [r for r in ctx.guild.roles if not r.is_bot_managed() and not r.managed and not r.is_integration()]
         roles.sort(key=lambda r: r.name)
         # idx = 0
-        sub_message = ""
         if len(roles) >= 24:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
             options.append(create_select_option(label="->OTHER<-", value="0", emoji="⛔"))
-            sub_message = "\n\nOnly 24 Roles Can Be Listed.\nIf Role Not Listed, Choose `->OTHER<-`"
         for r in roles[:24]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
 
@@ -2148,7 +2083,6 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
         ask_context = await self.sendEmbed(ctx.channel, title, '**What should the default role be?**\n\nThis is the role that will be the minimum permission for the the channel.', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
@@ -2254,22 +2188,16 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         self.db.open()
         guild_settings = self.db.get_guild_settings(ctx.guild.id)
-        # admin_role = discord.utils.find(lambda r: r.name.lower() in (s.lower().strip() for s in self.settings.admin_roles), ctx.message.guild.roles)
         is_in_guild_admin_role = False
         # see if there are guild settings for admin role
         if guild_settings:
             guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
             is_in_guild_admin_role = guild_admin_role in ctx.author.roles
-        # is_in_admin_role = admin_role in ctx.author.roles
-        # admin_user = str(ctx.author.id) in (str(u) for u in self.settings.admin_users)
         is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
-        # is_in_admin_role or admin_user or
         return is_bot_owner or is_in_guild_admin_role
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
-        # embed.set_author(name=f"{self.settings['name']}", url=self.settings['url'],
-        #                 icon_url=self.settings['icon'])
         if fields is not None:
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline='false')
