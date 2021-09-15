@@ -1519,9 +1519,6 @@ class voice(commands.Cog):
         guild_id = ctx.guild.id
         def check_user(m):
             return m.author.id == ctx.author.id
-        def check_numeric(m):
-            if check_user(m):
-                return m.content.isnumeric()
         try:
             author = ctx.author
             author_id = author.id
@@ -1970,10 +1967,10 @@ class voice(commands.Cog):
                 self.log.debug(guild_id, _method, f"watch.name: {a.name}")
                 if a.name not in games:
                     games.append(a.name)
-            for a in user.activities:
-                self.log.debug(guild_id, _method, f"activity.name: {a.name}")
-                if a.name not in games:
-                    games.append(a.name)
+            # for a in user.activities:
+            #     self.log.debug(guild_id, _method, f"activity.name: {a.name}")
+            #     if a.name not in games:
+            #         games.append(a.name)
 
             if len(games) == 1:
                 return games[0]
@@ -1981,11 +1978,8 @@ class voice(commands.Cog):
                 return None
 
 
-            # idx = 0
-            sub_message = ""
             if len(games) >= 24:
                 self.log.warn(user.guild.id, _method, f"There are more than 24 games: {str(len(user))}")
-                sub_message = "\n\nOnly 24 Games Can Be Listed."
             for g in games[:24]:
                 options.append(create_select_option(label=g, value=g, emoji="🎮"))
 
@@ -1997,7 +1991,6 @@ class voice(commands.Cog):
             )
 
             action_row = create_actionrow(select)
-            # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
             ask_context = await self.sendEmbed(targetChannel, title, '**There are multiple games detected. Which would you like to use?', delete_after=60, footer="**You have 60 seconds to answer**", components=[action_row])
             try:
                 button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
