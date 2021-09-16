@@ -1087,7 +1087,7 @@ class voice(commands.Cog):
         if self.isAdmin(ctx):
             self.db.open()
             try:
-                selected_default_role = await self.ask_default_role(ctx, "Channel Category Settings")
+                selected_default_role = await self.ask_default_role(ctx, self.settings.strings["title_voice_channel_settings"])
                 if not selected_default_role:
                         selected_default_role = ctx.guild.default_role
                 category = await self.set_role_ask_category(ctx)
@@ -1096,7 +1096,7 @@ class voice(commands.Cog):
                     if category_settings:
                         self.db.set_default_role_for_category(guildId=guild_id, categoryId=category.id, defaultRole=selected_default_role.id)
                     else:
-                        await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, Existing settings not found. Use `.voice settings` to configure.", fields=None, delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.settings.strings["title_voice_channel_settings"], f"{author.mention}, {self.settings.strings['info_no_category_settings']}", fields=None, delete_after=5)
                 else:
                     self.log.debug(guild_id, _method , f"unable to locate the expected category")
             except Exception as ex:
@@ -1116,33 +1116,33 @@ class voice(commands.Cog):
                 found_category = await self.set_role_ask_category(ctx)
 
                 if found_category:
-                    bitrate_value = await self.ask_bitrate(ctx, title="Voice Channel Settings")
-                    locked = await self.ask_yes_no(ctx, question="**Would you like the channels LOCKED 🔒 by default?**", title="Voice Channel Settings")
-                    limit = await self.ask_limit(ctx, "Voice Channel Settings")
-                    new_default_role = await self.ask_default_role(ctx, "Voice Channel Settings")
+                    bitrate_value = await self.ask_bitrate(ctx, title=self.settings.strings["title_voice_channel_settings"])
+                    locked = await self.ask_yes_no(ctx, question=self.settings.strings['ask_default_locked'], title=self.settings.strings["title_voice_channel_settings"])
+                    limit = await self.ask_limit(ctx, self.settings.strings["title_voice_channel_settings"])
+                    new_default_role = await self.ask_default_role(ctx, self.settings.strings["title_voice_channel_settings"])
                     if not new_default_role:
                         new_default_role = ctx.guild.default_role
 
                     self.db.set_guild_category_settings(guildId=guild_id, categoryId=found_category.id, channelLimit=limit, channelLocked=locked, bitrate=bitrate_value, defaultRole=new_default_role.id)
                     embed_fields = list()
                     embed_fields.append({
-                        "name": "Locked",
+                        "name": self.settings.strings['locked'],
                         "value": str(locked)
                     })
                     embed_fields.append({
-                        "name": "Limit",
+                        "name": self.settings.strings['limit'],
                         "value": str(limit)
                     })
                     embed_fields.append({
-                        "name": "Bitrate",
+                        "name": self.settings.strings['bitrate'],
                         "value": f"{str(bitrate_value)}kbps"
                     })
                     embed_fields.append({
-                        "name": "Default Role",
+                        "name": self.settings.strings['default_role'],
                         "value": f"{new_default_role.name}"
                     })
 
-                    await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, Category '{found_category}' settings have been set.", fields=embed_fields, delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.settings.strings["title_voice_channel_settings"], f"{author.mention}, Category '{found_category}' settings have been set.", fields=embed_fields, delete_after=5)
 
                 else:
                     self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
@@ -1152,7 +1152,7 @@ class voice(commands.Cog):
             finally:
                 self.db.close()
         else:
-            await self.sendEmbed(ctx.channel, "Channel Category Settings", f"{author.mention}, only the owner or admins of the server can setup the bot!", delete_after=5)
+            await self.sendEmbed(ctx.channel, self.settings.strings["title_voice_channel_settings"], f"{author.mention}, only the owner or admins of the server can setup the bot!", delete_after=5)
         await ctx.message.delete()
 
     @voice.command()
@@ -1184,7 +1184,7 @@ class voice(commands.Cog):
             if user and self.isAdmin(ctx):
                 author = user
             self.db.clean_user_settings(guildId=guild_id, userId=author.id)
-            await self.sendEmbed(ctx.channel, "Reset User Settings", f"{author.mention}, I have reset your settings.", delete_after=5)
+            await self.sendEmbed(ctx.channel, self.settings.strings["title_reset_user"], f"{author.mention}, {self.settings.strings['info_reset_user']}", delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1518,6 +1518,13 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
+    # "game": {
+	#     "help": "**Change your channel name to the game you are currently playing**",
+	# 	"usage": ".voice game",
+	# 	"example": ".voice game",
+	# 	"admin": false,
+	# 	"aliases": []
+	# },
     @voice.command()
     async def game(self, ctx):
         _method = inspect.stack()[1][3]

@@ -30,13 +30,7 @@
 			"admin": false,
 			"aliases": []
 		},
-		"game": {
-			"help": "**Change your channel name to the game you are currently playing**",
-			"usage": ".voice game",
-			"example": ".voice game",
-			"admin": false,
-			"aliases": []
-		},
+
 		"enable-auto-game": {
 			"help": "**Automatically change your channel to the name of the game you are playing**",
 			"usage": ".voice enable-auto-game",
