@@ -13,7 +13,7 @@ class Settings:
 
     def __init__(self):
         try:
-            with open('app.manifest') as json_file:
+            with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
         except Exception as e:
             print(e, file=sys.stderr)
@@ -34,10 +34,10 @@ class Settings:
             try:
                 lang_json = os.path.join("languages", f"{lang}.json")
                 if not os.path.exists(lang_json) or not os.path.isfile(lang_json):
+                    # THIS SHOULD NEVER GET HERE
                     continue
-                    # lang_json = os.path.join("languages", f"en-us.json")
 
-                with open(lang_json) as lang_file:
+                with open(lang_json, encoding="UTF-8") as lang_file:
                     self.strings[lang].update(json.load(lang_file))
             except Exception as e:
                 print(e, file=sys.stderr)
@@ -47,12 +47,6 @@ class Settings:
         self.db_provider = dbprovider.DatabaseProvider[dbp]
         if not self.db_provider:
             self.db_provider = dbprovider.DatabaseProvider.DEFAULT
-
-
-        # DEPRECATED
-        # self.admin_roles = utils.dict_get(os.environ, 'ADMIN_ROLES', default_value = 'Admin').split(',')
-        # self.admin_users = utils.dict_get(os.environ, 'ADMIN_USERS', default_value = '').split(' ')
-
 
 
 class GuildCategorySettings:
