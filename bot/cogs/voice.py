@@ -1072,12 +1072,13 @@ class voice(commands.Cog):
                     default_role = self.db.get_default_role(guildId=guild_id, categoryId=voice_channel.category.id, userId=user_id)
                     if default_role:
                         role = self.get_by_name_or_id(ctx.guild.roles, default_role)
-                        await self.sendEmbed(ctx.channel, "Channel Settings", f"{author.mention}, The default role applied to the channel or category you are in is: `{role}`", fields=None, delete_after=30)
+                        await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_voice_channel_settings'), f"{author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_get_default_role'), role=role.name)}", fields=None, delete_after=30)
                     else:
-                        await self.sendEmbed(ctx.channel, "Channel Settings", f"{author.mention}, I was unable to locate default role information based on the channel and category you are in.", fields=None, delete_after=5)
+                        await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_voice_channel_settings'), f"{author.mention}, {self.get_string(guild_id, 'info_default_role_not_found')}", fields=None, delete_after=5)
                 else:
-                    await self.sendEmbed(ctx.channel, "Channel Settings", f"{author.mention}, You must be in a voice channel to use this command", fields=None, delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_not_in_channel"), f'{author.mention}, {self.get_string(guild_id, "info_not_in_channel")}', delete_after=5)
             else:
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_permission_denied"), f"{author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 self.log.debug(guild_id, _method , f"{ctx.author.mention} attempted to call get_default_role")
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -1149,7 +1150,7 @@ class voice(commands.Cog):
                         "value": f"{new_default_role.name}"
                     })
 
-                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_voice_channel_settings"), f"{author.mention}, Category '{found_category}' settings have been set.", fields=embed_fields, delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_voice_channel_settings"), f"{author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_category_settings'), category=found_category.name)}", fields=embed_fields, delete_after=5)
 
                 else:
                     self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
@@ -1159,7 +1160,7 @@ class voice(commands.Cog):
             finally:
                 self.db.close()
         else:
-            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_voice_channel_settings"), f"{author.mention}, only the owner or admins of the server can setup the bot!", delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_voice_channel_settings"), f"{author.mention}, {self.get_string(guild_id, 'setup_no_permission')}", delete_after=5)
         await ctx.message.delete()
 
     @voice.command()
@@ -1301,7 +1302,7 @@ class voice(commands.Cog):
                         if text_channel:
                             await text_channel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
 
-                await self.sendEmbed(ctx.channel, "Channel Lock", f'{author.mention}, Voice chat unlocked! 🔓', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_channel_unlock'), f'{author.mention}, {self.get_string(guild_id, "info_unlocked")}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
