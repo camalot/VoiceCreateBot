@@ -943,9 +943,10 @@ class voice(commands.Cog):
 
                 # ask bot prefix?
                 prefix = "."
-                await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], self.settings.strings['ask_prefix'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+                ask_prefix = await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], self.settings.strings['ask_prefix'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
                 try:
                     prefixResp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+                    await ask_prefix.delete()
                 except asyncio.TimeoutError:
                     await self.sendEmbed(ctx.channel, self.settings.strings['title_guild_init'], self.settings.strings['took_too_long'], delete_after=5)
                 else:
@@ -1739,58 +1740,10 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
-    # TODO: REFACTOR
-    @voice.command()
-    # @commands.has_role("Admin")
-    async def delete(self, ctx):
-        _method = inspect.stack()[1][3]
-        guild_id = ctx.guild.id
-        if self.isAdmin(ctx):
-            try:
-                self.db.open()
-                tracked_voice_channels_ids = [item for clist in self.db.get_tracked_voice_channel_ids(guildId=guild_id) for item in clist]
-                tracked_voice_channels = [chan for chan in ctx.guild.channels if chan.id in tracked_voice_channels_ids]
-                embed = discord.Embed(title=self.settings.strings['title_delete_voice_channel'], description="Choose Which Voice Channel To Delete.", color=0x7289da)
-                embed.set_author(name=f"{self.settings.name} v{self.settings.APP_VERSION}", url=self.settings.url,
-                                icon_url=self.settings.icon)
-                channel_array = []
-                index = 0
-                for c in tracked_voice_channels:
-                    channel_array.append(c.id)
-                    embed.add_field(name=f'{index+1}: {c.category.name}/{c.name}', value=f"Enter: {index+1} to delete.", inline='false')
-                    index += 1
-                embed.set_footer(text=self.settings.strings['footer_60_seconds'])
-                await ctx.channel.send(embed=embed, delete_after=65)
-                selected_index = -1
-                try:
-                    def check_index(m):
-                        idx = int(m.content)
-                        result = m.content.isnumeric() and idx > 0 and idx <= len(channel_array)
-                        return result
-                    result_message = await self.bot.wait_for('message', check=check_index, timeout=60.0)
-                except asyncio.TimeoutError:
-                    await self.sendEmbed(ctx.channel, "Timeout", self.settings.strings["took_too_long"], delete_after=5)
-                else:
-                    selected_index = int(result_message.content)
-                    await result_message.delete()
-                    if selected_index >= 0:
-                        chan = await self.get_or_fetch_channel(channel_array[selected_index - 1])
-
-                        if chan:
-                            self.log.debug(guild_id, _method, f"Attempting to remove users in {chan}")
-                            for mem in chan.members:
-                                mem.disconnect()
-                            await self.sendEmbed(ctx.channel, self.settings.strings['title_delete_voice_channel'], f'{ctx.author.mention}, The channel {chan.name} has been deleted.', delete_after=5)
-            except Exception as ex:
-                self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-                await self.notify_of_error(ctx)
-            finally:
-                self.db.close()
-                await ctx.message.delete()
-        else:
-            self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'delete'")
-
     async def ask_yes_no(self, ctx, question: str, title: str = "Voice Channel Setup"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
         buttons = [
             create_button(style=ButtonStyle.green, label=self.settings.strings['yes'], custom_id="YES"),
             create_button(style=ButtonStyle.red, label=self.settings.strings['no'], custom_id="NO")
@@ -1799,7 +1752,7 @@ class voice(commands.Cog):
         action_row = create_actionrow(*buttons)
         yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
@@ -1870,6 +1823,9 @@ class voice(commands.Cog):
 
 
     async def set_role_ask_category(self, ctx, title: str = "Set Default Role"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         if not self.isAdmin(ctx):
@@ -1898,7 +1854,7 @@ class voice(commands.Cog):
         action_row = create_actionrow(select)
         ask_context = await self.sendEmbed(ctx.channel, title, f"{self.settings.strings['ask_category']} {sub_message}", delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
         else:
@@ -1947,6 +1903,9 @@ class voice(commands.Cog):
                     return None
 
     async def ask_game_for_user(self, targetChannel: discord.TextChannel, user: discord.Member, title: str):
+        def check_user(m):
+            same = m.author.id == user.id
+            return same
         _method = inspect.stack()[1][3]
         guild_id = targetChannel.guild.id
         options = []
@@ -1998,7 +1957,7 @@ class voice(commands.Cog):
             action_row = create_actionrow(select)
             ask_context = await self.sendEmbed(targetChannel, title, self.settings.strings['ask_multiple_games'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
             try:
-                button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+                button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
             except asyncio.TimeoutError:
                 await self.sendEmbed(targetChannel, title, self.settings.strings['took_too_long'], delete_after=5)
             else:
@@ -2012,14 +1971,40 @@ class voice(commands.Cog):
                 await ask_context.delete()
         else:
             return None
-
+    async def ask_role_by_name_or_id(self, ctx, title: str = "Voice Channel Initialization"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        role_id = None
+        try:
+            ask_role_name_id = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_role_name_or_id'], delete_after=60, footer=self.settings.strings['footer_60_seconds'])
+            role_name_id_resp = await self.bot.wait_for('message', check=check_user, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, self.settings.strings["took_too_long"], delete_after=5)
+        else:
+            await ask_role_name_id.delete()
+            role_name_id = role_name_id_resp.content
+            if role_name_id.isnumeric():
+                role_name_id = int(role_name_id)
+            found_role= self.get_by_name_or_id(ctx.guild.roles, role_name_id)
+            await role_name_id_resp.delete()
+            if found_role:
+                role_id = found_role.id
+            else:
+                await self.sendEmbed(ctx.channel, title, f"**Unable to find a role: '{str(role_name_id)}', using default role.**", delete_after=5)
+                role_id = ctx.guild.default_role.id
+        return role_id
     async def ask_admin_role(self, ctx, title: str = "Voice Channel Initialization"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         options = []
         roles = [r for r in ctx.guild.roles if not r.is_bot_managed() and not r.managed and not r.is_integration() and r.permissions.administrator]
         roles.sort(key=lambda r: r.name)
-        # idx = 0
         sub_message = ""
         if len(roles) >= 24:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total Roles: {str(len(roles))}")
@@ -2036,24 +2021,21 @@ class voice(commands.Cog):
         )
 
         action_row = create_actionrow(select)
-        # ask_context = await ctx.send(f"**Choose Default Role**{sub_message}", components=[action_row])
         ask_context = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_admin_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
-                # ask for role name or ID
-                role_id = ctx.guild.default_role.id
+                role_id = await self.ask_role_by_name_or_id(ctx, title)
 
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
                 self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You selected the role: '{selected_role.name}'", delete_after=5)
                 return selected_role
-
             else:
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.settings.strings['info_unverified_admin_role']}", delete_after=5)
                 return None
@@ -2061,6 +2043,9 @@ class voice(commands.Cog):
             await ask_context.delete()
 
     async def ask_default_role(self, ctx, title: str = "Voice Channel Setup"):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         options = []
@@ -2083,14 +2068,14 @@ class voice(commands.Cog):
         action_row = create_actionrow(select)
         ask_context = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_default_role'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
                 # ask for role name or ID
-                role_id = ctx.guild.default_role.id
+                role_id = await self.ask_role_by_name_or_id(ctx, title)
 
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
@@ -2112,7 +2097,6 @@ class voice(commands.Cog):
         options = []
         categories = [r for r in ctx.guild.categories]
         categories.sort(key=lambda r: r.name)
-        # idx = 0
         options.append(create_select_option(label=self.settings.strings['new'], value="-1", emoji="✨"))
         options.append(create_select_option(label=self.settings.strings['other'], value="0", emoji="⛔"))
         sub_message = self.settings.strings['ask_category_submessage']
@@ -2177,7 +2161,6 @@ class voice(commands.Cog):
                     await self.sendEmbed(ctx.channel, title, f'{ctx.author.mention}, {self.settings.strings["info_unverified_category"]}', delete_after=5)
                     return None
 
-
     async def ask_language(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
             same = m.author.id == ctx.author.id
@@ -2187,7 +2170,6 @@ class voice(commands.Cog):
         options = []
         lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../languages", "*.json"))
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
-        options.append(create_select_option(label="DEFAULT (en-US)", value="en-us", emoji="🗣"))
         for r in languages[:23]:
             options.append(create_select_option(label=r, value=r, emoji="🗣"))
 
@@ -2202,7 +2184,7 @@ class voice(commands.Cog):
         language_id = "en-us"
         ask_language = await self.sendEmbed(ctx.channel, title, self.settings.strings['ask_language'], delete_after=60, footer=self.settings.strings['footer_60_seconds'], components=[action_row])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
             await self.sendEmbed(ctx.channel, title, self.settings.strings['took_too_long'], delete_after=5)
         else:
@@ -2215,6 +2197,7 @@ class voice(commands.Cog):
             return ctx.voice.channel is not None
         else:
             return ctx.author.voice.channel is not None
+
     def isAdmin(self, ctx):
         _method = inspect.stack()[1][3]
         self.db.open()
@@ -2237,6 +2220,7 @@ class voice(commands.Cog):
         else:
             embed.set_footer(text=footer)
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
+
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, self.settings.strings['title_error'], f'{ctx.author.mention}, {self.settings.strings["info_error"]}', delete_after=30)
 
@@ -2247,6 +2231,7 @@ class voice(commands.Cog):
             return discord.utils.get(iterable, id=int(nameOrId))
         else:
             return None
+
     async def get_or_fetch_channel(self, channelId: int):
         _method = inspect.stack()[1][3]
         try:
@@ -2263,6 +2248,7 @@ class voice(commands.Cog):
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
+
     async def get_or_fetch_user(self, userId: int):
         _method = inspect.stack()[1][3]
         try:
@@ -2278,6 +2264,7 @@ class voice(commands.Cog):
         except Exception as ex:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
+
     async def get_or_fetch_member(self, guild, userId: int):
         _method = inspect.stack()[1][3]
         try:

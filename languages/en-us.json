@@ -34,6 +34,7 @@
 	"setup_not_configured": "Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**",
 	"ask_create_channel_name": "**Enter the name of the voice channel: (example: + CREATE CHANNEL)**",
 	"ask_admin_role": "**What is your server admin role?**\n\nThese are voice create bot administrators.",
+	"ask_role_name_or_id": "**What is the name, or discord ID, of the role?**",
 	"ask_prefix": "**What would you like to set for the bot prefix?\n\nExample: `.`**",
 	"ask_language": "**What is the language you would like me to use?**",
 	"ask_limit": "**Set the channel limit.\n\nReply: 0 - 100.**",
