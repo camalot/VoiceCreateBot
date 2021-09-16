@@ -962,6 +962,10 @@ class voice(commands.Cog):
 
 
                 self.db.insert_or_update_guild_settings(guildId=guild_id, prefix=prefix, defaultRole=selected_guild_role.id, adminRole=selected_admin_role.id, language=language)
+
+                # after update, update the guild strings
+                self.set_guild_strings(guild_id)
+
                 await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_guild_init'), f"{author.mention}, {self.get_string(guild_id, 'info_init_success')}", delete_after=5)
             except Exception as ex:
                 self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -2324,13 +2328,13 @@ class voice(commands.Cog):
                 self.log.debug(guildId, _method, f"Unable to find key in defined language. Falling back to {self.settings.language}")
                 return self.settings.strings[self.settings.language][key]
             else:
-                self.log.error(guildId, _method, f"UNKNOWN KEY: {key}", traceback.format_exc())
+                self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
                 return f"{key}"
         else:
             if key in self.settings.strings[self.settings.language]:
                 return self.settings.strings[self.settings.language][key]
             else:
-                self.log.error(guildId, _method, f"UNKNOWN KEY: {key}", traceback.format_exc())
+                self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
                 return f"{key}"
 
     def get_language(self, guildId: int):
