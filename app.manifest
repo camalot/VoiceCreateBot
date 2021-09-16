@@ -13,10 +13,6 @@
 				"value": "`.voice name`"
 			},
 			{
-				"name": "**NEW**: Name your channel after the game you are playing",
-				"value": "`.voice game`"
-			},
-			{
 				"name": "View more commands to control your channel",
 				"value": "`.voice help`"
 			}
