@@ -159,7 +159,7 @@ class voice(commands.Cog):
                                 if text_channel:
                                     self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
                                     await text_channel.edit(name=selected_title)
-                                    await self.sendEmbed(text_channel, self.get_string(guild_id, 'title_update_channel_name'), f'{after.mention}, You have changed the channel name to {selected_title}', delete_after=5)
+                                    await self.sendEmbed(text_channel, self.get_string(guild_id, 'title_update_channel_name'), f'{after.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), name=selected_title)}', delete_after=5)
                                 await voice_channel.edit(name=selected_title)
                         else:
                             self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
@@ -1342,7 +1342,7 @@ class voice(commands.Cog):
                     await text_channel.set_permissions(userOrRole, read_messages=True, send_messages=True, view_channel=True, read_message_history=True, )
             if userOrRole:
                 await voice_channel.set_permissions(userOrRole, connect=True, view_channel=True, speak=True, stream=True)
-                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention}, You have permitted {userOrRole.name} to have access to the channel. ✅', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_grant"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_grant"), user=userOrRole.name)}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1386,7 +1386,7 @@ class voice(commands.Cog):
                             m.disconnect()
 
             await voice_channel.set_permissions(userOrRole, connect=False, read_messages=False, view_channel=True, speak=False, stream=False, read_message_history=False)
-            await self.sendEmbed(ctx.channel, "Reject User Access", f'{ctx.author.mention}, You have rejected {userOrRole} from accessing the channel. ❌', delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_revoke"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_revoke"), user=userOrRole.name)}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1420,7 +1420,7 @@ class voice(commands.Cog):
                 return
 
             await voice_channel.edit(user_limit=limit)
-            await self.sendEmbed(ctx.channel, "Set Channel Limit", f'{ctx.author.mention}, You have set the channel limit to be ' + '{}!'.format(limit), delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_limit"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_limit"), limit=str(limit))}', delete_after=5)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id) or ctx.guild.default_role
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role)
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
@@ -1465,15 +1465,15 @@ class voice(commands.Cog):
             br_set = int(bitrate)
 
             if br_set > bitrate_limit:
-                await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, your bitrate is above the bitrate limit of {bitrate_limit}kbps. I will apply the the limit instead.", delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_bitrate"), f"{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_bitrate_too_high'), bitrate_max=bitrate_limit)}", delete_after=5)
                 br_set = bitrate_limit
             elif br_set < bitrate_min:
-                await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f"{ctx.author.mention}, your bitrate is below the bitrate minimum of {bitrate_min}kbps. I will apply the the minimum instead.", delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_bitrate"), f"{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_bitrate_too_high'), bitrate_min=bitrate_min)}", delete_after=5)
                 br_set = bitrate_min
 
             br = br_set * 1000
             await voice_channel.edit(bitrate=br)
-            await self.sendEmbed(ctx.channel, "Updated Channel Bitrate", f'{ctx.author.mention}, you have set the channel bitrate to be ' + '{}kbps!'.format(br_set), delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_bitrate"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_bitrate_set"), bitrate=br_set)}', delete_after=5)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
@@ -1508,7 +1508,7 @@ class voice(commands.Cog):
                 await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
 
-            enable_auto = await self.ask_yes_no(ctx, "**Would you like me to change your channel title when your game status changes?**", "Enable Game Auto Change")
+            enable_auto = await self.ask_yes_no(ctx, self.get_string(guild_id, "ask_enabled_auto_game"), self.get_string(guild_id, "title_enable_auto_game"))
 
             user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
             default_role = self.db.get_default_role(guildId=guild_id, categoryId=channel_category_id, userId=owner_id)
@@ -1519,10 +1519,10 @@ class voice(commands.Cog):
                 self.db.set_user_settings_auto_game(guildId=guild_id, userId=owner_id, autoGame=enable_auto)
             else:
                 self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=voice_channel.name, channelLimit=0, bitrate=self.settings.BITRATE_DEFAULT, defaultRole=temp_default_role.id, autoGame=enable_auto)
-            state = "disabled"
+            state = self.get_string(guild_id, "disabled")
             if enable_auto:
-                state = "enabled"
-            await self.sendEmbed(ctx.channel, "Enable Game Auto Change", f'{author.mention}, You have {state} the changing of your channel name based on your game.', delete_after=5)
+                state = self.get_string(guild_id, "enabled")
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_enable_auto_game"), f'{author.mention}, {utils.str_replace(self.get_string(guild_id, "info_enable_auto_game"), state=state)}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1559,11 +1559,11 @@ class voice(commands.Cog):
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
             if owner:
-                selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title="Update Title To Game")
+                selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title=self.get_string(guild_id, "title_update_to_game"))
                 if selected_title:
                     await self._name(ctx, selected_title, False)
                 else:
-                    await self.sendEmbed(ctx.channel, "Unable to get Game", f'{ctx.author.mention}, I was unable to determine the game title.', delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_unknown_game"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_unknown_game")}', delete_after=5)
                     await ctx.message.delete()
             else:
                 self.log.debug(guild_id, _method, f"Unable to locate the owner for 'game' call.")
@@ -1907,7 +1907,7 @@ class voice(commands.Cog):
                     await ask_new_category.delete()
                     selected_category = await ctx.guild.create_category_channel(new_category.content)
                     await new_category.delete()
-                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You created the category: '{selected_category.name}'", delete_after=5)
+                    await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_category_created'), category=selected_category.name)}", delete_after=5)
 
                     return selected_category
             else: # selected a category
