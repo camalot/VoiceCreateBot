@@ -1281,7 +1281,7 @@ class voice(commands.Cog):
             owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
             is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
             if not is_owner and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Channel Lock", f'{author.mention}, You do not own this channel, and do not have permissions to lock it.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
             else:
                 # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
                 everyone = self.get_by_name_or_id(ctx.guild.roles, default_role)
@@ -1326,7 +1326,7 @@ class voice(commands.Cog):
             # get the channel owner, in case this is an admin running the command.
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
             if not self.isAdmin(ctx) and ctx.author.id != owner_id:
-                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention}, You do not own this channel, and do not have permissions to allow access.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
@@ -1363,7 +1363,7 @@ class voice(commands.Cog):
             # get the channel owner, in case this is an admin running the command.
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
             if not self.isAdmin(ctx) and ctx.author.id != owner_id:
-                await self.sendEmbed(ctx.channel, "Grant User Access", f'{ctx.author.mention}, You do not own this channel, and do not have permissions to allow access.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             if text_channel_id:
@@ -1411,7 +1411,7 @@ class voice(commands.Cog):
             if self.isAdmin(ctx) or owner_id == author.id:
                 owner = await self.get_or_fetch_user(owner_id)
             else:
-                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention}, You are not an admin, nor are you the owner of this channel.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
 
             await voice_channel.edit(user_limit=limit)
@@ -1455,7 +1455,7 @@ class voice(commands.Cog):
             if self.isAdmin(ctx) or owner_id == author.id:
                 owner = await self.get_or_fetch_user(owner_id)
             else:
-                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention}, You are not an admin, nor are you the owner of this channel.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
             br_set = int(bitrate)
 
@@ -1500,7 +1500,7 @@ class voice(commands.Cog):
                 return
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
             if owner_id != author.id:
-                await self.sendEmbed(ctx.channel, "Permission Denied", f'{author.mention}, You are not an admin, nor are you the owner of this channel.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
 
             enable_auto = await self.ask_yes_no(ctx, "**Would you like me to change your channel title when your game status changes?**", "Enable Game Auto Change")
@@ -1550,7 +1550,7 @@ class voice(commands.Cog):
                 return
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
             if owner_id != author_id and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
             owner = await self.get_or_fetch_member(ctx.guild, owner_id)
             if owner:
@@ -1592,7 +1592,7 @@ class voice(commands.Cog):
         try:
             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
             if owner_id != author_id and not self.isAdmin(ctx):
-                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, You do not own this channel, and do not have permissions to set the channel limit.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
                 return
             category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
 
@@ -1600,7 +1600,7 @@ class voice(commands.Cog):
             temp_default_role = self.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             is_tracked_channel = len([c for c in self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id) if c == voice_channel_id]) >= 1
             if not is_tracked_channel:
-                await self.sendEmbed(ctx.channel, "Set Channel Name", f'{ctx.author.mention}, this channel is not tracked by me.', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_update_channel_name'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_voice_not_tracked')}", delete_after=5)
                 return
 
             text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
@@ -1616,7 +1616,7 @@ class voice(commands.Cog):
                     self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
                 else:
                     self.db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
-            await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_update_channel_name'), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), channel=name)}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -1634,7 +1634,7 @@ class voice(commands.Cog):
         channel = ctx.author.voice.channel
         try:
             if not self.isInVoiceChannel(ctx):
-                await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, You are not currently in a voice channel!', delete_after=5)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_not_in_channel"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_not_in_channel")}', delete_after=5)
                 return
             if self.isAdmin(ctx):
                 if not name or name == "":
@@ -1643,7 +1643,7 @@ class voice(commands.Cog):
                 guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
                 owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
                 if not owner_id:
-                    await self.sendEmbed(ctx.channel, "Updated Channel Name", f"{ctx.author.mention}, I cannot determine who is the owner of this voice channel. Is it tracked?", delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_update_channel_name'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_voice_not_tracked')}", delete_after=5)
                     return
                 user_settings = self.db.get_user_settings(guildId=guild_id, userId=owner_id)
                 default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
@@ -1653,7 +1653,7 @@ class voice(commands.Cog):
                 if channel:
                     self.log.debug(guild_id, _method, f"Edit the channel to: {channel.name} -> {name}")
                     await channel.edit(name=name)
-                    await self.sendEmbed(ctx.channel, "Updated Channel Name", f'{ctx.author.mention}, you have changed the channel name to {name}.', delete_after=5)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_update_channel_name'), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), channel=name)}', delete_after=5)
 
                 if user_settings:
                     self.db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
@@ -1682,9 +1682,9 @@ class voice(commands.Cog):
                 if owner_id:
                     owner = await self.get_or_fetch_member(ctx.guild, owner_id)
                     if owner:
-                        await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention}, The channel '{channel.name}' is owned by {owner.mention}!", delete_after=30)
+                        await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_who_owns'), f"{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_who_owns'), channel=channel.name, user=owner.mention)}", delete_after=30)
                     else:
-                        await self.sendEmbed(ctx.channel, "Who Owns Channel", f"{ctx.author.mention}, The channel '{channel.name}' is owned by an unknown user (UserId: {owner_id})!", delete_after=30)
+                        await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_who_owns'), f"{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, 'info_who_owns'), channel=channel.name, user=f'UserId:{str(owner_id)}')}", delete_after=30)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
