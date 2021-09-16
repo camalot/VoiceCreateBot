@@ -26,16 +26,22 @@ class Settings:
         self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
 
         self.strings = {}
-        try:
-            lang_json = os.path.join("languages", f"{self.language}.json")
-            if not os.path.exists(lang_json) or not os.path.isfile(lang_json):
-                lang_json = os.path.join("languages", f"en-us.json")
 
-            with open(lang_json) as lang_file:
-                self.strings.update(json.load(lang_file))
-        except Exception as e:
-            print(e, file=sys.stderr)
-            raise e
+        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "*.json"))
+        languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
+        for lang in languages:
+            self.strings[lang] = {}
+            try:
+                lang_json = os.path.join("languages", f"{lang}.json")
+                if not os.path.exists(lang_json) or not os.path.isfile(lang_json):
+                    continue
+                    # lang_json = os.path.join("languages", f"en-us.json")
+
+                with open(lang_json) as lang_file:
+                    self.strings[lang].update(json.load(lang_file))
+            except Exception as e:
+                print(e, file=sys.stderr)
+                raise e
 
         dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
         self.db_provider = dbprovider.DatabaseProvider[dbp]
