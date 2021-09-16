@@ -79,3 +79,14 @@ def load_from_gist(type, count):
     data = re.sub(r"(var\s(adjectives|nouns|verbs)\s=\s)|;$","", data)
     jdata = json.loads(data)
     return random.sample(jdata, count)
+
+def get_args_dict(func, args, kwargs):
+    args_names = func.__code__.co_varnames[:func.__code__.co_argcount]
+    return {**dict(zip(args_names, args)), **kwargs}
+
+def str_replace(input_string: str, *args, **kwargs):
+    xargs = get_args_dict(str_replace, args, kwargs)
+    result = input_string
+    for a in xargs:
+        result = result.replace(f"{{{a}}}", kwargs[a])
+    return result
