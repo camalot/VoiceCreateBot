@@ -16,6 +16,7 @@
 	"title_cleandb": "Base de datos limpia",
 	"title_channel_private": "Canal privado",
 	"title_channel_mute": "Silenciar canal",
+	"title_channel_unmute": "Activar sonido del canal",
 	"title_channel_hide": "Ocultar canal",
 	"title_channel_show": "Canal mostrado",
 	"title_channel_grant": "Conceder acceso de usuario",

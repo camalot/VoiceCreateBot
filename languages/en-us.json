@@ -18,6 +18,7 @@
 	"title_cleandb": "Clean Database",
 	"title_channel_private": "Channel Private",
 	"title_channel_mute": "Channel Mute",
+	"title_channel_unmute": "Channel Unmute",
 	"title_channel_hide": "Channel Hide",
 	"title_channel_show": "Channel Show",
 	"title_channel_grant": "Grant User Access",

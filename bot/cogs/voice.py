@@ -839,7 +839,7 @@ class voice(commands.Cog):
             for r in permRoles:
                 await voice_channel.set_permissions(r, speak=True)
 
-            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_unmute"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_channel_unmute")}', delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "Vorhandene Kategorie namens {category} gefunden"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_channel_unmute")}', delete_after=5)
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
