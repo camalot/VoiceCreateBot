@@ -29,6 +29,7 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 | BOT_OWNER | The discord ID of the bot owner | `true` | `null` |  
 | LOG_LEVEL | The minimum log level. `[DEBUG\|INFO\|WARNING\|ERROR\|FATAL]` | `false` | `DEBUG` |  
 | DB_PROVIDER | The database provider to use `[MONGODB\|SQLITE]` | `false` | `MONGODB` |  
+| LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |
 
 ## DATABASE SUPPORT
 
