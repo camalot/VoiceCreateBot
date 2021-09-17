@@ -12,6 +12,7 @@ A dedicated bot for creating dynamic voice channels. Keep your voice channel cou
 - Supports changing voice bitrate
 - Dynamic channel names. Uses a custom api to dynamically generate a channel name
 - Support for **Stage Channels** in *Community Discords*
+- Supports per-server language (looking for more translations)
 
 For help with the code, or the bot [join the discord](http://discord.darthminos.tv)
 # INSTALL

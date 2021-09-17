@@ -5,22 +5,22 @@
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
 	"initMessage": {
-		"title": "Customize the name of your channel by using the voice bot 'name' command",
-		"message": "Type in this channel `.voice name new channel name`",
+		"title": "help_init_title",
+		"message": "help_init_message",
 		"fields": [
 			{
-				"name": "**NEW**: Give your channel a random name",
+				"name": "help_init_field_0",
 				"value": "`.voice name`"
 			},
 			{
-				"name": "View more commands to control your channel",
+				"name": "help_init_field_1",
 				"value": "`.voice help`"
 			}
 		]
 	},
 	"commands": {
 		"name": {
-			"help": "**Change your channel name**\nLeaving the [name] blank will generate a random name.",
+			"help": "help_command_name",
 			"usage": ".voice name [name]",
 			"example": ".voice name my awesome channel",
 			"admin": false,
@@ -28,7 +28,7 @@
 		},
 
 		"enable-auto-game": {
-			"help": "**Automatically change your channel to the name of the game you are playing**",
+			"help": "help_command_enable_auto_game",
 			"usage": ".voice enable-auto-game",
 			"example": ".voice eag",
 			"admin": false,
@@ -37,77 +37,77 @@
 			]
 		},
 		"unlock": {
-			"help": "**Unlock your channel**",
+			"help": "help_command_unlock",
 			"usage": ".voice unlock",
 			"example": ".voice unlock",
 			"admin": false,
 			"aliases": []
 		},
 		"lock": {
-			"help": "**Lock your channel**",
+			"help": "help_command_lock",
 			"usage": ".voice lock [locked_role]",
 			"example": ".voice lock",
 			"admin": false,
 			"aliases": []
 		},
 		"private": {
-			"help": "**Lock your channel for only those in it. Requires Push to Talk**",
+			"help": "help_command_private",
 			"usage": ".voice private",
 			"example": ".voice private",
 			"admin": false,
 			"aliases": []
 		},
 		"resync": {
-			"help": "**Resync permissions of the channel with the defaults set for the category**",
+			"help": "help_command_resync",
 			"usage": ".voice resync",
 			"example": ".voice resync",
 			"admin": false,
 			"aliases": []
 		},
 		"mute": {
-			"help": "**Sets role or user to be muted in the channel**",
+			"help": "help_command_mute",
 			"usage": ".voice mute [@role|@user]",
 			"example": ".voice mute @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"unmute": {
-			"help": "**Removes the specified role or user as being a 'muted' role in the channel**",
+			"help": "help_command_unmute",
 			"usage": ".voice unmute [@role|@user]",
 			"example": ".voice unmute @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"hide": {
-			"help": "**Hides the channel from the specified user or role**",
+			"help": "help_command_hide",
 			"usage": ".voice hide [@role|@user]",
 			"example": ".voice hide @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"show": {
-			"help": "**Shows the channel to the specified user or role**",
+			"help": "help_command_show",
 			"usage": ".voice show [@role|@user]",
 			"example": ".voice show @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"limit": {
-			"help": "**Change your channel's user limit**",
+			"help": "help_command_limit",
 			"usage": ".voice limit <number>",
 			"example": ".voice limit 3",
 			"admin": false,
 			"aliases": []
 		},
 		"bitrate": {
-			"help": "**Change your channel's voice bitrate. This vaule is between 8kbps and the server's max kbps. 64kbps is the default.**",
+			"help": "help_command_bitrate",
 			"usage": ".voice bitrate [number]",
 			"example": ".voice bitrate 64",
 			"admin": false,
 			"aliases": []
 		},
 		"permit": {
-			"help": "**Give users/roles permission to join**",
+			"help": "help_command_permit",
 			"usage": ".voice permit <@person>",
 			"example": ".voice permit @DarthMinos#1161",
 			"admin": false,
@@ -115,15 +115,8 @@
 				"allow"
 			]
 		},
-		"claim": {
-			"help": "**Claim ownership of channel once the owner has left**",
-			"usage": ".voice claim",
-			"example": ".voice claim",
-			"admin": false,
-			"aliases": []
-		},
 		"reject": {
-			"help": "**Remove permission and the user from your channel**",
+			"help": "help_command_reject",
 			"usage": ".voice reject <@person>",
 			"example": ".voice reject @DarthMinos#1161",
 			"admin": false,
@@ -131,64 +124,71 @@
 				"deny"
 			]
 		},
-		"setprefix": {
-			"help": "**Set the bot prefix**",
-			"usage": ".voice setprefix <previx>",
-			"example": ".voice setprefix !",
+		"claim": {
+			"help": "help_command_claim",
+			"usage": ".voice claim",
+			"example": ".voice claim",
+			"admin": false,
+			"aliases": []
+		},
+		"set-prefix": {
+			"help": "help_command_set_prefix",
+			"usage": ".voice set-prefix <prefix>",
+			"example": ".voice set-prefix !",
 			"admin": true,
 			"aliases": []
 		},
 		"owner": {
-			"help": "**Set the ownership of a channel**",
+			"help": "help_command_owner",
 			"usage": ".voice owner <@person>",
 			"example": ".voice owner @DarthMinos#1161",
 			"admin": true,
 			"aliases": []
 		},
 		"whoowns": {
-			"help": "**Shows who is the owner of the channel**",
+			"help": "help_command_whoowns",
 			"usage": ".voice whoowns",
 			"example": ".voice whoowns",
 			"admin": false,
 			"aliases": []
 		},
 		"channels": {
-			"help": "**Get a list of all the currently tracked channels**",
+			"help": "help_command_channels",
 			"usage": ".voice channels",
 			"example": ".voice channels",
 			"admin": true,
 			"aliases": []
 		},
 		"rename": {
-			"help": "**Allows an admin to rename a channel that they join**",
+			"help": "help_command_rename",
 			"usage": ".voice rename <channel name>",
 			"example": ".voice rename New Channel Name",
 			"admin": true,
 			"aliases": []
 		},
 		"reset": {
-			"help": "**Reset your user settings back to defaults**\n\nAdmins can mention a user as an argument to reset a specific user.",
+			"help": "help_command_reset",
 			"usage": ".voice reset",
 			"example": ".voice reset",
 			"admin": false,
 			"aliases": []
 		},
 		"cleandb": {
-			"help": "**Allows an admin to clean user and channel data from database**",
+			"help": "help_command_cleandb",
 			"usage": ".voice cleandb",
 			"example": ".voice cleandb",
 			"admin": true,
 			"aliases": []
 		},
 		"track": {
-			"help": "**Add the current voice channel to be tracked by the bot**",
+			"help": "help_command_track",
 			"usage": ".voice track",
 			"example": ".voice track",
 			"admin": true,
 			"aliases": []
 		},
 		"track-text-channel": {
-			"help": "**Add the specified text channel as the tracked channel with your current voice channel**",
+			"help": "help_command_track_text",
 			"usage": ".voice track-text-channel <#text-channel>",
 			"example": ".voice track-text-channel #my-text-channel",
 			"admin": true,
@@ -197,14 +197,14 @@
 			]
 		},
 		"settings": {
-			"help": "**Change the Group Settings for Channels**",
+			"help": "help_command_settings",
 			"usage": ".voice settings",
 			"example": ".voice settings",
 			"admin": true,
 			"aliases": []
 		},
 		"set-default-role": {
-			"help": "**Change the Default Role for a specific category**",
+			"help": "help_command_set_default_role",
 			"usage": ".voice set-default-role \"<role name>\"",
 			"example": ".voice set-default-role \"Role Name\"",
 			"admin": true,
@@ -213,7 +213,7 @@
 			]
 		},
 		"get-default-role": {
-			"help": "**Change the Default Role for a specific category**",
+			"help": "help_command_get_default_role",
 			"usage": ".voice get-default-role",
 			"example": ".voice get-default-role",
 			"admin": true,
@@ -222,16 +222,30 @@
 			]
 		},
 		"init": {
-			"help": "**Set bot for this discord**",
+			"help": "help_command_init",
 			"usage": ".voice init",
 			"example": ".voice init",
 			"admin": true,
 			"aliases": []
 		},
 		"setup": {
-			"help": "**Setup a Create Voice Channel**",
+			"help": "help_command_setup",
 			"usage": ".voice setup",
 			"example": ".voice setup",
+			"admin": true,
+			"aliases": []
+		},
+		"language": {
+			"help": "help_command_language",
+			"usage": ".voice language",
+			"example": ".voice language",
+			"admin": true,
+			"aliases": []
+		},
+		"set-language": {
+			"help": "help_command_set_language",
+			"usage": ".voice set-language",
+			"example": ".voice set-language",
 			"admin": true,
 			"aliases": []
 		}

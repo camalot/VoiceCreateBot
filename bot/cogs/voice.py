@@ -353,11 +353,15 @@ class voice(commands.Cog):
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
-                    await self.sendEmbed(textChannel, self.get_string(guild_id, 'title_new_voice_text_channel'), f"{member.mention}, {self.get_string(guild_id, 'info_new_voice_text_channel')}", delete_after=None, footer='')
+                    await self.sendEmbed(textChannel, self.get_string(guild_id, 'title_new_voice_text_channel'), f"{member.mention}, {self.get_string(guild_id, 'info_new_voice_text_channel')}", delete_after=None, footer=None)
+                    # initMessage contains keys that point to strings in the language file.
                     initMessage = self.settings.initMessage
                     if initMessage:
                         # title, message, fields=None, delete_after=None, footer=None
-                        await self.sendEmbed(textChannel, initMessage['title'], f"{member.mention}, {initMessage['message']}", initMessage['fields'], delete_after=None, footer='')
+                        fields = []
+                        for f in range(len(initMessage['fields'])):
+                            fields.append(EmbedField(self.get_string(guild_id, initMessage['fields'][f]['name']), initMessage['fields'][f]['value']).__dict__)
+                        await self.sendEmbed(textChannel, self.get_string(guild_id, initMessage['title']), f"{member.mention}, {self.get_string(guild_id, initMessage['message'])}", fields=fields, delete_after=None, footer=None)
             except discord.errors.NotFound as nf:
                 self.log.warn(guild_id, _method , str(nf))
             except Exception as ex:
@@ -839,7 +843,7 @@ class voice(commands.Cog):
             for r in permRoles:
                 await voice_channel.set_permissions(r, speak=True)
 
-            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "Vorhandene Kategorie namens {category} gefunden"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_channel_unmute")}', delete_after=5)
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_channel_unmute"), f'{ctx.author.mention}, {self.get_string(guild_id, "info_channel_unmute")}', delete_after=5)
 
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -886,7 +890,7 @@ class voice(commands.Cog):
                 language = self.settings.language
                 if guild_settings:
                     language = guild_settings.language
-                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_get_language"), language=language)}', delete_after=10)
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_get_language"), language=self.settings.languages[language])}', delete_after=10)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.notify_of_error(ctx)
@@ -903,7 +907,7 @@ class voice(commands.Cog):
                 if language:
                     self.db.set_guild_settings_language(guild_id, language)
                     self.set_guild_strings(guild_id)
-                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_set_language"), language=language)}', delete_after=10)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_set_language"), language=self.settings.languages[language])}', delete_after=10)
                 else:
                     self.log.debug(guild_id, _method, "Language was None after ask user to set it.")
             except Exception as ex:
@@ -922,11 +926,11 @@ class voice(commands.Cog):
                 cmd = command_list[command.lower()]
                 if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
                     fields = list()
-                    fields.append({"name": "**Usage**", "value": f"`{cmd['usage']}`"})
-                    fields.append({"name": "**Example**", "value": f"`{cmd['example']}`"})
-                    fields.append({"name": "**Aliases**", "value": f"`{cmd['aliases']}`"})
+                    fields.append({"name": self.get_string(guild_id, 'help_info_usage'), "value": f"`{cmd['usage']}`"})
+                    fields.append({"name": self.get_string(guild_id, 'help_info_example'), "value": f"`{cmd['example']}`"})
+                    fields.append({"name": self.get_string(guild_id, 'help_info_aliases'), "value": f"`{cmd['aliases']}`"})
 
-                    await self.sendEmbed(ctx.channel, f"Command Help for **{command.lower()}**", cmd['help'], fields=fields)
+                    await self.sendEmbed(ctx.channel, utils.str_replace(self.get_string(guild_id, ''), command=command.lower()), self.get_string(guild_id, cmd['help']), fields=fields)
             else:
                 filtered_list = list()
                 if self.isAdmin(ctx):
@@ -942,14 +946,14 @@ class voice(commands.Cog):
                     for k in chunk:
                         cmd = command_list[k.lower()]
                         if cmd['admin'] and self.isAdmin(ctx):
-                            fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
-                            fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
-                            fields.append({"name": "Admin Command", "value": f"Can only be ran by a server admin"})
+                            fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
+                            fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
+                            fields.append({"name": self.get_string(guild_id, 'help_info_admin_title'), "value": self.get_string(guild_id, "help_info_admin")})
                         else:
-                            fields.append({"name": cmd['help'], "value": f"`{cmd['usage']}`"})
-                            fields.append({"name": "More Help", "value": f"`.voice help {k.lower()}`"})
+                            fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
+                            fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
 
-                    await self.sendEmbed(ctx.channel, f"Voice Bot Command Help ({page}/{pages})", "List of Available Commands", fields=fields)
+                    await self.sendEmbed(ctx.channel, f"{self.get_string(guild_id, 'help_info_list_title')} ({page}/{pages})", self.get_string(guild_id, 'help_info_list_description'), fields=fields)
                     page += 1
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
@@ -2221,10 +2225,20 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         options = []
-        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../languages", "*.json"))
-        languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
-        for r in languages[:23]:
-            options.append(create_select_option(label=r, value=r, emoji="🗣"))
+
+        # lang_manifest = os.path.join(os.path.dirname(__file__), "../../languages/manifest.json")
+        # manifest = {}
+        # if os.path.exists(lang_manifest):
+        #     with open(lang_manifest, encoding="UTF-8") as manifest_file:
+        #         manifest.update(json.load(manifest_file))
+        for l in self.settings.languages:
+            options.append(create_select_option(label=self.settings.languages[l], value=l, emoji="🗣"))
+
+
+        # lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../languages", "[a-z][a-z]-[a-z][a-z].json"))
+        # languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
+        # for r in languages[:23]:
+            # options.append(create_select_option(label=r, value=r, emoji="🗣"))
 
         select = create_select(
             options=options,
@@ -2356,6 +2370,9 @@ class voice(commands.Cog):
         #     self.log.debug(guildId, _method, self.get_string(guildId, x))
     def get_string(self, guildId: int, key: str):
         _method = inspect.stack()[1][3]
+        if not key:
+            self.log.debug(guildId, _method, f"KEY WAS EMPTY")
+            return ''
         if str(guildId) in self.strings:
             if key in self.strings[str(guildId)]:
                 return self.strings[str(guildId)][key]

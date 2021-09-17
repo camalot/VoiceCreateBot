@@ -25,9 +25,19 @@ class Settings:
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
         self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
 
+        self.load_language_manifest()
+        self.load_strings()
+
+        dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
+        self.db_provider = dbprovider.DatabaseProvider[dbp]
+        if not self.db_provider:
+            self.db_provider = dbprovider.DatabaseProvider.DEFAULT
+
+
+    def load_strings(self):
         self.strings = {}
 
-        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "*.json"))
+        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json"))
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
         for lang in languages:
             self.strings[lang] = {}
@@ -43,10 +53,13 @@ class Settings:
                 print(e, file=sys.stderr)
                 raise e
 
-        dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
-        self.db_provider = dbprovider.DatabaseProvider[dbp]
-        if not self.db_provider:
-            self.db_provider = dbprovider.DatabaseProvider.DEFAULT
+    def load_language_manifest(self):
+        lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")
+        self.languages = {}
+        if os.path.exists(lang_manifest):
+            with open(lang_manifest, encoding="UTF-8") as manifest_file:
+                self.languages.update(json.load(manifest_file))
+
 
 
 class GuildCategorySettings:
