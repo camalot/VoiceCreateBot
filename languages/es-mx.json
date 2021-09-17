@@ -1,0 +1,18 @@
+{
+	"took_too_long": "Me tomó demasiado tiempo responder.",
+	"footer_60_seconds": "**Tienes 60 segundos para contestar**",
+
+	"yes": "SÍ",
+	"no": "NO",
+	"new": "->NUEVO<-",
+	"other": "->OTRO<-",
+	"enabled": "activado",
+	"disabled": "discapacitado",
+
+	"locked": "Bloqueado",
+	"bitrate": "Bitrate",
+	"limit": "Límite",
+	"default_role": "Rol predeterminado"
+
+
+}

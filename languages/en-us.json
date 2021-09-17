@@ -1,5 +1,5 @@
 {
-	"took_too_long": "Took too long to answer!",
+	"took_too_long": "Took too long to answer. ⏱",
 	"footer_60_seconds": "**You have 60 seconds to answer**",
 
 	"yes": "YES",
@@ -13,6 +13,7 @@
 	"bitrate": "Bitrate",
 	"limit": "Limit",
 	"default_role": "Default Role",
+
 	"title_channel_sync": "Channel Sync",
 	"title_cleandb": "Clean Database",
 	"title_channel_private": "Channel Private",
@@ -46,6 +47,7 @@
 	"title_channel_bitrate": "Channel Bitrate",
 	"title_enable_auto_game": "Enable Game Auto Change",
 	"title_unknown_game": "Unable To Determine Game",
+
 	"info_unknown_game": "I was unable to determine the game title.",
 	"info_enable_auto_game": "You have {state} the changing of your channel name based on your game.",
 	"info_channel_grant": "You have permitted {user} to have access to the channel. ✅",
@@ -110,8 +112,10 @@
 	"info_channel_limit": "You have set the channel limit to be {limit}.",
 	"info_locked": "Voice chat locked! 🔒",
 	"info_unlocked": "Voice chat unlocked! 🔓",
-	"ready_to_go": "Congratulations, you are all setup and ready to go!",
+
+	"ready_to_go": "Congratulations, you are all setup and ready to go. ✔",
 	"setup_not_configured": "Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**",
+
 	"ask_enabled_auto_game": "**Would you like me to change your channel title when your game status changes?**",
 	"ask_create_channel_name": "**Enter the name of the voice channel: (example: + CREATE CHANNEL)**",
 	"ask_admin_role": "**What is your server admin role?**\n\nThese are voice create bot administrators.",
@@ -128,11 +132,13 @@
 	"ask_category_name": "**Enter the name or id of the category**",
 	"ask_new_category_name": "**Enter the name of the category**",
 	"ask_multiple_games": "**There are multiple games detected. Which would you like to use?",
+
 	"placeholder_admin_role": "Choose Admin Role",
 	"placeholder_default_role": "Choose Default Role",
 	"placeholder_category": "Choose Category",
 	"placeholder_language": "Choose Language",
 	"placeholder_game": "Choose Game",
+
 	"setup_no_permission": "Only the owner or admins of the server can setup the bot!"
 
 }

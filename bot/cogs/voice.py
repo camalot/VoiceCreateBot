@@ -1776,7 +1776,6 @@ class voice(commands.Cog):
             await self.sendEmbed(ctx.channel, title, self.get_string(guild_id, 'took_too_long'), delete_after=5)
         else:
             yes_no = utils.str2bool(button_ctx.custom_id)
-        finally:
             await yes_no_req.delete()
         return yes_no
 
@@ -1802,7 +1801,6 @@ class voice(commands.Cog):
             return
         else:
             defaultLimit = int(limitResp.content)
-        finally:
             await limitResp.delete()
             await limit_ask.delete()
         return defaultLimit
@@ -1834,11 +1832,10 @@ class voice(commands.Cog):
             return
         else:
             defaultBitrate = int(bitrateResp.content)
-            if defaultBitrate == 0:
-                defaultBitrate = self.settings.BITRATE_DEFAULT
-        finally:
             await bitrateResp.delete()
             await bitrate_ask.delete()
+            if defaultBitrate == 0:
+                defaultBitrate = self.settings.BITRATE_DEFAULT
         return defaultBitrate
 
     async def set_role_ask_category(self, ctx, title: str = "Set Default Role"):
@@ -1979,14 +1976,13 @@ class voice(commands.Cog):
             except asyncio.TimeoutError:
                 await self.sendEmbed(targetChannel, title, self.get_string(guild_id, 'took_too_long'), delete_after=5)
             else:
+                await ask_context.delete()
                 selected_game = button_ctx.selected_options[0]
                 if selected_game:
                     await self.sendEmbed(targetChannel, title, f"{user.mention}, {utils.str_replace(self.get_string(guild_id, 'info_game_selected'), game=selected_game.name)}", delete_after=5)
                     return selected_game
                 else:
                     return None
-            finally:
-                await ask_context.delete()
         else:
             return None
 
@@ -2051,6 +2047,7 @@ class voice(commands.Cog):
             if role_id == 0:
                 role_id = await self.ask_role_by_name_or_id(ctx, title)
 
+            await ask_context.delete()
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
                 self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
@@ -2059,8 +2056,6 @@ class voice(commands.Cog):
             else:
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.get_string(guild_id, 'info_unverified_admin_role')}", delete_after=5)
                 return None
-        finally:
-            await ask_context.delete()
 
     async def ask_default_role(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
@@ -2095,6 +2090,7 @@ class voice(commands.Cog):
             if role_id == 0:
                 role_id = await self.ask_role_by_name_or_id(ctx, title)
 
+            await ask_context.delete()
             selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
             if selected_role:
                 self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
@@ -2103,8 +2099,6 @@ class voice(commands.Cog):
             else:
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, {self.get_string(guild_id, 'info_unverified_role')}", delete_after=5)
                 return None
-        finally:
-            await ask_context.delete()
 
     async def ask_category(self, ctx, title: str = "Voice Channel Setup"):
         def check_user(m):
