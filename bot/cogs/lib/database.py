@@ -39,6 +39,8 @@ class Database():
         pass
     def set_guild_settings_prefix(self, guildId, prefix: str):
         pass
+    def set_guild_settings_language(self, guildId: int, language: str):
+        pass
     def get_guild_create_channel_settings(self, guildId):
         pass
     def delete_guild_create_channel(self, guildId, channelId, categoryId):

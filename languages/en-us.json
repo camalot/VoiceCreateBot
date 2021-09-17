@@ -21,7 +21,7 @@
 	"title_channel_hide": "Channel Hide",
 	"title_channel_show": "Channel Show",
 	"title_channel_grant": "Grant User Access",
-	"title_channel_revoke": "Reject User Access",
+	"title_channel_revoke": "Revoke User Access",
 	"title_who_owns": "Who Owns Channel",
 	"title_guild_init": "Voice Channel Initialization",
 	"title_delete_voice_channel": "Delete Voice Channel",
@@ -47,6 +47,7 @@
 	"title_channel_bitrate": "Channel Bitrate",
 	"title_enable_auto_game": "Enable Game Auto Change",
 	"title_unknown_game": "Unable To Determine Game",
+	"title_language": "Voice Create Bot Language",
 
 	"info_unknown_game": "I was unable to determine the game title.",
 	"info_enable_auto_game": "You have {state} the changing of your channel name based on your game.",
@@ -108,10 +109,12 @@
 	"info_unverified_category": "I was unable to verify that category as a valid discord category in this guild.",
 	"info_unverified_role": "I was unable to verify that role as a valid discord role.",
 	"info_init_success": "You have successfully initialized the bot for this discord. ☑",
-	"info_no_category_settings": "Existing settings not found. Use `.voice settings` to configure.",
+	"info_no_category_settings": "Existing settings not found. Use `settings` command to configure.",
 	"info_channel_limit": "You have set the channel limit to be {limit}.",
-	"info_locked": "Voice chat locked! 🔒",
-	"info_unlocked": "Voice chat unlocked! 🔓",
+	"info_locked": "Voice channel locked. 🔒",
+	"info_unlocked": "Voice channel unlocked. 🔓",
+	"info_get_language": "My currently configured language is `{language}`.\n\nUse `set-language` command to change.",
+	"info_set_language": "You have changed the currently configured language to `{language}`.",
 
 	"ready_to_go": "Congratulations, you are all setup and ready to go. ✔",
 	"setup_not_configured": "Voice Create bot not configured for this discord.\n\n\n**Please run `init` command.**",
@@ -139,6 +142,6 @@
 	"placeholder_language": "Choose Language",
 	"placeholder_game": "Choose Game",
 
-	"setup_no_permission": "Only the owner or admins of the server can setup the bot!"
+	"setup_no_permission": "Only the owner or admins of the server can setup the bot."
 
 }

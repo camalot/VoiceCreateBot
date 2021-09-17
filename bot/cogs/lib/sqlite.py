@@ -146,6 +146,8 @@ class SqliteDatabase(database.Database):
         pass
     def set_guild_settings_prefix(self, guildId: int, prefix: str):
         pass
+    def set_guild_settings_language(self, guildId: int, language: str):
+        pass
     def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage: bool):
         try:
             if self.connection is None:

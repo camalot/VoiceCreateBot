@@ -848,9 +848,9 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
-    @voice.command()
+    @voice.command(aliases=["set-prefix"])
     @has_permissions(administrator=True)
-    async def setprefix(self, ctx, prefix="."):
+    async def set_prefix(self, ctx, prefix="."):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         if self.isAdmin(ctx):
@@ -862,14 +862,55 @@ class voice(commands.Cog):
 
     @voice.command()
     async def prefix(self, ctx):
-        _method = inspect.stack()[1][3]
-        guild_id = ctx.guild.id
-        guild_settings = self.db.get_guild_settings(guild_id)
-        prefix = "."
-        if guild_settings:
-            prefix = guild_settings.prefix
-        await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_prefix"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_get_prefix"), prefix=prefix)}', delete_after=10)
-        await ctx.message.delete()
+        try:
+            _method = inspect.stack()[1][3]
+            guild_id = ctx.guild.id
+            guild_settings = self.db.get_guild_settings(guild_id)
+            prefix = "."
+            if guild_settings:
+                prefix = guild_settings.prefix
+            await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_prefix"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_get_prefix"), prefix=prefix)}', delete_after=10)
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self.notify_of_error(ctx)
+        finally:
+            await ctx.message.delete()
+
+    @voice.command()
+    async def language(self, ctx):
+        try:
+            if self.isAdmin(ctx):
+                _method = inspect.stack()[1][3]
+                guild_id = ctx.guild.id
+                guild_settings = self.db.get_guild_settings(guild_id)
+                language = self.settings.language
+                if guild_settings:
+                    language = guild_settings.language
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_get_language"), language=language)}', delete_after=10)
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self.notify_of_error(ctx)
+        finally:
+            await ctx.message.delete()
+
+    @voice.command(aliases=["set-language"])
+    async def set_language(self, ctx):
+        if self.isAdmin(ctx):
+            try:
+                _method = inspect.stack()[1][3]
+                guild_id = ctx.guild.id
+                language = await self.ask_language(ctx, title=self.get_string(guild_id, "title_language"))
+                if language:
+                    self.db.set_guild_settings_language(guild_id, language)
+                    self.set_guild_strings(guild_id)
+                    await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_language"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_set_language"), language=language)}', delete_after=10)
+                else:
+                    self.log.debug(guild_id, _method, "Language was None after ask user to set it.")
+            except Exception as ex:
+                self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+                await self.notify_of_error(ctx)
+            finally:
+                await ctx.message.delete()
 
     @voice.command()
     async def help(self, ctx, command=""):

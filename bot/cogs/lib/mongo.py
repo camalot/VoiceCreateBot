@@ -259,9 +259,23 @@ class MongoDatabase(database.Database):
         if not gs:
             return False
         payload = {
-            "prefix": prefix
+            "prefix": prefix,
+            "timestamp": utils.get_timestamp()
         }
         self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+
+    def set_guild_settings_language(self, guildId: int, language: str):
+        if not self.connection:
+            self.open()
+        gs = self.get_guild_settings(guildId=guildId)
+        if not gs:
+            return False
+        payload = {
+            "language": language,
+            "timestamp": utils.get_timestamp()
+        }
+        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+
     def insert_or_update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
         try:
             if not self.connection:
