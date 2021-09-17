@@ -8,15 +8,26 @@
 
 A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
-- Supports multiple **Create Channels**. Allowing different permissions to each **Create Channel**.
-- Supports changing voice bitrate
-- Dynamic channel names. Uses a custom api to dynamically generate a channel name
-- Support for **Stage Channels** in *Community Discords*
-- Supports per-server language (looking for more translations)
+## FEATURES
+
+| | | |
+|---|---|---|
+| Multiple Create Channels | :heavy_check_mark: | |
+| Different Permissions Per Create Channel | :heavy_check_mark: | |
+| Random Channel Names | :heavy_check_mark: | | 
+| Ability for user to change channel name | :heavy_check_mark: | |
+| Stage Channels | :heavy_check_mark: | |
+| Per-Server Language | :heavy_check_mark: | |
+| Change command prefix per-server | :heavy_check_mark: | |
+| Admin role to control bot | :heavy_check_mark: | |
+| Admin commands | :heavy_check_mark: | |
+| Set channel limits | :heavy_check_mark: | |
+| Set channel bitrate | :heavy_check_mark: | |
+| User specific settings | :heavy_check_mark: | | 
+| Set channel name from game | :heavy_check_mark: | |
 
 For help with the code, or the bot [join the discord](http://discord.darthminos.tv)
 # INSTALL
-
 
 ## ENVIRONMENT VARIABLES
 
