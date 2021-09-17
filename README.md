@@ -62,6 +62,7 @@ docker run --rm \
 -e DISCORD_BOT_TOKEN="<FILL IN YOUR DISCORD BOT TOKEN>" \
 -e BOT_OWNER="<FILL IN YOUR DISCORD USER ID>" \
 -e VCB_MONGODB_URL="mongodb://mdbroot:toorbdm@mongodb:27017/admin" \
+-e LANGUAGE="en-us" \
 -e LOG_LEVEL="INFO" \
 -e DB_PROVIDER="MONGODB" \
 camalot/voice-create-bot-docker:latest
