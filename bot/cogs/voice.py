@@ -322,7 +322,7 @@ class voice(commands.Cog):
                         self.log.debug(guild_id, _method , f"Created Voice Channel")
                         voiceChannel = await source_channel.clone(name=name, reason="Create Channel Request by {member}")
                         # voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
-                        await voiceChannel.edit(sync_permissions=True)
+                        # await voiceChannel.edit(sync_permissions=True)
                     textChannel = await member.guild.create_text_channel(name, category=category)
                     await textChannel.edit(sync_permissions=True)
                     channelID = voiceChannel.id
