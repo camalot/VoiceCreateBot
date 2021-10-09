@@ -333,7 +333,7 @@ class voice(commands.Cog):
                     try:
                         self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
                         # if use_voice_activity is not True, some cases where people cant speak, unless they use P2T
-                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, use_voice_activation=True, stream=True)
+                        await voiceChannel.set_permissions(member, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, use_voice_activation=True, stream=True, move_members=True)
                         await textChannel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())

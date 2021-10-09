@@ -1,7 +1,7 @@
 # VoiceCreateBot
 
 
-[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) [![join the discord](https://badgen.net/badge/icon/Join%20Discord?icon=discord&label)](http://discord.darthminos.tv/)
+[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) 
 
 <!-- ![](https://dcbadge.vercel.app/api/shield/262031734260891648)  -->
 <!-- ![](https://dcbadge.vercel.app/api/shield/bot/571011576618811402) -->
