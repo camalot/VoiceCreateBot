@@ -349,7 +349,7 @@ class voice(commands.Cog):
                         if default_role:
                             self.log.debug(guild_id, _method , f"Check if bot can set channel for {default_role.name} {voiceChannel}")
                             await textChannel.set_permissions(default_role, read_messages=(not locked), send_messages=(not locked), read_message_history=(not locked), view_channel=True)
-                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked), use_voice_activation=True)
+                            await voiceChannel.set_permissions(default_role, speak=True, connect=(not locked), read_messages=(not locked), send_messages=(not locked), view_channel=True, stream=(not locked), use_voice_activation=True, move_members=True)
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
