@@ -572,7 +572,7 @@ class voice(commands.Cog):
 
             await voice_channel.edit(sync_permissions=True)
             # BUG that requires use_voice_activation=True or some users cannot speak.
-            await voice_channel.set_permissions(ctx.author, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True, use_voice_activation=True)
+            await voice_channel.set_permissions(ctx.author, speak=True, priority_speaker=True, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True, use_voice_activation=True, move_members=True)
             await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_channel_sync'), f'{ctx.author.mention}, {self.get_string(guild_id, "info_channel_sync")}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
