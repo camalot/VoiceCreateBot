@@ -317,13 +317,13 @@ class voice(commands.Cog):
                     if(useStage and is_community):
                         self.log.debug(guild_id, _method , f"Creating Stage Channel")
                         stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
-                        voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}")
+                        voiceChannel = await member.guild.create_stage_channel(name, topic=stage_topic, category=category, reason="Create Channel Request by {member}", position=0)
                     else:
                         self.log.debug(guild_id, _method , f"Created Voice Channel")
                         voiceChannel = await source_channel.clone(name=name, reason="Create Channel Request by {member}")
                         # voiceChannel = await member.guild.create_voice_channel(name, category=category, reason="Create Channel Request by {member}")
                         # await voiceChannel.edit(sync_permissions=True)
-                    textChannel = await member.guild.create_text_channel(name, category=category)
+                    textChannel = await member.guild.create_text_channel(name, category=category, position=0)
                     await textChannel.edit(sync_permissions=True)
                     channelID = voiceChannel.id
 
@@ -338,7 +338,7 @@ class voice(commands.Cog):
                     except Exception as ex:
                         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
                     self.log.debug(guild_id, _method , f"Set user limit to {limit} on {voiceChannel}")
-                    await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000))
+                    await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000), position=0)
 
                     self.log.debug(guild_id, _method , f"Track voiceChannel userID: {mid} channelID: {channelID}")
                     self.log.debug(guild_id, _method , f"Track Voice and Text Channels {name} in {category}")
