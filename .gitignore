@@ -2,5 +2,3 @@
 \.idea/
 __pycache__/**
 .env
-voice.db
-voice2.db
