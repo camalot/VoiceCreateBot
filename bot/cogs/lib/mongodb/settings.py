@@ -25,7 +25,7 @@ class SettingsDatabase():
         self.connection = self.client[self.db_name]
     def close(self):
         try:
-            if self.client:
+            if self.client is not None:
                 self.client.close()
         except Exception as ex:
             print(ex)
@@ -33,7 +33,7 @@ class SettingsDatabase():
 
     def get(self, guildId: int):
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             c = self.connection.guild_settings.find_one({"guild_id": guildId})
             if c:
@@ -52,7 +52,7 @@ class SettingsDatabase():
 
     def set(self, settings: GuildSettingsV2):
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             payload = {
                 "prefixes": settings.prefixes,
@@ -70,7 +70,7 @@ class SettingsDatabase():
 
 
     def set_prefixes(self, guildId: int, prefixes: typing.List[str], append: bool = False):
-        if not self.connection:
+        if self.connection is None:
             self.open()
         gs = self.get(guildId=guildId)
         if not gs:
@@ -86,7 +86,7 @@ class SettingsDatabase():
         self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
 
     def set_setting(self, guildId: int, key: str, value: typing.Any):
-        if not self.connection:
+        if self.connection is None:
             self.open()
         gs = self.get(guildId=guildId)
         if not gs:

@@ -31,6 +31,8 @@ class VoiceCreate(commands.Bot):
     # v4: 9/9/2021 - added auto_game column to userSettings
     # v5: 9/13/2021 - rename the collections
     # v6: 9/15/2021 - added language field to guild_settings
+    # v7: 7/31/2023 - Migration for app version 2.x
+    
     def __init__(self, *, intents: discord.Intents):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory

@@ -18,7 +18,7 @@ class MongoMigration:
     def run(self):
         self.open()
         try:
-            if not self.connection:
+            if self.connection is not None:
                 self.open()
             db_version = self.connection.migration.find_one({"user_version": self.schema_version})
 

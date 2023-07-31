@@ -20,7 +20,7 @@ class MongoDatabase(database.Database):
         try:
             # check if migrated
             # if not, open db and migrate the data
-            if not self.connection:
+            if self.connection is None:
                 self.open()
 
             migrator = migration.MongoMigration(newDBVersion)
@@ -42,7 +42,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
 
@@ -53,7 +53,7 @@ class MongoDatabase(database.Database):
         self.connection = self.client[self.settings.db_name]
     def close(self):
         try:
-            if self.client and self.connection:
+            if self.client is not None and self.connection is not None:
                 self.client.close()
         except Exception as ex:
             print(ex)
@@ -227,7 +227,7 @@ class MongoDatabase(database.Database):
 
     def set_guild_category_settings(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: int):
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
             if cat_settings:
