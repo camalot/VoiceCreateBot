@@ -3,9 +3,10 @@ import os
 import traceback
 import glob
 import typing
+import inspect
 from . import utils
+from .mongodb.settings import SettingsDatabase
 import json
-from . import dbprovider
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
@@ -19,19 +20,17 @@ class Settings:
             print(e, file=sys.stderr)
 
         self.db_url = utils.dict_get(os.environ, "VCB_MONGODB_URL", default_value="")
-        self.db_path = utils.dict_get(os.environ, 'VCB_DB_PATH', default_value = 'voice.db')
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
         self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
+        self.db_name = utils.dict_get(os.environ, "VCB_MONGODB_DBNAME", default_value = "voicecreate_v2")
+
+        self.db = SettingsDatabase()
+
 
         self.load_language_manifest()
         self.load_strings()
-
-        dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
-        self.db_provider = dbprovider.DatabaseProvider[dbp]
-        if not self.db_provider:
-            self.db_provider = dbprovider.DatabaseProvider.DEFAULT
 
 
     def load_strings(self):
@@ -60,6 +59,41 @@ class Settings:
             with open(lang_manifest, encoding="UTF-8") as manifest_file:
                 self.languages.update(json.load(manifest_file))
 
+    def get_string(self, guildId: int, key: str, *args, **kwargs) -> str:
+        _method = inspect.stack()[1][3]
+        if not key:
+            return ''
+        if str(guildId) in self.strings:
+            if key in self.strings[str(guildId)]:
+                return utils.str_replace(self.strings[str(guildId)][key], *args, **kwargs)
+            elif key in self.strings[self.language]:
+                return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
+            else:
+                return utils.str_replace(f"{key}", *args, **kwargs)
+        else:
+            if key in self.strings[self.language]:
+                return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
+            else:
+                return utils.str_replace(f"{key}", *args, **kwargs)
+
+    def set_guild_strings(self, guildId: int, lang: typing.Optional[str] = None) -> None:
+        _method = inspect.stack()[1][3]
+        if not lang:
+            lang = self.language
+        self.strings[str(guildId)] = self.strings[lang]
+
+    def get_language(self, guildId: int) -> str:
+        guild_setting = self.db.get_guild_settings(guildId)
+        if not guild_setting:
+            return self.language
+        return guild_setting.language or self.language
+        return self.language
+
+    def get(self, name, default_value=None) -> typing.Any:
+        return utils.dict_get(self.__dict__, name, default_value)
+
+    def get_settings(self, db, guildId: int, name:str) -> typing.Any:
+        return db.get_settings(guildId, name)
 
 
 class GuildCategorySettings:
@@ -81,13 +115,6 @@ class UserSettings():
         self.auto_game = autoGame
         pass
 
-class GuildSettings:
-    def __init__(self, guildId: int, prefix, defaultRole: int, adminRole: int, language: str):
-        self.guild_id = guildId
-        self.default_role = defaultRole
-        self.admin_role = adminRole
-        self.prefix = prefix
-        self.language = language
 
 class GuildCreateChannelSettings:
     def __init__(self, guildId: int):

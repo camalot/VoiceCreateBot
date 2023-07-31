@@ -1,6 +1,5 @@
 from pymongo import MongoClient
 from . import Migration
-from ... import sqlite
 
 class Migration_00000(Migration):
     def __init__(self, connection):

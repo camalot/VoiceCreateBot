@@ -57,7 +57,7 @@ class MongoMigration:
         if not self.settings.db_url:
             raise ValueError("VCB_MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
-        self.connection = self.client.voicecreate
+        self.connection = self.client[self.settings.db_name]
     def close(self):
         try:
             if self.client:

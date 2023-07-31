@@ -6,7 +6,6 @@ import json
 from . import database
 from . import settings
 from . import utils
-from . import sqlite
 from .mongodb import migration
 
 class MongoDatabase(database.Database):
@@ -16,30 +15,11 @@ class MongoDatabase(database.Database):
         self.connection = None
         pass
 
-    def RESET_MIGRATION(self):
-        try:
-            if not self.connection:
-                self.open()
-            print("RESET MIGRATION STATUS")
-            self.connection.create_channels.delete_many({})
-            self.connection.category_settings.delete_many({})
-            self.connection.user_settings.delete_many({})
-            self.connection.text_channels.delete_many({})
-            self.connection.voice_channels.delete_many({})
-            self.connection.migration.delete_many({})
-            print("ALL DATA PURGED")
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-
     def UPDATE_SCHEMA(self, newDBVersion: int):
         print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
         try:
             # check if migrated
-            # if not, open sqlitedb and migate the data
+            # if not, open db and migrate the data
             if not self.connection:
                 self.open()
 
@@ -70,10 +50,10 @@ class MongoDatabase(database.Database):
         if not self.settings.db_url:
             raise ValueError("VCB_MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
-        self.connection = self.client.voicecreate
+        self.connection = self.client[self.settings.db_name]
     def close(self):
         try:
-            if self.client:
+            if self.client and self.connection:
                 self.client.close()
         except Exception as ex:
             print(ex)
@@ -240,90 +220,11 @@ class MongoDatabase(database.Database):
         result = self.connection.create_channels.insert_one(payload)
         # c.execute("INSERT INTO guild VALUES (?, ?, ?, ?, ?)", (guildId, ownerId, createChannelId, categoryId, stageInt))
         return result is not None
-    def get_guild_settings(self, guildId: int):
-        try:
-            if not self.connection:
-                self.open()
-            c = self.connection.guild_settings.find_one({"guild_id": guildId})
-            if c:
-                return settings.GuildSettings(guildId=guildId, prefix=c['prefix'], defaultRole=c['default_role'], adminRole=c['admin_role'], language=c['language'])
-            return None
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc(ex)
-            return None
-    def set_guild_settings_prefix(self, guildId: int, prefix: str):
-        if not self.connection:
-            self.open()
-        gs = self.get_guild_settings(guildId=guildId)
-        if not gs:
-            return False
-        payload = {
-            "prefix": prefix,
-            "timestamp": utils.get_timestamp()
-        }
-        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
 
-    def set_guild_settings_language(self, guildId: int, language: str):
-        if not self.connection:
-            self.open()
-        gs = self.get_guild_settings(guildId=guildId)
-        if not gs:
-            return False
-        payload = {
-            "language": language,
-            "timestamp": utils.get_timestamp()
-        }
-        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
 
-    def insert_or_update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
-        try:
-            if not self.connection:
-                self.open()
-            gs = self.get_guild_settings(guildId=guildId)
-            if gs:
-                return self.update_guild_settings(guildId=gs.guild_id, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole, language=language)
-            else:
-                return self.insert_guild_settings(guildId=guildId, prefix=prefix, defaultRole=defaultRole, adminRole=adminRole, language=language)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc(ex)
-            return False
-    def insert_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
-        try:
-            if not self.connection:
-                self.open()
-            payload = {
-                "guild_id": guildId,
-                "prefix": prefix,
-                "default_role": defaultRole,
-                "admin_role": adminRole,
-                "language": language,
-                "timestamp": utils.get_timestamp()
-            }
-            self.connection.guild_settings.insert_one(payload)
-            return True
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-            return False
-    def update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
-        try:
-            if not self.connection:
-                self.open()
-            payload = {
-                "prefix": prefix,
-                "default_role": defaultRole,
-                "admin_role": adminRole,
-                "language": language,
-                "timestamp": utils.get_timestamp()
-            }
-            self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
-            return True
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-            return False
+
+
+
     def set_guild_category_settings(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: int):
         try:
             if not self.connection:

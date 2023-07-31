@@ -62,7 +62,7 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
-def to_timestamp(date):
+def to_timestamp(date: datetime.datetime):
     return (date - datetime.datetime(1970,1,1)).total_seconds()
 def get_timestamp():
     return to_timestamp(datetime.datetime.now())

@@ -7,7 +7,6 @@ from discord.ext import commands
 import inspect
 from random import randint
 import traceback
-import sqlite3
 import sys
 import os
 import glob
@@ -15,7 +14,6 @@ import typing
 import discordhealthcheck
 from .cogs.lib import utils
 from .cogs.lib import settings
-from .cogs.lib import sqlite
 from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
@@ -23,7 +21,7 @@ from .cogs.lib import loglevel
 
 class VoiceCreate(commands.Bot):
     DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
-    DBVERSION = 6 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
+    DBVERSION = 7 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     # 0 = NO SCHEMA APPLIED
 
     # VERSION HISTORY:
@@ -41,7 +39,6 @@ class VoiceCreate(commands.Bot):
         super().__init__(command_prefix=self.get_prefix, intents=intents, case_insensitive=True)
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
-        print(f"DBPath: {self.settings.db_path}")
 
         self.db = mongo.MongoDatabase()
         self.initDB()
@@ -51,19 +48,9 @@ class VoiceCreate(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "voice.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
 
-        initial_extensions = ['bot.cogs.events', 'bot.cogs.voice', 'bot.cogs.slash']
-        for extension in initial_extensions:
-            try:
-                self.bot.load_extension(extension)
-            except Exception as e:
-                print(f'Failed to load extension {extension}.', file=sys.stderr)
-                traceback.print_exc()
 
-        self.bot.remove_command("help")
-        self.bot.run(self.DISCORD_TOKEN)
 
     async def setup_hook(self) -> None:
         _method = inspect.stack()[0][3]
@@ -85,6 +72,26 @@ class VoiceCreate(commands.Bot):
         self.log.debug(0, f"{self._module}.{_method}", "Setting up bot")
         self.log.debug(0, f"{self._module}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
+
+        # _method = inspect.stack()[0][3]
+        # self.log.debug(0, f"{self._module}.{_method}", "Setup hook called")
+        # # cogs that dont start with an underscore are loaded
+        # cogs = [
+        #     f"bot.cogs.{os.path.splitext(f)[0]}"
+        #     for f in os.listdir("bot/cogs")
+        #     if f.endswith(".py") and not f.startswith("_")
+        # ]
+
+        # for extension in cogs:
+        #     try:
+        #         await self.load_extension(extension)
+        #     except Exception as e:
+        #         print(f"Failed to load extension {extension}.", file=sys.stderr)
+        #         traceback.print_exc()
+
+        # self.log.debug(0, f"{self._module}.{_method}", "Setting up bot")
+        # self.log.debug(0, f"{self._module}.{_method}", "Starting Healthcheck Server")
+        # self.healthcheck_server = await discordhealthcheck.start(self)
 
     def initDB(self):
         self.db.UPDATE_SCHEMA(self.DBVERSION)
@@ -117,6 +124,7 @@ class VoiceCreate(commands.Bot):
                 # prefixes = settings["command_prefixes"]
             # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
+            print(f"prefixes: {prefixes}")
             return commands.when_mentioned_or(*prefixes)(self, message)
         except Exception as e:
             self.log.error(0, f"{self._module}.{_method}", f"Failed to get prefixes: {e}")

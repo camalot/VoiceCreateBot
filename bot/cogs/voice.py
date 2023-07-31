@@ -10,10 +10,6 @@ from discord.ext.commands.core import guild_only
 import validators
 from discord.ext.commands.cooldowns import BucketType
 
-# from discord_slash import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
-
 from discord.ext.commands import has_permissions, CheckFailure
 from time import gmtime, strftime
 import os
@@ -21,11 +17,10 @@ import glob
 import typing
 from .lib import utils
 from .lib import settings
-from .lib import sqlite
 from .lib import mongo
 from .lib import logger
 from .lib import loglevel
-from .lib import dbprovider
+
 import inspect
 class EmbedField():
     def __init__(self, name, value):
@@ -36,19 +31,14 @@ class voice(commands.Cog):
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
-        if self.settings.db_provider == dbprovider.DatabaseProvider.SQLITE:
-            self.db = sqlite.SqliteDatabase()
-        elif self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+
+        self.db = mongo.MongoDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "voice.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
 
 
@@ -115,11 +105,11 @@ class voice(commands.Cog):
     async def voice(self, ctx):
         pass
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        for guild in self.bot.guilds:
-            await self.clean_up_tracked_channels(guild.id)
-            self.set_guild_strings(guild.id)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     for guild in self.bot.guilds:
+    #         await self.clean_up_tracked_channels(guild.id)
+    #         self.set_guild_strings(guild.id)
 
 
     @commands.Cog.listener()
@@ -264,8 +254,8 @@ class voice(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = member.guild.id
         self.log.debug(guild_id, _method , f"On Voice State Update")
-        await self.clean_up_tracked_channels(guild_id)
-        await asyncio.sleep(2)
+        # await self.clean_up_tracked_channels(guild_id)
+        # await asyncio.sleep(2)
         voiceChannels = self.db.get_guild_create_channels(guild_id)
         if voiceChannels is None:
             self.log.debug(guild_id, _method , f"No voice create channels found for GuildID: {guild_id}")
@@ -854,17 +844,17 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
-    @voice.command(aliases=["set-prefix"])
-    @has_permissions(administrator=True)
-    async def set_prefix(self, ctx, prefix="."):
-        _method = inspect.stack()[1][3]
-        guild_id = ctx.guild.id
-        if self.isAdmin(ctx):
-            if prefix:
-                self.db.set_guild_settings_prefix(ctx.guild.id, prefix)
-                # self.bot.command_prefix = self.get_prefix
-                await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_prefix"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_set_prefix"), prefix=prefix)}', delete_after=10)
-                await ctx.message.delete()
+    # @voice.command(aliases=["set-prefix"])
+    # @has_permissions(administrator=True)
+    # async def set_prefix(self, ctx, prefix="."):
+    #     _method = inspect.stack()[1][3]
+    #     guild_id = ctx.guild.id
+    #     if self.isAdmin(ctx):
+    #         if prefix:
+    #             self.db.set_guild_settings_prefix(ctx.guild.id, prefix)
+    #             # self.bot.command_prefix = self.get_prefix
+    #             await self.sendEmbed(ctx.channel, self.get_string(guild_id, "title_prefix"), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_set_prefix"), prefix=prefix)}', delete_after=10)
+    #             await ctx.message.delete()
 
     @voice.command()
     async def prefix(self, ctx):
@@ -918,49 +908,49 @@ class voice(commands.Cog):
             finally:
                 await ctx.message.delete()
 
-    @voice.command()
-    async def help(self, ctx, command=""):
-        _method = inspect.stack()[1][3]
-        guild_id = ctx.guild.id
-        try:
-            command_list = self.settings.commands
-            if command and command.lower() in command_list:
-                cmd = command_list[command.lower()]
-                if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
-                    fields = list()
-                    fields.append({"name": self.get_string(guild_id, 'help_info_usage'), "value": f"`{cmd['usage']}`"})
-                    fields.append({"name": self.get_string(guild_id, 'help_info_example'), "value": f"`{cmd['example']}`"})
-                    fields.append({"name": self.get_string(guild_id, 'help_info_aliases'), "value": f"`{cmd['aliases']}`"})
+    # @voice.command()
+    # async def help(self, ctx, command=""):
+    #     _method = inspect.stack()[1][3]
+    #     guild_id = ctx.guild.id
+    #     try:
+    #         command_list = self.settings.commands
+    #         if command and command.lower() in command_list:
+    #             cmd = command_list[command.lower()]
+    #             if not cmd['admin'] or (cmd['admin'] and self.isAdmin(ctx)):
+    #                 fields = list()
+    #                 fields.append({"name": self.get_string(guild_id, 'help_info_usage'), "value": f"`{cmd['usage']}`"})
+    #                 fields.append({"name": self.get_string(guild_id, 'help_info_example'), "value": f"`{cmd['example']}`"})
+    #                 fields.append({"name": self.get_string(guild_id, 'help_info_aliases'), "value": f"`{cmd['aliases']}`"})
 
-                    await self.sendEmbed(ctx.channel, utils.str_replace(self.get_string(guild_id, ''), command=command.lower()), self.get_string(guild_id, cmd['help']), fields=fields)
-            else:
-                filtered_list = list()
-                if self.isAdmin(ctx):
-                    filtered_list = [i for i in command_list.keys()]
-                else:
-                    filtered_list = [i for i in command_list.keys() if command_list[i]['admin'] == False]
+    #                 await self.sendEmbed(ctx.channel, utils.str_replace(self.get_string(guild_id, ''), command=command.lower()), self.get_string(guild_id, cmd['help']), fields=fields)
+    #         else:
+    #             filtered_list = list()
+    #             if self.isAdmin(ctx):
+    #                 filtered_list = [i for i in command_list.keys()]
+    #             else:
+    #                 filtered_list = [i for i in command_list.keys() if command_list[i]['admin'] == False]
 
-                chunked = utils.chunk_list(list(filtered_list), 10)
-                pages = math.ceil(len(filtered_list) / 10)
-                page = 1
-                for chunk in chunked:
-                    fields = list()
-                    for k in chunk:
-                        cmd = command_list[k.lower()]
-                        if cmd['admin'] and self.isAdmin(ctx):
-                            fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
-                            fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
-                            fields.append({"name": self.get_string(guild_id, 'help_info_admin_title'), "value": self.get_string(guild_id, "help_info_admin")})
-                        else:
-                            fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
-                            fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
+    #             chunked = utils.chunk_list(list(filtered_list), 10)
+    #             pages = math.ceil(len(filtered_list) / 10)
+    #             page = 1
+    #             for chunk in chunked:
+    #                 fields = list()
+    #                 for k in chunk:
+    #                     cmd = command_list[k.lower()]
+    #                     if cmd['admin'] and self.isAdmin(ctx):
+    #                         fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
+    #                         fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
+    #                         fields.append({"name": self.get_string(guild_id, 'help_info_admin_title'), "value": self.get_string(guild_id, "help_info_admin")})
+    #                     else:
+    #                         fields.append({"name": self.get_string(guild_id, cmd['help']), "value": f"`{cmd['usage']}`"})
+    #                         fields.append({"name": self.get_string(guild_id, 'help_info_more_help'), "value": f"`.voice help {k.lower()}`"})
 
-                    await self.sendEmbed(ctx.channel, f"{self.get_string(guild_id, 'help_info_list_title')} ({page}/{pages})", self.get_string(guild_id, 'help_info_list_description'), fields=fields)
-                    page += 1
-        except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            await self.notify_of_error(ctx)
-        await ctx.message.delete()
+    #                 await self.sendEmbed(ctx.channel, f"{self.get_string(guild_id, 'help_info_list_title')} ({page}/{pages})", self.get_string(guild_id, 'help_info_list_description'), fields=fields)
+    #                 page += 1
+    #     except Exception as ex:
+    #         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+    #         await self.notify_of_error(ctx)
+    #     await ctx.message.delete()
 
     @voice.command(pass_context=True)
     @has_permissions(administrator=True)
@@ -2397,5 +2387,5 @@ class voice(commands.Cog):
             return self.settings.language
         return guild_setting.language or self.settings.language
 
-def setup(bot):
-    bot.add_cog(voice(bot))
+async def setup(bot):
+    await bot.add_cog(voice(bot))

@@ -3,18 +3,15 @@ from discord.ext import commands
 import asyncio
 import json
 import traceback
-import sqlite3
 import sys
 import os
 import glob
 import typing
 from .lib import utils
 from .lib import settings
-from .lib import sqlite
 from .lib import mongo
 from .lib import logger
 from .lib import loglevel
-from .lib import dbprovider
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -24,8 +21,6 @@ class Events(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "events.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "events.__init__", f"SQLITE DB Path: {self.settings.db_path}")
         self.log.debug(0, "events.__init__", f"Logger initialized with level {log_level.name}")
 
 
@@ -48,5 +43,5 @@ class Events(commands.Cog):
     async def on_error(self, event, *args, **kwargs):
         self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
 
-def setup(bot):
-    bot.add_cog(Events(bot))
+async def setup(bot):
+    await bot.add_cog(Events(bot))
