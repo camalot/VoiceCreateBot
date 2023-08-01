@@ -1,12 +1,18 @@
 from pymongo import MongoClient
 from . import Migration
+import inspect
+import os
 class Migration_00005(Migration):
     def __init__(self, connection):
-        self.connection = connection
-        self.log("Migration_00005.__init__", f"INITIALIZE MIGRATION 00005")
+        _method = inspect.stack()[0][3]
+        super().__init__(connection)
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+        self.log(f"{self._module}.{_method}", f"INITIALIZE MIGRATION 00005")
         pass
     def execute(self):
-        self.log("Migration_00005.execute", f"EXECUTE MIGRATION 00005")
+        _method = inspect.stack()[0][3]
+        self.log(f"{self._module}.{_method}", f"EXECUTE MIGRATION 00005")
         # v5 migration start
         collections = self.connection.list_collection_names()
         if 'guild' in collections:
@@ -20,4 +26,4 @@ class Migration_00005(Migration):
         if 'voiceChannel' in collections:
             self.connection['voiceChannel'].rename("voice_channels")
         # v5 migration end
-        self.log("Migration_00005.execute", f"COMPLETE MIGRATION 00005")
+        self.log(f"{self._module}.{_method}", f"COMPLETE MIGRATION 00005")

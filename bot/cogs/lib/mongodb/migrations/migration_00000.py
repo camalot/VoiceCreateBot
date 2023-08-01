@@ -1,13 +1,19 @@
 from pymongo import MongoClient
 from . import Migration
+import inspect
+import os
 
 class Migration_00000(Migration):
     def __init__(self, connection):
-        self.connection = connection
-        self.log("Migration_00000.__init__", f"INITIALIZE MIGRATION 00000")
+        _method = inspect.stack()[0][3]
+        super().__init__(connection)
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+        self.log(f"{self._module}.{_method}", f"INITIALIZE MIGRATION 00000")
         pass
     def execute(self):
-        self.log("Migration_00000.execute", f"EXECUTE MIGRATION 00000")
+        _method = inspect.stack()[0][3]
+        self.log(f"{self._module}.{_method}", f"EXECUTE MIGRATION 00000")
         # v0 migration start
 
         # disable the DB migration because this has already been done...

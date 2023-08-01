@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import traceback
 import json
-
+import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
@@ -27,16 +27,16 @@ class MongoDatabase(database.Database):
             migrator.run()
 
             # setup missing guild category settings...
-            guild_channels = self.connection.create_channels.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
+            guild_channels = self.connection.create_channels.find({}, { "guild_id": 1, "voice_channel_id": 1, "voice_category_id": 1 })
             for g in guild_channels:
-                gcs = self.get_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'])
+                gcs = self.get_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'])
                 if not gcs:
-                    print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
-                    guild_setting = self.get_guild_settings(g['guildID'])
+                    print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guild_id']} category: {g['voice_category_id']}")
+                    guild_setting = self.get_guild_settings(g['guild_id'])
                     if guild_setting:
-                        self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole=guild_setting.default_role)
+                        self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole=guild_setting.default_role)
                     else:
-                        self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="@everyone")
+                        self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="@everyone")
 
         except Exception as ex:
             print(ex)
@@ -225,39 +225,41 @@ class MongoDatabase(database.Database):
 
 
 
-    def set_guild_category_settings(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: int):
+    def set_guild_category_settings(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: typing.Union[int,str]):
         try:
             if self.connection is None:
                 self.open()
-            cat_settings = self.get_guild_category_settings(guildId=guildId, categoryId=categoryId)
-            if cat_settings:
-                payload = { "channelLimit": channelLimit, "channelLocked": channelLocked, "bitrate": bitrate, "defaultRole": defaultRole }
-                self.connection.category_settings.find_one_and_update({"guildID": guildId, "voiceCategoryID": categoryId}, { "$set": payload })
-                # c.execute("UPDATE guildCategorySettings SET channelLimit = ?, channelLocked = ?, bitrate = ?, defaultRole = ? WHERE guildID = ? AND voiceCategoryID = ?", (channelLimit, channelLocked, bitrate, defaultRole, guildId, CategoryChannelConverter,))
-            else:
-                # c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
-                payload = {
-                    "guildID": guildId,
-                    "voiceCategoryID": categoryId,
-                    "channelLimit": channelLimit,
-                    "channelLocked": channelLocked,
-                    "bitrate": bitrate,
-                    "defaultRole": defaultRole,
-                    "timestamp": utils.get_timestamp()
-                }
-                self.connection.category_settings.insert_one(payload)
+            # c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
+            payload = {
+                "guild_id": str(guildId),
+                "voice_category_id": str(categoryId),
+                "channel_limit": channelLimit,
+                "channel_locked": channelLocked,
+                "bitrate": bitrate,
+                "default_role": defaultRole,
+                "timestamp": utils.get_timestamp()
+            }
+            self.connection.category_settings.update_one({"guild_id": guildId, "voice_category_id": categoryId}, { "$set": payload }, upsert=True)
             return True
         except Exception as ex:
             print(ex)
             traceback.print_exc()
             return False
-    def get_guild_category_settings(self, guildId, categoryId):
+
+    def get_guild_category_settings(self, guildId: int, categoryId: int):
         try:
             if self.connection is None:
                 self.open()
-            row = self.connection.category_settings.find_one({ "guildID": guildId, "voiceCategoryID": categoryId})
+            row = self.connection.category_settings.find_one({ "guild_id": str(guildId), "voice_category_id": str(categoryId)})
             if row:
-                result = settings.GuildCategorySettings(guildId=guildId, categoryId=categoryId, channelLimit=row['channelLimit'], channelLocked=row['channelLocked'], bitrate=row['bitrate'], defaultRole=row['defaultRole'])
+                result = settings.GuildCategorySettings(
+                    guildId=guildId,
+                    categoryId=categoryId,
+                    channelLimit=row['channel_limit'],
+                    channelLocked=row['channel_locked'],
+                    bitrate=row['bitrate'],
+                    defaultRole=row['default_role']
+                )
                 return result
             # c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildId, categoryId,))
             print(f"NO CATEGORY SETTINGS FOUND: {guildId}:{categoryId}")

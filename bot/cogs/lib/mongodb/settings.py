@@ -27,6 +27,8 @@ class SettingsDatabase():
         try:
             if self.client is not None:
                 self.client.close()
+                self.client = None
+                self.connection = None
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -35,13 +37,13 @@ class SettingsDatabase():
         try:
             if self.connection is None:
                 self.open()
-            c = self.connection.guild_settings.find_one({"guild_id": guildId})
+            c = self.connection.guild_settings.find_one({"guild_id": str(guildId)})
             if c:
                 return GuildSettingsV2(
-                    guildId=guildId,
+                    guildId=int(c['guild_id']),
                     prefixes=c['prefixes'],
-                    defaultRole=c['default_role'],
-                    adminRoles=c['admin_role'],
+                    defaultRole=int(c['default_role']),
+                    adminRoles=[int(r) for r in c['admin_roles']],
                     language=c['language']
                 )
             return None
@@ -61,29 +63,101 @@ class SettingsDatabase():
                 "language": settings.language,
                 "timestamp": utils.get_timestamp()
             }
-            self.connection.guild_settings.update_one({"guild_id": settings.guild_id}, { "$set": payload }, upsert=True)
+            self.connection.guild_settings.update_one({"guild_id": str(settings.guild_id)}, { "$set": payload }, upsert=True)
             return True
         except Exception as ex:
             print(ex)
             traceback.print_exc()
             return False
 
+    def delete_admin_role(self, guildId: int, roleId: int) -> bool:
+        try:
+            if self.connection is None:
+                self.open()
+
+            result = self.connection.guild_settings.update_one(
+                {
+                    "guild_id": str(guildId)
+                },
+                {
+                    "$pull": {
+                        "admin_roles": str(roleId)
+                    },
+                    "$set": {
+                        "timestamp": utils.get_timestamp()
+                    }
+                }
+            )
+
+            if result.modified_count == 0:
+                return False
+
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+
+    def add_admin_role(self, guildId: int, roleId: int) -> bool:
+        try:
+            if self.connection is None:
+                self.open()
+
+            result = self.connection.guild_settings.update_one(
+                {
+                    "guild_id": str(guildId)
+                },
+                {
+                    "$addToSet": {
+                        "admin_roles": str(roleId)
+                    },
+                    "$set": {
+                        "timestamp": utils.get_timestamp()
+                    }
+                }
+            )
+
+            if result.modified_count == 0:
+                return False
+
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
 
     def set_prefixes(self, guildId: int, prefixes: typing.List[str], append: bool = False):
+        try:
+            if self.connection is None:
+                self.open()
+            gs = self.get(guildId=guildId)
+            if not gs:
+                return False
+
+            if append:
+                prefixes = gs.prefixes + prefixes
+
+            payload = {
+                "prefixes": prefixes,
+                "timestamp": utils.get_timestamp(),
+            }
+            result = self.connection.guild_settings.update_one({"guild_id": str(guildId)}, { "$set": payload })
+            if result.modified_count == 0:
+                return False
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+
+    def get_prefixes(self, guildId: int) -> typing.List[str]:
         if self.connection is None:
             self.open()
         gs = self.get(guildId=guildId)
         if not gs:
-            return False
-
-        if append:
-            prefixes = gs.prefixes + prefixes
-
-        payload = {
-            "prefixes": prefixes,
-            "timestamp": utils.get_timestamp(),
-        }
-        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+            return None
+        print(gs.prefixes)
+        return gs.prefixes
 
     def set_setting(self, guildId: int, key: str, value: typing.Any):
         if self.connection is None:
@@ -95,10 +169,10 @@ class SettingsDatabase():
             key: value,
             "timestamp": utils.get_timestamp(),
         }
-        self.connection.guild_settings.update_one({"guild_id": guildId}, { "$set": payload })
+        self.connection.guild_settings.update_one({"guild_id": str(guildId)}, { "$set": payload })
 
     # def set_guild_settings_language(self, guildId: int, language: str):
-    #     if not self.connection:
+    #     if self.connection is None:
     #         self.open()
     #     gs = self.get_guild_settings(guildId=guildId)
     #     if not gs:
@@ -111,7 +185,7 @@ class SettingsDatabase():
 
     # def insert_or_update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
     #     try:
-    #         if not self.connection:
+    #         if self.connection is None:
     #             self.open()
     #         gs = self.get_guild_settings(guildId=guildId)
     #         if gs:
@@ -124,7 +198,7 @@ class SettingsDatabase():
     #         return False
     # def insert_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
     #     try:
-    #         if not self.connection:
+    #         if self.connection is None:
     #             self.open()
     #         payload = {
     #             "guild_id": guildId,
@@ -142,7 +216,7 @@ class SettingsDatabase():
     #         return False
     # def update_guild_settings(self, guildId: int, prefix: str, defaultRole: int, adminRole: int, language: str):
     #     try:
-    #         if not self.connection:
+    #         if self.connection is None:
     #             self.open()
     #         payload = {
     #             "prefix": prefix,

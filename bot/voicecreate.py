@@ -20,7 +20,6 @@ from .cogs.lib import loglevel
 
 
 class VoiceCreate(commands.Bot):
-    DISCORD_TOKEN = os.environ['DISCORD_BOT_TOKEN']
     DBVERSION = 7 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
     # 0 = NO SCHEMA APPLIED
 
@@ -32,13 +31,18 @@ class VoiceCreate(commands.Bot):
     # v5: 9/13/2021 - rename the collections
     # v6: 9/15/2021 - added language field to guild_settings
     # v7: 7/31/2023 - Migration for app version 2.x
-    
+
     def __init__(self, *, intents: discord.Intents):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
-        super().__init__(command_prefix=self.get_prefix, intents=intents, case_insensitive=True)
+        super().__init__(
+            command_prefix=self.get_prefix,
+            intents=intents,
+            case_insensitive=True,
+        )
+
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
 
@@ -50,7 +54,8 @@ class VoiceCreate(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "voice.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, f"{self._module}.{_method}", f"Initialized")
 
 
 
@@ -106,24 +111,20 @@ class VoiceCreate(commands.Bot):
     async def get_prefix(self, message) -> typing.List[str]:
         _method: str = inspect.stack()[0][3]
         # default prefixes
+        default_prefixes: typing.List[str] = [".voice ", "?voice ", "!voice ", ".vcb ", "?vcb ", "!vcb "]
         # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-        prefixes: typing.List[str] = [".voice ", "?voice ", "!voice "]
+        prefixes: typing.List[str] =  default_prefixes
         try:
             # get the prefix for the guild.
-            # if message.guild:
-                # guild_id = message.guild.id
+            if message.guild:
+                guild_id = message.guild.id
                 # get settings from db
-                # settings = self.settings.get_settings(self.db, guild_id, "tacobot")
-                # if not settings:
-                #     raise Exception("No bot settings found")
-                # prefixes = settings["command_prefixes"]
+                prefixes = self.settings.db.get_prefixes(guild_id)
+                if prefixes is None:
+                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Prefixes not found for guild {guild_id}. Using default prefixes")
+                    prefixes = default_prefixes
 
-            # elif not message.guild:
-                # get the prefix for the DM using 0 for the guild_id
-                # settings = self.settings.get_settings(self.db, 0, "tacobot")
-                # if not settings:
-                #     raise Exception("No bot settings found")
-                # prefixes = settings["command_prefixes"]
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Getting prefixes for guild {guild_id}: {prefixes}")
             # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
             print(f"prefixes: {prefixes}")

@@ -1,4 +1,4 @@
-from inspect import stack
+import inspect
 from os.path import dirname, basename, isfile, join
 import glob
 import json
@@ -9,6 +9,13 @@ migration_files.sort(key=lambda x: str(filter(str.isdigit, x[:-3])), reverse=Tru
 
 __all__ = [ basename(f)[:-3] for f in migration_files if isfile(f) and not f.endswith('__init__.py')]
 class Migration():
+    def __init__(self, connection):
+        _method = inspect.stack()[0][3]
+        self.connection = connection
+        self._module = basename(__file__)[:-3]
+        self.log(f"{self._module}.{_method}", f"INITIALIZE MIGRATION {self._module}")
+        pass
+    
     def log(self, method: str, message: str, stackTrace: str = None):
         print(f"[DEBUG] [{method}] [guild:0] {message}")
         if stackTrace:

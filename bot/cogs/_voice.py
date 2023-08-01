@@ -44,63 +44,6 @@ class voice(commands.Cog):
 
         self.strings = {}
 
-    async def clean_up_tracked_channels(self, guildID):
-        _method = inspect.stack()[1][3]
-        self.log.debug(guildID, _method , "Clean up tracked channels")
-        self.db.open()
-        try:
-            self.log.debug(guildID, _method , "checking guild create channels")
-            guildSettings = self.db.get_guild_create_channel_settings(guildId=guildID)
-            if guildSettings and guildSettings.channels:
-                for cc in guildSettings.channels:
-                    cc_channel = await self.get_or_fetch_channel(cc.channel_id)
-                    if not cc_channel:
-                        # delete this channel as it no longer exists.
-                        self.log.debug(guildID, _method , f"Deleting create channel {cc.channel_id} as it does not exist")
-                        self.db.delete_guild_create_channel(guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id)
-                        pass
-                    else:
-                        # check the category and update if necessary
-                        cc_category = cc_channel.category
-                        if not cc_category:
-                            # what if its not in a category at all?
-                            self.log.debug(guildID, _method , "Create Channel is no longer in a category")
-                        else:
-                            # check if the category is the same that we have tracked
-                            if cc.category_id != cc_category.id:
-                                self.log.debug(guildID, _method , "Category ID is different")
-                                self.db.update_guild_create_channel_settings(guildId=guildID, createChannelId=cc.channel_id, categoryId=cc_category.id, ownerId=cc.owner_id, useStage=cc.use_stage)
-            self.log.debug(guildID, _method , "checking user created channels")
-            trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
-            for vc in trackedChannels:
-                textChannel = None
-                voiceChannelId = vc
-                if voiceChannelId:
-                    voiceChannel = await self.get_or_fetch_channel(voiceChannelId)
-
-                    textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
-                    if textChannelId:
-                        textChannel = await self.get_or_fetch_channel(textChannelId)
-
-                    if voiceChannel:
-                        if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
-                            self.log.debug(guildID, _method , f"Start Tracked Cleanup: {voiceChannelId}")
-                            self.log.debug(guildID, _method , f"Deleting Channel {voiceChannel} because everyone left")
-                            self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
-                            if textChannel:
-                                await textChannel.delete()
-                            await voiceChannel.delete()
-                    else:
-                        self.log.debug(guildID, _method , f"Unable to find voice channel: {voiceChannelId}")
-                        self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
-        except discord.errors.NotFound as nf:
-            self.log.warn(guildID, _method, str(nf), traceback.format_exc())
-            self.log.debug(guildID, _method , f"Channel Not Found. Already Cleaned Up")
-        except Exception as ex:
-            self.log.error(guildID, _method, str(ex), traceback.format_exc())
-        finally:
-             self.db.close()
-
     @commands.group()
     async def voice(self, ctx):
         pass
@@ -112,76 +55,76 @@ class voice(commands.Cog):
     #         self.set_guild_strings(guild.id)
 
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        try:
-            _method = inspect.stack()[1][3]
-            guild_id = after.guild.id
-            if not after:
-                return
-            is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
-            if is_in_channel:
-                self.db.open()
-                self.log.debug(guild_id, _method , f"Member Update Start of user: '{after.name}'")
-                voice_channel = after.voice.channel
-                voice_channel_id = voice_channel.id
-                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-                if owner_id != after.id:
-                    # user is in a channel, but not their channel
-                    self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not their own channel.")
-                    return
-                if before.activity == after.activity:
-                    # we are only looking at activity
-                    self.log.debug(guild_id, _method , f"Before / After activity is the same")
-                    return
+    # @commands.Cog.listener()
+    # async def on_member_update(self, before, after):
+    #     try:
+    #         _method = inspect.stack()[1][3]
+    #         guild_id = after.guild.id
+    #         if not after:
+    #             return
+    #         is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
+    #         if is_in_channel:
+    #             self.db.open()
+    #             self.log.debug(guild_id, _method , f"Member Update Start of user: '{after.name}'")
+    #             voice_channel = after.voice.channel
+    #             voice_channel_id = voice_channel.id
+    #             owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+    #             if owner_id != after.id:
+    #                 # user is in a channel, but not their channel
+    #                 self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not their own channel.")
+    #                 return
+    #             if before.activity == after.activity:
+    #                 # we are only looking at activity
+    #                 self.log.debug(guild_id, _method , f"Before / After activity is the same")
+    #                 return
 
-                owner = await self.get_or_fetch_member(after.guild, owner_id)
-                user_settings = self.db.get_user_settings(guild_id, after.id)
+    #             owner = await self.get_or_fetch_member(after.guild, owner_id)
+    #             user_settings = self.db.get_user_settings(guild_id, after.id)
 
-                if user_settings and user_settings.auto_game:
-                    text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
-                    if text_channel_id:
-                        text_channel = await self.get_or_fetch_channel(int(text_channel_id))
-                    self.log.debug(guild_id, _method , f"trigger auto game change")
-                    selected_title = voice_channel.name
-                    if owner and text_channel:
-                        selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title=self.get_string(guild_id, 'title_update_to_game'))
-                        if selected_title:
-                            if voice_channel.name != selected_title:
-                                if text_channel:
-                                    self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
-                                    await text_channel.edit(name=selected_title)
-                                    await self.sendEmbed(text_channel, self.get_string(guild_id, 'title_update_channel_name'), f'{after.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), name=selected_title)}', delete_after=5)
-                                await voice_channel.edit(name=selected_title)
-                        else:
-                            self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
-                    else:
-                        self.log.debug(guild_id, _method , f"owner is none, or text_channel is none. Can't ask to choose game.")
-                        game_activity = [a for a in after.activities if a.type == discord.ActivityType.playing]
-                        stream_activity = [a for a in after.activities if a.type == discord.ActivityType.streaming]
-                        watch_activity = [a for a in after.activities if a.type == discord.ActivityType.watching]
-                        if game_activity:
-                            selected_title = game_activity[0].name
-                        elif stream_activity:
-                            selected_title = stream_activity[0].game
-                        elif watch_activity:
-                            selected_title = watch_activity[0].name
+    #             if user_settings and user_settings.auto_game:
+    #                 text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+    #                 if text_channel_id:
+    #                     text_channel = await self.get_or_fetch_channel(int(text_channel_id))
+    #                 self.log.debug(guild_id, _method , f"trigger auto game change")
+    #                 selected_title = voice_channel.name
+    #                 if owner and text_channel:
+    #                     selected_title = await self.ask_game_for_user(targetChannel=text_channel, user=owner, title=self.get_string(guild_id, 'title_update_to_game'))
+    #                     if selected_title:
+    #                         if voice_channel.name != selected_title:
+    #                             if text_channel:
+    #                                 self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
+    #                                 await text_channel.edit(name=selected_title)
+    #                                 await self.sendEmbed(text_channel, self.get_string(guild_id, 'title_update_channel_name'), f'{after.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), name=selected_title)}', delete_after=5)
+    #                             await voice_channel.edit(name=selected_title)
+    #                     else:
+    #                         self.log.debug(guild_id, _method , f"Unable to retrieve a valid title from game.")
+    #                 else:
+    #                     self.log.debug(guild_id, _method , f"owner is none, or text_channel is none. Can't ask to choose game.")
+    #                     game_activity = [a for a in after.activities if a.type == discord.ActivityType.playing]
+    #                     stream_activity = [a for a in after.activities if a.type == discord.ActivityType.streaming]
+    #                     watch_activity = [a for a in after.activities if a.type == discord.ActivityType.watching]
+    #                     if game_activity:
+    #                         selected_title = game_activity[0].name
+    #                     elif stream_activity:
+    #                         selected_title = stream_activity[0].game
+    #                     elif watch_activity:
+    #                         selected_title = watch_activity[0].name
 
-                        if selected_title:
-                            if voice_channel.name != selected_title:
-                                if text_channel:
-                                    self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
-                                    await text_channel.edit(name=selected_title)
-                                self.log.debug(guild_id, _method , f"Change Voice Channel Name: {selected_title}")
-                                await voice_channel.edit(name=selected_title)
-                else:
-                    self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
-        except discord.errors.NotFound as nf:
-            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
-        except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-        finally:
-            self.db.close()
+    #                     if selected_title:
+    #                         if voice_channel.name != selected_title:
+    #                             if text_channel:
+    #                                 self.log.debug(guild_id, _method , f"Change Text Channel Name: {selected_title}")
+    #                                 await text_channel.edit(name=selected_title)
+    #                             self.log.debug(guild_id, _method , f"Change Voice Channel Name: {selected_title}")
+    #                             await voice_channel.edit(name=selected_title)
+    #             else:
+    #                 self.log.debug(guild_id, _method , f"trigger name change, but setting is false.")
+    #     except discord.errors.NotFound as nf:
+    #         self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
+    #     except Exception as ex:
+    #         self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+    #     finally:
+    #         self.db.close()
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
