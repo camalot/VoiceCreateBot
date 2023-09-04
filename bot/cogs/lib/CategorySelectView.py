@@ -8,9 +8,11 @@ from . import logger
 from . import loglevel
 
 
-class ChannelSelect(discord.ui.Select):
-    def __init__(self, ctx, placeholder: str, channels, allow_none: bool = False) -> None:
+class CategorySelect(discord.ui.Select):
+    def __init__(self, ctx, placeholder: str, categories, allow_none: bool = False, allow_new: bool = False) -> None:
         max_items = 24 if not allow_none else 23
+        max_items = max_items if not allow_new else max_items - 1
+
         super().__init__(placeholder=placeholder, min_values=1, max_values=1)
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
@@ -22,7 +24,7 @@ class ChannelSelect(discord.ui.Select):
         self.log = logger.Log(minimumLogLevel=log_level)
         options = []
 
-        if len(channels) >= max_items:
+        if len(categories) >= max_items:
             options.append(
                 discord.SelectOption(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
             )
@@ -31,21 +33,26 @@ class ChannelSelect(discord.ui.Select):
             options.append(
                 discord.SelectOption(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
             )
-        for c in channels[:max_items]:
-            self.log.debug(ctx.guild.id, f"{self._module}.{_method}", f"Adding channel {c.name} to options")
+        if allow_new:
+            options.append(
+                discord.SelectOption(label=self.settings.get_string(ctx.guild.id, "new"), value="-2", emoji="⭐")
+            )
+        for c in categories[:max_items]:
+            self.log.debug(ctx.guild.id, f"{self._module}.{_method}", f"Adding category {c.name} to options")
             options.append(discord.SelectOption(label=c.name, value=str(c.id), emoji="🏷"))
         self.options = options
 
 
-class ChannelSelectView(discord.ui.View):
+class CategorySelectView(discord.ui.View):
     def __init__(
             self,
             ctx,
             placeholder: str,
-            channels,
+            categories,
             select_callback=None,
             timeout_callback=None,
             allow_none: bool = False,
+            allow_new: bool = False,
             timeout: int = 180
         ) -> None:
         super().__init__(timeout=timeout)
@@ -57,7 +64,7 @@ class ChannelSelectView(discord.ui.View):
         self.log = logger.Log(minimumLogLevel=log_level)
 
         self.ctx = ctx
-        self.channel_select = ChannelSelect(ctx, placeholder, channels, allow_none)
+        self.channel_select = CategorySelect(ctx, placeholder, categories, allow_none, allow_new)
 
         self.select_callback = select_callback
         self.timeout_callback = timeout_callback
@@ -69,6 +76,7 @@ class ChannelSelectView(discord.ui.View):
         _method = inspect.stack()[0][3]
         if interaction.user.id != self.ctx.author.id:
             return
+        
         self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "Item Selected")
         if self.select_callback is not None:
             await self.select_callback(self, interaction)

@@ -1,0 +1,33 @@
+---
+name: Lint Helm Chart
+on:
+  push:
+    branches:
+      - "**" # All branches
+      - "!gh-pages" # Except gh-pages
+      - '!develop' # Except develop
+      - '!main' # Except main
+      - "!master" # Except master
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Super-Linter
+        uses: super-linter/super-linter/slim@v5
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: develop
+          GITHUB_TOKEN: ${{ github.token }}
+          VALIDATE_PYTHON_FLAKE8: false
+          VALIDATE_PYTHON_MYPY: false

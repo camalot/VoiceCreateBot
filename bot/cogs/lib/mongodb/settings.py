@@ -70,6 +70,27 @@ class SettingsDatabase():
             traceback.print_exc()
             return False
 
+    def get_default_role(self, guildId: int, categoryId: typing.Optional[int], userId: typing.Optional[int]) -> typing.Optional[int]:
+        if self.connection is None:
+            self.open()
+
+        if userId is not None: # check user settings
+            user_settings = self.connection.user_settings.find_one({"guild_id": str(guildId), "user_id": str(userId)})
+            if user_settings:
+                if "default_role" in user_settings:
+                    return int(user_settings['default_role'])
+        if categoryId is not None:
+            category_settings = self.connection.category_settings.find_one({"guild_id": str(guildId), "category_id": str(categoryId)})
+            if category_settings:
+                if "default_role" in category_settings:
+                    return int(category_settings['default_role'])
+
+        guild_settings = self.connection.guild_settings.find_one({"guild_id": str(guildId)})
+        if guild_settings:
+            if "default_role" in guild_settings:
+                return int(guild_settings['default_role'])
+
+        return None
     def delete_admin_role(self, guildId: int, roleId: int) -> bool:
         try:
             if self.connection is None:

@@ -1,0 +1,52 @@
+---
+name: Correct PR Branch Check
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "master"
+    types:
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+jobs:
+  target-branch-check:
+    runs-on: ubuntu-latest
+    env:
+      REQUIRED_BRANCH: "develop"
+    steps:
+      # use actions/github-script@v6 to check if the PR target branch is main/master.
+      # if it is, comment on the PR and close it.
+      # and set the check as failed.
+      - name: Check PR Branch
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const targetBranch = context.payload.pull_request.base.ref;
+            const message = `This PR is targeting the ${targetBranch} branch. Please target the \`${{ env.REQUIRED_BRANCH }}\` branch.`;
+            const labels = ['invalid target'];
+            if (targetBranch === 'main' || targetBranch === 'master') {
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              });
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+              github.rest.pulls.update({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'closed'
+              });
+              core.setFailed(message);
+            }

@@ -49,7 +49,6 @@ class YesOrNoView(discord.ui.View):
         # check if the user who clicked the button is the same as the user who started the command
         if interaction.user.id != self.ctx.author.id:
           return
-        await interaction.response.defer()
 
         await interaction.delete_original_response()
         if self.button_answer_callback is not None:

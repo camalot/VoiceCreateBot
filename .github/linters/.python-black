@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 120
+target-version = ["py37", "py38", "py39", "py310"]
+target-versions = ["py37", "py38", "py39", "py310"]
+skip-magic-trailing-comma = true
+skip-string-normalization = true
+verbose = true
+diff = true
+check = true
+color = true
+

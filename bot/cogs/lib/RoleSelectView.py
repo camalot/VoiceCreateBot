@@ -42,15 +42,14 @@ class RoleSelectView(discord.ui.View):
     async def on_select_callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.ctx.author.id:
           return
-        await interaction.response.defer()
         if self.select_callback is not None:
-            await self.select_callback(self.role_select, interaction)
+            await self.select_callback(self, interaction)
             self.stop()
 
     async def on_timeout(self, interaction: discord.Interaction) -> None:
         self.clear_items()
         if self.timeout_callback is not None:
-            await self.timeout_callback()
+            await self.timeout_callback(self)
 
 
 class RoleSelect(discord.ui.Select):

@@ -12,8 +12,11 @@ from .lib import mongo
 from .lib import logger
 from .lib import loglevel
 from .lib import member_helper
+from .lib.bot_helper import BotHelper
 from .lib.messaging import Messaging
 from .lib.enums import AddRemoveEnum
+from .lib.RoleSelectView import RoleSelectView
+from .lib.CategorySelectView import CategorySelectView
 
 class SetupCog(commands.Cog):
     def __init__(self, bot):
@@ -25,6 +28,7 @@ class SetupCog(commands.Cog):
 
         self.db = mongo.MongoDatabase()
         self.messaging = Messaging(bot)
+        self.bot_helper = BotHelper(bot)
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -59,9 +63,97 @@ class SetupCog(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def init(self, ctx):
         _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
+            await ctx.message.delete()
 
-            pass
+
+            # this should be configurable
+            exclude_roles = [r.id for r in ctx.guild.roles if r.name.lower().startswith('lfg-')]
+
+
+            async def rsv_callback(view, interaction):
+                await interaction.response.defer()
+                await rsv_message.delete()
+
+                # get the role
+                role_id = int(interaction.data['values'][0])
+                # get the role object
+                role = utils.get_by_name_or_id(ctx.guild.roles, role_id)
+
+                if role is None:
+                    await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_role_not_found"), f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_role_not_found')}", delete_after=5)
+                    return
+
+                await ctx.send(f"Role selected: {role.name}")
+                selected_role = role
+
+                async def csv_callback(view, interaction):
+                    await interaction.response.defer()
+                    await csv_message.delete()
+
+                    category_id = int(interaction.data['values'][0])
+                    if category_id == -2:
+                        # create a new category
+                        await ctx.send("TODO: Create a new category", delete_after=5)
+                        return
+                    if category_id == -1:
+                        # no category selected
+                        await ctx.send("TODO: No category selected", delete_after=5)
+                        return
+                    if category_id == 0:
+                        # other category selected
+                        await ctx.send("TODO: Other category selected", delete_after=5)
+                        return
+
+                    # get the role object
+                    category: discord.CategoryChannel = utils.get_by_name_or_id(ctx.guild.categories, category_id)
+                    if not category:
+                        await ctx.send("Category not found", delete_after=5)
+                    selected_category = category
+                    await ctx.send(f"Category selected: {category.name}")
+
+
+
+                async def csv_timeout_callback(view):
+                    await csv_message.delete()
+                    # took too long to respond
+                    await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_timeout"), f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'took_too_long')}", delete_after=5)
+                    pass
+
+
+                csv = CategorySelectView(
+                    ctx=ctx,
+                    placeholder=self.settings.get_string(guild_id, "title_select_category"),
+                    categories=ctx.guild.categories,
+                    select_callback=csv_callback,
+                    timeout_callback=csv_timeout_callback,
+                    allow_none=False,
+                    allow_new=True,
+                    timeout=60
+                )
+                csv_message = await ctx.send(view=csv)
+            async def rsv_timeout_callback(view):
+                await rsv_message.delete()
+                # took too long to respond
+                await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_timeout"), f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'took_too_long')}", delete_after=5)
+                pass
+
+
+            selected_role = None
+            selected_category = None
+            # ask for the default user role.
+            rsv = RoleSelectView(
+                ctx=ctx,
+                placeholder=self.settings.get_string(guild_id, "title_select_default_role"),
+                exclude_roles=exclude_roles,
+                select_callback=rsv_callback,
+                timeout_callback=rsv_timeout_callback,
+                allow_none=False,
+
+                timeout=60
+            )
+            rsv_message = await ctx.send(view=rsv)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"Error: {e}")
             traceback.print_exc()
@@ -130,12 +222,15 @@ class SetupCog(commands.Cog):
                 # NO ROLE PASSED IN. Treat this as a get command
                 if member_helper.is_in_voice_channel(ctx.author):
                     voice_channel = ctx.author.voice.channel
-                    # category_id = ctx.author.voice.channel.category.id
                     self.db.open()
                     user_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel.id)
-                    result_role = self.db.get_default_role(guildId=guild_id, categoryId=voice_channel.category.id, userId=user_id)
-                    if result_role:
-                        role: discord.Role = self.get_by_name_or_id(ctx.guild.roles, result_role)
+                    result_role_id = self.settings.db.get_default_role(
+                        guildId=guild_id,
+                        categoryId=voice_channel.category.id,
+                        userId=user_id
+                    )
+                    if result_role_id:
+                        role: discord.Role = utils.get_by_name_or_id(ctx.guild.roles, result_role_id)
                         await self.messaging.send_embed(
                             channel=ctx.channel,
                             title=self.settings.get_string(guild_id, 'title_voice_channel_settings'),
@@ -144,9 +239,19 @@ class SetupCog(commands.Cog):
                             delete_after=30
                         )
                     else:
-                        await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, 'title_voice_channel_settings'), f"{author.mention}, {self.get_string(guild_id, 'info_default_role_not_found')}", fields=None, delete_after=5)
+                        await self.messaging.send_embed(
+                            channel=ctx.channel,
+                            title=self.settings.get_string(guild_id, 'title_voice_channel_settings'),
+                            message=f"{author.mention}, {self.settings.get_string(guild_id, 'info_default_role_not_found')}",
+                            fields=None, delete_after=5
+                        )
                 else:
-                    await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_not_in_channel"), f'{author.mention}, {self.get_string(guild_id, "info_not_in_channel")}', delete_after=5)
+                    await self.messaging.send_embed(
+                        channel=ctx.channel,
+                        title=self.settings.get_string(guild_id, "title_not_in_channel"),
+                        message=f'{author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                        delete_after=5
+                    )
                 return
 
 
@@ -172,8 +277,9 @@ class SetupCog(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def admin(self, ctx, action: typing.Optional[AddRemoveEnum],  role: typing.Optional[typing.Union[str, discord.Role]]):
         _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
-
+            await ctx.message.delete()
             if action is None and role is None:
                 # return the list of admin roles
                 pass
@@ -187,15 +293,15 @@ class SetupCog(commands.Cog):
             if admin_role is None:
                 raise commands.BadArgument(f"Role {admin_role} not found")
 
-
             if action == AddRemoveEnum.ADD:
-                # self.db.set_admin_role_for_guild(ctx.guild.id, admin_role.id)
-                ctx.send(f"Added role {admin_role.name}")
+                self.settings.db.add_admin_role(guildId=guild_id, roleId=admin_role.id)
+                ctx.send(f"Added role {admin_role.name}", delete_after=5)
             elif action == AddRemoveEnum.REMOVE:
-                # self.db.remove_admin_role_for_guild(ctx.guild.id, admin_role.id)
-                ctx.send(f"Removed role {admin_role.name}")
+                self.settings.db.delete_admin_role(guildId=guild_id, roleId=admin_role.id)
+                ctx.send(f"Removed role {admin_role.name}", delete_after=5)
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"Error: {e}")
+            await self.messaging.notify_of_error(ctx)
+            self.log.error(guild_id, f"{self._module}.{_method}", f"Error: {e}")
             traceback.print_exc()
 
 
