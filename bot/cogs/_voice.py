@@ -302,7 +302,6 @@ class voice(commands.Cog):
             except Exception as ex:
                 self.log.error(guild_id, _method , str(ex), traceback.format_exc())
 
-
     @voice.command()
     async def version(self, ctx):
         author = ctx.author
@@ -1609,7 +1608,6 @@ class voice(commands.Cog):
             self.db.close()
             await ctx.message.delete()
 
-
     @voice.command(aliases=["rename"])
     async def force_name(self, ctx, *, name: str = None):
         _method = inspect.stack()[1][3]
@@ -2303,6 +2301,7 @@ class voice(commands.Cog):
 
         # for x in self.strings[str(guildId)]:
         #     self.log.debug(guildId, _method, self.get_string(guildId, x))
+
     def get_string(self, guildId: int, key: str):
         _method = inspect.stack()[1][3]
         if not key:

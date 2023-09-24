@@ -53,6 +53,7 @@ class HelpCog(commands.Cog):
             await self.root_help(ctx)
         else:
             await self.subcommand_help(ctx, command, subcommand)
+            
     async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
         _method = inspect.stack()[1][3]
         if ctx.guild:

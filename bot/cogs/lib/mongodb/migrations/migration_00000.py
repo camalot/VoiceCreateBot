@@ -1,7 +1,8 @@
-from pymongo import MongoClient
-from . import Migration
 import inspect
 import os
+
+from bot.cogs.lib.mongodb.migration import Migration
+
 
 class Migration_00000(Migration):
     def __init__(self, connection):

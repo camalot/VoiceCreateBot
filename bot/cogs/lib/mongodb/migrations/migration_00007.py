@@ -1,12 +1,12 @@
 
 # MIGRATE SETTINGS COLLECTION
-
-from pymongo import MongoClient
-from ..models.guild_settings import GuildSettingsV2
-from ... import utils
-from . import Migration
 import inspect
 import os
+
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb.migration import Migration
+from bot.cogs.lib.mongodb.models.guild_settings import GuildSettingsV2
+
 
 class Migration_00007(Migration):
     def __init__(self, connection):

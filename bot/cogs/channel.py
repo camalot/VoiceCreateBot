@@ -1,0 +1,381 @@
+import inspect
+import os
+import traceback
+import typing
+
+import discord
+from bot.cogs.lib import channels, logger, loglevel, messaging, settings, users, utils
+from bot.cogs.lib.mongodb import channels as channels_db
+from bot.cogs.lib.mongodb import usersettings as usersettings_db
+from discord.ext import commands
+
+
+class channel(commands.Cog):
+    def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
+
+        self.channel_db = channels_db.ChannelsDatabase()
+        self.usersettings_db = usersettings_db.UserSettingsDatabase()
+
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+        self.settings = settings.Settings()
+        self.bot = bot
+        self._messaging = messaging.Messaging(bot)
+        self._users = users.Users(bot)
+        self._channels = channels.Channels(bot)
+
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._module}.{self._class} cog")
+
+    @commands.group(name="channel", aliases=["ch"])
+    async def channel(self, ctx):
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            guild_id = 0
+        if guild_id != 0:
+            await ctx.message.delete()
+
+    @channel.command()
+    async def name(self, ctx, *, name: typing.Optional[str] = None):
+        await self._name(ctx, name=name, saveSettings=True)
+
+    async def _name(self, ctx, name: typing.Optional[str] = None, saveSettings: bool = True):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        voice_channel_id = None
+        voice_channel = None
+
+        try:
+            await ctx.message.delete()
+            if self._users.isInVoiceChannel(ctx):
+                voice_channel_id = ctx.author.voice.channel.id
+                voice_channel = ctx.author.voice.channel
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            if not name or name == "":
+                name = utils.get_random_name()
+            author_id = ctx.author.id
+            category_id = ctx.author.voice.channel.category.id
+
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if owner_id != author_id and not self._users.isAdmin(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_permission_denied')}",
+                    delete_after=5,
+                )
+                return
+            category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+            is_tracked_channel = len(
+                [
+                    c for c in self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id)
+                    if c == voice_channel_id
+                ]
+            ) >= 1
+            if not is_tracked_channel:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_update_channel_name'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_voice_not_tracked')}",
+                    delete_after=5,
+                )
+                return
+
+            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            text_channel = None
+            if text_channel_id:
+                text_channel = await self._channels.get_or_fetch_channel(int(text_channel_id))
+            if text_channel:
+                await text_channel.edit(name=name)
+
+            await voice_channel.edit(name=name)
+            if saveSettings:
+                user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
+                if user_settings:
+                    self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
+                else:
+                    self.usersettings_db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
+            await self._messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, 'title_update_channel_name'), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), channel=name)}', delete_after=5)
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command(aliases=["rename"])
+    async def force_name(self, ctx, *, name: typing.Optional[str] = None):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        channel_id = ctx.author.voice.channel.id
+        channel = ctx.author.voice.channel
+        try:
+            await ctx.message.delete()
+            if not self._users.isInVoiceChannel(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            if self._users.isAdmin(ctx):
+                if not name or name == "":
+                    name = utils.get_random_name()
+                category_id = ctx.author.voice.channel.category.id
+                guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+                owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+                if not owner_id:
+                    await self._messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, 'title_update_channel_name'),
+                        f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_voice_not_tracked')}",
+                        delete_after=5,
+                    )
+                    return
+                user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
+                default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+                # text channel rename is automatically handled by the change event on the voice channel.
+
+                if channel:
+                    self.log.debug(guild_id, _method, f"Edit the channel to: {channel.name} -> {name}")
+                    await channel.edit(name=name)
+                    await self._messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, 'title_update_channel_name'),
+                        f'''{ctx.author.mention}, {
+                            utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=name)
+                        }''',
+                        delete_after=5,
+                    )
+
+                if user_settings:
+                    self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
+                else:
+                    self.usersettings_db.insert_user_settings(
+                        guildId=guild_id,
+                        userId=owner_id,
+                        channelName=name,
+                        channelLimit=guild_category_settings.channel_limit,
+                        bitrate=guild_category_settings.bitrate,
+                        defaultRole=temp_default_role.id,
+                        autoGame=False,
+                    )
+            else:
+                self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'rename'")
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def mute(self, ctx, userOrRole: typing.Optional[typing.Union[discord.Role, discord.Member]] = None):
+        guild_id = ctx.guild.id
+        _method = inspect.stack()[1][3]
+        try:
+            await ctx.message.delete()
+
+            author_id = ctx.author.id
+            category_id = None
+            category = None
+            voice_channel = None
+            if self._users.isInVoiceChannel(ctx):
+                voice_channel = ctx.author.voice.channel
+                category = voice_channel.category
+                category_id = category.id
+                voice_channel_id = voice_channel.id
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_not_in_channel'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            owner = await self._users.get_or_fetch_user(owner_id)
+
+            if (not self._users.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "title_permission_denied")}',
+                    delete_after=5,
+                )
+                return
+
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+            text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            text_channel = None
+            if text_channel_id:
+                text_channel = await self._channels.get_or_fetch_channel(text_channel_id)
+
+            permRoles = []
+            if everyone:
+                permRoles = [everyone]
+            if userOrRole:
+                permRoles.append(userOrRole)
+            if text_channel:
+                await text_channel.set_permissions(
+                    owner,
+                    connect=True,
+                    read_messages=True,
+                    send_messages=True,
+                    view_channel=True,
+                    read_message_history=True,
+                )
+                for r in permRoles:
+                    await text_channel.set_permissions(r, send_messages=False)
+
+            await voice_channel.set_permissions(owner, speak=True)
+            for r in permRoles:
+                await voice_channel.set_permissions(r, speak=False)
+
+            await self._messaging.send_embed(
+                ctx.channel,
+                self.settings.get_string(guild_id, "title_channel_mute"),
+                f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_channel_mute")}',
+                delete_after=5,
+            )
+
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def unmute(self, ctx, userOrRole: typing.Optional[typing.Union[discord.Role, discord.Member]] = None):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+            author_id = ctx.author.id
+            category_id = ctx.author.voice.channel.category.id
+            voice_channel = None
+            if self._users.isInVoiceChannel(ctx):
+                voice_channel = ctx.author.voice.channel
+                voice_channel_id = voice_channel.id
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_not_in_channel'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            owner = await self._users.get_or_fetch_user(owner_id)
+            if (not self._users.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "title_permission_denied")}',
+                    delete_after=5,
+                )
+                return
+
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+            text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            text_channel = None
+            if text_channel_id:
+                text_channel = await self._channels.get_or_fetch_channel(text_channel_id)
+
+            permRoles = []
+            if everyone:
+                permRoles = [everyone]
+            if userOrRole:
+                permRoles.append(userOrRole)
+            if text_channel:
+                await text_channel.set_permissions(
+                    owner,
+                    connect=True,
+                    read_messages=True,
+                    send_messages=True,
+                    view_channel=True,
+                    read_message_history=True,
+                )
+                for r in permRoles:
+                    await text_channel.set_permissions(r, send_messages=True)
+
+            await voice_channel.set_permissions(owner, speak=True)
+            for r in permRoles:
+                await voice_channel.set_permissions(r, speak=True)
+
+            await self._messaging.send_embed(
+                ctx.channel,
+                self.settings.get_string(guild_id, "title_channel_unmute"),
+                f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_channel_unmute")}',
+                delete_after=5,
+            )
+
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def owner(self, ctx, member: discord.Member):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.author.guild.id
+        channel = None
+        try:
+            if self._users.isInVoiceChannel(ctx):
+                channel = ctx.author.voice.channel
+            if channel is None:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_set_channel_owner"),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_not_in_channel')}",
+                    delete_after=5,
+                )
+            else:
+                owner_id = self.channel_db.get_tracked_channel_owner(guildId=guild_id, voiceChannelId=channel.id)
+                if not owner_id:
+                    await self._messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, "title_set_channel_owner"),
+                        f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_unmanaged_channel')}",
+                        delete_after=5,
+                    )
+                else:
+                    if self._users.isAdmin(ctx) or ctx.author.id == owner_id:
+                        self.channel_db.update_tracked_channel_owner(
+                            guildId=guild_id, voiceChannelId=channel.id, ownerId=owner_id, newOwnerId=member.id
+                        )
+                        await self._messaging.send_embed(
+                            ctx.channel,
+                            self.settings.get_string(guild_id, "title_set_channel_owner"),
+                            f"""{ctx.author.mention}, {
+                                utils.str_replace(
+                                    self.settings.get_string(guild_id, 'info_new_owner'), user=member.mention
+                                )
+                            }""",
+                            delete_after=5)
+                    else:
+                        await self._messaging.send_embed(
+                            ctx.channel,
+                            self.settings.get_string(guild_id, "title_set_channel_owner"),
+                            f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_permission_denied')}",
+                            delete_after=5,
+                        )
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+
+async def setup(bot):
+    await bot.add_cog(channel(bot))

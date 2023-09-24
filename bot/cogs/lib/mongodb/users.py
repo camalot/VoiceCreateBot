@@ -1,16 +1,13 @@
-from .. import settings
-from pymongo import MongoClient
-import traceback
-import json
-from .. import utils
-from .database import Database
 import datetime
+import traceback
 import discord
-import typing
-from ..member_status import MemberStatus
+
+from bot.cogs.lib import utils
+from bot.cogs.lib.database import Database
+from bot.cogs.lib.member_status import MemberStatus
+
 
 class UsersMongoDatabase(Database):
-
     def __init__(self):
         super().__init__()
         pass

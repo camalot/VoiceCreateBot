@@ -1,11 +1,10 @@
-from .. import settings
-import discord
-from pymongo import MongoClient
-import traceback
-import json
-from .. import utils
-from .database import Database
 import datetime
+import traceback
+import discord
+
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb.database import Database
+
 
 class GuildsMongoDatabase(Database):
 

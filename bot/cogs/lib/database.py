@@ -98,10 +98,6 @@ class Database():
         pass
     def get_all_guild_settings(self):
         pass
-    def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
-        pass
-    def clear_log(self, guildId: int):
-        pass
 
     def UPDATE_SCHEMA(self):
         pass

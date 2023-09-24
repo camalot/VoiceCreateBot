@@ -92,7 +92,7 @@ def str_replace(input_string: str, *args, **kwargs):
         result = result.replace(f"{{{a}}}", kwargs[a])
     return result
 
-def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
+def get_by_name_or_id(iterable, nameOrId: typing.Optional[typing.Union[int, str]]):
     if isinstance(nameOrId, str):
         return discord.utils.get(iterable, name=str(nameOrId))
     elif isinstance(nameOrId, int):

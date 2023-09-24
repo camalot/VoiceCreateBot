@@ -1,11 +1,10 @@
-from pymongo import MongoClient
 import traceback
-import json
 import os
 import typing
 
-from .. import utils
-from .models.guild_settings import GuildSettingsV2
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb.models.guild_settings import GuildSettingsV2
+from pymongo import MongoClient
 
 class SettingsDatabase():
     def __init__(self):
@@ -23,6 +22,7 @@ class SettingsDatabase():
             raise ValueError("VCB_MONGODB_DBNAME is not set")
         self.client = MongoClient(self.db_url)
         self.connection = self.client[self.db_name]
+
     def close(self):
         try:
             if self.client is not None:
@@ -91,6 +91,7 @@ class SettingsDatabase():
                 return int(guild_settings['default_role'])
 
         return None
+
     def delete_admin_role(self, guildId: int, roleId: int) -> bool:
         try:
             if self.connection is None:

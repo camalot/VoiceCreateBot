@@ -1,7 +1,6 @@
 import typing
 
 
-
 class GuildSettings:
     def __init__(self, guildId: int, prefix, defaultRole: int, adminRole: int, language: str):
         self.guild_id = guildId
@@ -19,6 +18,7 @@ class GuildSettingsV2:
         self.prefixes = prefixes
         self.language = language
 
+
     @staticmethod
     def from_v1(v1: GuildSettings) -> 'GuildSettingsV2':
         return GuildSettingsV2(
@@ -28,6 +28,7 @@ class GuildSettingsV2:
             adminRoles=[int(v1.admin_role)],
             language=v1.language
         )
+
 
     @staticmethod
     def from_v1_dict(d: dict) :

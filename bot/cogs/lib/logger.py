@@ -1,13 +1,14 @@
 import sys
 import typing
 
-from bot.cogs.lib import loglevel, mongo
+from bot.cogs.lib import loglevel
+from bot.cogs.lib.mongodb.logs import LogsMongoDatabase
 from bot.cogs.lib.colors import Colors
 
 
-class Log():
+class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG):
-        self.db = mongo.MongoDatabase()
+        self.db = LogsMongoDatabase()
         self.minimum_log_level = minimumLogLevel
 
     def __write(
@@ -41,7 +42,7 @@ class Log():
             stackTrace=stackTrace,
             file=sys.stdout,
         )
-        
+
     def info(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,

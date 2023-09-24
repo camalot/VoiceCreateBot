@@ -45,16 +45,16 @@ class CategorySelect(discord.ui.Select):
 
 class CategorySelectView(discord.ui.View):
     def __init__(
-            self,
-            ctx,
-            placeholder: str,
-            categories,
-            select_callback=None,
-            timeout_callback=None,
-            allow_none: bool = False,
-            allow_new: bool = False,
-            timeout: int = 180
-        ) -> None:
+        self,
+        ctx,
+        placeholder: str,
+        categories,
+        select_callback=None,
+        timeout_callback=None,
+        allow_none: bool = False,
+        allow_new: bool = False,
+        timeout: int = 180
+    ) -> None:
         super().__init__(timeout=timeout)
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
@@ -76,7 +76,7 @@ class CategorySelectView(discord.ui.View):
         _method = inspect.stack()[0][3]
         if interaction.user.id != self.ctx.author.id:
             return
-        
+
         self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "Item Selected")
         if self.select_callback is not None:
             await self.select_callback(self, interaction)

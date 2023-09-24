@@ -48,7 +48,7 @@ class YesOrNoView(discord.ui.View):
     async def answer_callback(self, interaction: discord.Interaction) -> None:
         # check if the user who clicked the button is the same as the user who started the command
         if interaction.user.id != self.ctx.author.id:
-          return
+            return
 
         await interaction.delete_original_response()
         if self.button_answer_callback is not None:

@@ -56,39 +56,6 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def insert_log(
-        self,
-        guildId: int,
-        level: loglevel.LogLevel,
-        method: str,
-        message: str,
-        stackTrace: typing.Optional[str] = None
-    ):
-        try:
-            if self.connection is None:
-                self.open()
-            payload = {
-                "guild_id": guildId,
-                "timestamp": utils.get_timestamp(),
-                "level": level.name,
-                "method": method,
-                "message": message,
-                "stack_trace": stackTrace
-            }
-            self.connection.logs.insert_one(payload)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-    def clear_log(self, guildId):
-        try:
-            if self.connection is None:
-                self.open()
-            self.connection.logs.delete_many({ "guild_id": guildId })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
     def get_tracked_voice_channel_ids(self, guildId):
         try:
             if self.connection is None:

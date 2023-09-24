@@ -1,13 +1,17 @@
-from bot.cogs.lib.mongodb import migrations
-from .. import settings
-from pymongo import MongoClient
 import traceback
-import json
-from .migrations import *
-from .. import utils
+import typing
+
+from bot.cogs.lib import settings
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb import migrations
+# from bot.cogs.lib.mongodb.migrations import *
+from pymongo import MongoClient
+
+
 class MongoMigration:
 
     def __init__(self, schemaVersion: int = 0):
+        # TODO: module, method, class names
         self.settings = settings.Settings()
         self.client = None
         self.connection = None
@@ -65,7 +69,7 @@ class MongoMigration:
         except Exception as ex:
            self.log("migration.close", str(ex), traceback.format_exc())
 
-    def log(self, method: str, message: str, stackTrace: str = None):
+    def log(self, method: str, message: str, stackTrace: typing.Optional[str] = None):
         print(f"[DEBUG] [{method}] [guild:0] {message}")
         if stackTrace:
             print(stackTrace)
