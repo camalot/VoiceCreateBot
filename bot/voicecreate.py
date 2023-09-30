@@ -12,11 +12,8 @@ import os
 import glob
 import typing
 import discordhealthcheck
-from .cogs.lib import utils
-from .cogs.lib import settings
-from .cogs.lib import mongo
-from .cogs.lib import logger
-from .cogs.lib import loglevel
+
+from bot.cogs.lib import logger, loglevel, mongo, settings
 
 
 class VoiceCreate(commands.Bot):
@@ -101,7 +98,8 @@ class VoiceCreate(commands.Bot):
         # self.healthcheck_server = await discordhealthcheck.start(self)
 
     def initDB(self):
-        self.db.UPDATE_SCHEMA(self.DBVERSION)
+        pass
+        # self.db.UPDATE_SCHEMA(self.DBVERSION)
         # sql3db = sqlite.SqliteDatabase()
         # sql3db.UPDATE_SCHEMA(self.DBVERSION)
         # mdb = mongo.MongoDatabase()

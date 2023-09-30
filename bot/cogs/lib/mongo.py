@@ -4,7 +4,6 @@ import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
 from bot.cogs.lib import database, settings, utils, loglevel
 from bot.cogs.lib.mongodb.models import category_settings
-from bot.cogs.lib.mongodb import migration
 
 class MongoDatabase(database.Database):
     def __init__(self):
@@ -14,34 +13,35 @@ class MongoDatabase(database.Database):
         pass
 
     def UPDATE_SCHEMA(self, newDBVersion: int):
-        print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
-        try:
-            # check if migrated
-            # if not, open db and migrate the data
-            if self.connection is None:
-                self.open()
+        pass
+        # print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
+        # try:
+        #     # check if migrated
+        #     # if not, open db and migrate the data
+        #     if self.connection is None:
+        #         self.open()
 
-            migrator = migration.MongoMigration(newDBVersion)
-            migrator.run()
+        #     migrator = migration_runner.MongoMigration(newDBVersion)
+        #     migrator.run()
 
-            # setup missing guild category settings...
-            guild_channels = self.connection.create_channels.find({}, { "guild_id": 1, "voice_channel_id": 1, "voice_category_id": 1 })
-            for g in guild_channels:
-                gcs = self.get_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'])
-                if not gcs:
-                    print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guild_id']} category: {g['voice_category_id']}")
-                    guild_setting = self.get_guild_settings(g['guild_id'])
-                    if guild_setting:
-                        self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole=guild_setting.default_role)
-                    else:
-                        self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="@everyone")
+        #     # setup missing guild category settings...
+        #     guild_channels = self.connection.create_channels.find({}, { "guild_id": 1, "voice_channel_id": 1, "voice_category_id": 1 })
+        #     for g in guild_channels:
+        #         gcs = self.get_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'])
+        #         if not gcs:
+        #             print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guild_id']} category: {g['voice_category_id']}")
+        #             guild_setting = self.get_guild_settings(g['guild_id'])
+        #             if guild_setting:
+        #                 self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole=guild_setting.default_role)
+        #             else:
+        #                 self.set_guild_category_settings(guildId=g['guild_id'], categoryId=g['voice_category_id'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="@everyone")
 
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection is not None:
-                self.close()
+        # except Exception as ex:
+        #     print(ex)
+        #     traceback.print_exc()
+        # finally:
+        #     if self.connection is not None:
+        #         self.close()
 
 
     def open(self):

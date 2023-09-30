@@ -6,6 +6,7 @@ import os
 import signal
 import asyncio
 
+from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
 from bot.cogs.lib.colors import Colors
 from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
@@ -17,6 +18,9 @@ def sighandler(signum, frame):
 
 def main():
     try:
+        migrations = MigrationRunner()
+        migrations.start_migrations()
+
         DISCORD_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
         intents = discord.Intents.all()
         intents.message_content = True

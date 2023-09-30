@@ -3,9 +3,10 @@ import os
 import typing
 
 from bot.cogs.lib import utils
-from bot.cogs.lib.mongodb.models.guild_settings import GuildSettingsV2
+from bot.cogs.lib.mongodb.models.guild_settings import GuildSettings
 from bot.cogs.lib.mongodb.models.category_settings import GuildCategorySettings
 from pymongo import MongoClient
+
 
 class SettingsDatabase():
     def __init__(self):
@@ -40,7 +41,7 @@ class SettingsDatabase():
                 self.open()
             c = self.connection.guild_settings.find_one({"guild_id": str(guildId)})
             if c:
-                return GuildSettingsV2(
+                return GuildSettings(
                     guildId=int(c['guild_id']),
                     prefixes=c['prefixes'],
                     defaultRole=int(c['default_role']),
@@ -53,7 +54,7 @@ class SettingsDatabase():
             traceback.print_exc()
             return None
 
-    def set(self, settings: GuildSettingsV2):
+    def set(self, settings: GuildSettings):
         try:
             if self.connection is None:
                 self.open()

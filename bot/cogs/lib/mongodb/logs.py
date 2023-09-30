@@ -1,7 +1,6 @@
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.database import Database
 
 

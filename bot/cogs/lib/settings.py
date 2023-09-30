@@ -1,12 +1,13 @@
 import sys
 import os
 import traceback
+import json
 import glob
 import typing
 import inspect
-from . import utils
-from .mongodb.settings import SettingsDatabase
-import json
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb.settings import SettingsDatabase
+
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
