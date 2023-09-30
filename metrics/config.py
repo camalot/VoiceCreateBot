@@ -11,6 +11,7 @@ class VoiceCreateMetricsConfig:
             "pollingInterval": int(utils.dict_get(os.environ, "VCBE_CONFIG_METRICS_POLLING_INTERVAL", "60")),
         }
 
+        # load config from file
         try:
             # check if file exists
             if os.path.exists(file):
