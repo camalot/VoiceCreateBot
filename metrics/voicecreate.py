@@ -1,19 +1,38 @@
 import inspect
 import os
 import time
+import traceback
+
 from prometheus_client import Gauge
-from .lib.mongodb.exporter import ExporterMongoDatabase
+from bot.cogs.lib.mongodb.exporter import ExporterMongoDatabase
+from bot.cogs.lib.logger import Log
+from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib import settings
+
 
 class VoiceCreateMetrics:
     def __init__(self, config):
-        self._method = inspect.stack()[0][3]
+        _method = inspect.stack()[0][3]
         self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
 
         self.namespace = "voicecreate"
         self.polling_interval_seconds = config.metrics["pollingInterval"]
         self.config = config
 
-        self.db = ExporterMongoDatabase()
+        self.settings = settings.Settings()
+        log_level = LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = LogLevel.DEBUG
+        self.log = Log(minimumLogLevel=log_level)
+
+        self.exporter_db = ExporterMongoDatabase()
+
+        self.errors = Gauge(
+            namespace=self.namespace,
+            name=f"exporter_errors",
+            documentation="The number of errors encountered",
+            labelnames=["source"])
 
         self.guilds = Gauge(
             namespace=self.namespace,
@@ -21,18 +40,35 @@ class VoiceCreateMetrics:
             documentation="The guilds that the bot is in",
             labelnames=["guild_id", "name"])
 
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
+
 
     def run_metrics_loop(self):
         """Metrics fetching loop"""
+        _method = inspect.stack()[0][3]
         while True:
-            print(f"begin metrics fetch")
-            self.fetch()
-            print(f"end metrics fetch")
-            time.sleep(self.polling_interval_seconds)
+            try:
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
+                self.fetch()
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Sleeping for {self.polling_interval_seconds} seconds",
+                )
+                time.sleep(self.polling_interval_seconds)
+            except Exception as ex:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
     def fetch(self):
-        q_guilds = self.db.get_guilds()
+        _method = inspect.stack()[0][3]
         known_guilds = []
-        for row in q_guilds:
-            known_guilds.append(row['guild_id'])
-            self.guilds.labels(guild_id=row['guild_id'], name=row['name']).set(1)
+        try:
+            q_guilds = self.exporter_db.get_guilds() or []
+            for row in q_guilds:
+                known_guilds.append(row['guild_id'])
+                self.guilds.labels(guild_id=row['guild_id'], name=row['name']).set(1)
+            self.errors.labels(source="guilds").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels(source="guilds").set(1)

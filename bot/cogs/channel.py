@@ -10,7 +10,7 @@ from bot.cogs.lib.mongodb import usersettings as usersettings_db
 from discord.ext import commands
 
 
-class channel(commands.Cog):
+class ChannelCog(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -98,7 +98,7 @@ class channel(commands.Cog):
                 )
                 return
 
-            text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+            text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             text_channel = None
             if text_channel_id:
                 text_channel = await self._channels.get_or_fetch_channel(int(text_channel_id))
@@ -111,7 +111,15 @@ class channel(commands.Cog):
                 if user_settings:
                     self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=name)
                 else:
-                    self.usersettings_db.insert_user_settings(guildId=guild_id, userId=owner_id, channelName=name, channelLimit=category_settings.channel_limit, bitrate=category_settings.bitrate, defaultRole=temp_default_role.id, autoGame=False)
+                    self.usersettings_db.insert_user_settings(
+                        guildId=guild_id,
+                        userId=owner_id,
+                        channelName=name,
+                        channelLimit=category_settings.channel_limit,
+                        bitrate=category_settings.bitrate,
+                        defaultRole=temp_default_role.id,
+                        autoGame=False,
+                    )
             await self._messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, 'title_update_channel_name'), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), channel=name)}', delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
@@ -376,6 +384,155 @@ class channel(commands.Cog):
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
 
+    @channel.command()
+    async def game(self, ctx):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+            author = ctx.author
+            author_id = author.id
+            channel_id = None
+            selected_title = None
+            if self._users.isInVoiceChannel(ctx):
+                channel_id = ctx.author.voice.channel.id
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+            if owner_id != author_id and not self._users.isAdmin(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_permission_denied')}",
+                    delete_after=5,
+                )
+                return
+            owner = await self._users.get_or_fetch_member(ctx.guild, owner_id)
+            if owner:
+                selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title=self.settings.get_string(guild_id, "title_update_to_game"))
+                if selected_title:
+                    await self._name(ctx, selected_title, False)
+                else:
+                    await self._messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, "title_unknown_game"),
+                        f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_unknown_game")}',
+                        delete_after=5,
+                    )
+                    await ctx.message.delete()
+            else:
+                self.log.debug(guild_id, _method, f"Unable to locate the owner for 'game' call.")
+                await ctx.message.delete()
+        except discord.errors.NotFound as nf:
+            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def give(self, ctx, newOwner: discord.Member):
+        """Give ownership of the channel to another user in the channel"""
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+            if not self._users.isInVoiceChannel(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_not_in_channel'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            channel_id = ctx.author.voice.channel.id
+            new_owner_id = newOwner.id
+            # update_tracked_channel_owner
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
+            if new_owner_id == owner_id:
+                # Can't grant to self
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_update_owner'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_channel_owned_you')}",
+                    delete_after=5,
+                )
+            else:
+                self.channel_db.update_tracked_channel_owner(
+                    guildId=guild_id, voiceChannelId=channel_id, ownerId=owner_id, newOwnerId=new_owner_id
+                )
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_update_owner'),
+                    f"{ctx.author.mention}, {utils.str_replace(self.settings.get_string(guild_id, 'info_new_owner'), user=newOwner.mention)}",
+                    delete_after=5,
+                )
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def claim(self, ctx):
+        _method = inspect.stack()[1][3]
+        found_as_owner = False
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+            if not self._users.isInVoiceChannel(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_not_in_channel'),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+            channel = ctx.author.voice.channel
+            aid = ctx.author.id
+
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel.id)
+            if not owner_id and not self._users.isAdmin(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_permission_denied')}",
+                    delete_after=5,
+                )
+            else:
+                for data in channel.members:
+                    if data.id == owner_id:
+                        owner = await self._users.get_or_fetch_member(ctx.guild, owner_id)
+                        mention = owner.mention if owner else f"<@{owner_id}>"
+                        await self._messaging.send_embed(
+                            ctx.channel,
+                            self.settings.get_string(guild_id, 'title_update_owner'),
+                            f"""{ctx.author.mention}, {
+                                utils.str_replace(
+                                    self.settings.get_string(guild_id, 'info_channel_owned'), user=mention
+                                )
+                            }""",
+                            delete_after=5,
+                        )
+                        found_as_owner = True
+                        break
+                if not found_as_owner:
+                    self.channel_db.update_tracked_channel_owner(
+                        guildId=guild_id, voiceChannelId=channel.id, ownerId=owner_id, newOwnerId=aid
+                    )
+                    await self._messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, 'title_update_owner'),
+                        f"{ctx.author.mention}, {utils.str_replace(self.settings.get_string(guild_id, 'info_new_owner'), user=ctx.author.mention)}",
+                        delete_after=5,
+                    )
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
 
 async def setup(bot):
-    await bot.add_cog(channel(bot))
+    await bot.add_cog(ChannelCog(bot))

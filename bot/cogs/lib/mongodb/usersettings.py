@@ -33,8 +33,11 @@ class UserSettingsDatabase(Database):
             print(ex)
             traceback.print_exc()
 
-    def update_user_channel_name(self, guildId: int, userId: int, channelName: str):
+    def update_user_channel_name(self, guildId: int, userId: typing.Optional[int], channelName: typing.Optional[str]):
         try:
+            if userId is None or channelName is None:
+                return
+
             if self.connection is None:
                 self.open()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
@@ -48,7 +51,7 @@ class UserSettingsDatabase(Database):
     def insert_user_settings(
             self,
             guildId: int,
-            userId: int,
+            userId: typing.Optional[int],
             channelName: str,
             channelLimit: int,
             bitrate: int,
@@ -56,6 +59,9 @@ class UserSettingsDatabase(Database):
             autoGame: bool = False,
         ):
         try:
+            if userId is None:
+                return
+
             if self.connection is None:
                 self.open()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))

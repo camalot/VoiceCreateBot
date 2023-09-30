@@ -9,8 +9,8 @@ class Users():
 
     def isInVoiceChannel(self, ctx):
         return (
-        (ctx.voice and ctx.voice.channel is not None) or
-        (ctx.author and ctx.author.voice and ctx.author.voice.channel is not None)
+            (ctx.voice and ctx.voice.channel is not None) or
+            (ctx.author and ctx.author.voice and ctx.author.voice.channel is not None)
         )
 
     def isAdmin(self, ctx):
@@ -29,6 +29,17 @@ class Users():
                 user = self.bot.get_user(userId)
                 if not user:
                     user = await self.bot.fetch_user(userId)
+                return user
+            return None
+        except Exception as ex:
+            return None
+
+    async def get_or_fetch_member(self, guild, userId: typing.Optional[int]):
+        try:
+            if userId:
+                user = guild.get_member(userId)
+                if not user:
+                    user = await guild.fetch_member(userId)
                 return user
             return None
         except Exception as ex:

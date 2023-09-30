@@ -5,11 +5,13 @@ import discord
 import os
 import signal
 import asyncio
+
+from bot.cogs.lib.colors import Colors
 from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
 
 def sighandler(signum, frame):
-    print("<SIGTERM received>")
+    print(Colors.colorize(Colors.FGYELLOW,"<SIGTERM received>"))
     exit(0)
 
 
@@ -28,7 +30,7 @@ def main():
         voiceCreate.remove_command('help')
         voiceCreate.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
-        print("<KeyboardInterrupt received>")
+        print(Colors.colorize(Colors.FGYELLOW,"<KeyboardInterrupt received>"))
         exit(0)
 
 def exporter():
@@ -36,7 +38,7 @@ def exporter():
         exporter = MetricsExporter()
         exporter.run()
     except KeyboardInterrupt:
-        print("<KeyboardInterrupt received>")
+        print(Colors.colorize(Colors.FGYELLOW,"<KeyboardInterrupt received>"))
         exit(0)
 
 

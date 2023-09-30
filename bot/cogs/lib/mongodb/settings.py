@@ -4,6 +4,7 @@ import typing
 
 from bot.cogs.lib import utils
 from bot.cogs.lib.mongodb.models.guild_settings import GuildSettingsV2
+from bot.cogs.lib.mongodb.models.category_settings import GuildCategorySettings
 from pymongo import MongoClient
 
 class SettingsDatabase():
@@ -193,6 +194,25 @@ class SettingsDatabase():
         }
         self.connection.guild_settings.update_one({"guild_id": str(guildId)}, { "$set": payload })
 
+    def get_guild_category_settings(self, guildId: int, categoryId: int) -> typing.Optional[GuildCategorySettings]:
+        try:
+            if self.connection is None:
+                self.open()
+            row = self.connection.category_settings.find_one({"guild_id": str(guildId), "voice_category_id": str(categoryId)})
+            if row:
+                result = GuildCategorySettings(
+                    guildId=int(guildId),
+                    categoryId=int(categoryId),
+                    channelLimit=row['channel_limit'],
+                    channelLocked=row['channel_locked'],
+                    bitrate=row['bitrate'],
+                    defaultRole=row['default_role']
+                )
+                return result
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     # def set_guild_settings_language(self, guildId: int, language: str):
     #     if self.connection is None:
     #         self.open()

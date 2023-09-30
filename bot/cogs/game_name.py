@@ -66,6 +66,8 @@ class GameNameCog(commands.Cog):
             await self.messaging_helper.notify_of_error(ctx)
 
 
+
+
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         _method = inspect.stack()[1][3]
@@ -109,6 +111,13 @@ class GameNameCog(commands.Cog):
                             "author" : owner,
                             "channel" : text_channel
                         }
+
+                        async def timeout_callback(view: discord.ui.View):
+                            view.stop()
+                            view.clear_items()
+                            await ask_message.delete()
+                            pass
+
                         async def select_callback(view: discord.ui.View, interaction: discord.Interaction):
                             view.stop()
                             await ask_message.delete()
@@ -133,11 +142,6 @@ class GameNameCog(commands.Cog):
                                         delete_after=5
                                     )
                                 await voice_channel.edit(name=selected_value)
-
-                        async def timeout_callback(view: discord.ui.View):
-                            view.stop()
-                            view.clear_items()
-                            await ask_message.delete()
 
                         game_view = GameSelectView(
                             ctx=ctx,

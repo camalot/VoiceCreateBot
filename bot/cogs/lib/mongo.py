@@ -3,6 +3,7 @@ import traceback
 import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
 from bot.cogs.lib import database, settings, utils, loglevel
+from bot.cogs.lib.mongodb.models import category_settings
 from bot.cogs.lib.mongodb import migration
 
 class MongoDatabase(database.Database):
@@ -223,7 +224,6 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            # c.execute("INSERT INTO guildCategorySettings VALUES ( ?, ?, ?, ?, ?, ? )", (guildId, CategoryChannelConverter, channelLimit, channelLocked, bitrate, defaultRole,))
             payload = {
                 "guild_id": str(guildId),
                 "voice_category_id": str(categoryId),
@@ -246,7 +246,7 @@ class MongoDatabase(database.Database):
                 self.open()
             row = self.connection.category_settings.find_one({ "guild_id": str(guildId), "voice_category_id": str(categoryId)})
             if row:
-                result = settings.GuildCategorySettings(
+                result = category_settings.GuildCategorySettings(
                     guildId=guildId,
                     categoryId=categoryId,
                     channelLimit=row['channel_limit'],
@@ -255,7 +255,6 @@ class MongoDatabase(database.Database):
                     defaultRole=row['default_role']
                 )
                 return result
-            # c.execute("SELECT channelLimit, channelLocked, bitrate, defaultRole FROM guildCategorySettings WHERE guildID = ? and voiceCategoryID = ?", (guildId, categoryId,))
             print(f"NO CATEGORY SETTINGS FOUND: {guildId}:{categoryId}")
             return None
         except Exception as ex:

@@ -95,18 +95,6 @@ class Settings:
     def get_settings(self, db, guildId: int, name:str) -> typing.Any:
         return db.get_settings(guildId, name)
 
-
-class GuildCategorySettings:
-    def __init__(self, guildId: int, categoryId: int, channelLimit: int, channelLocked: bool, bitrate: int, defaultRole: typing.Union[str, int] ):
-        self.guild_id = guildId
-        self.category_id = categoryId
-        self.channel_limit = channelLimit
-        self.channel_locked = channelLocked >= 1
-        self.bitrate = bitrate
-        self.default_role = defaultRole
-
-
-
 class GuildCreateChannelSettings:
     def __init__(self, guildId: int):
         self.guild_id = guildId

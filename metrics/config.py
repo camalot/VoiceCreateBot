@@ -1,7 +1,7 @@
 import os
 import codecs
 import yaml
-from .lib import utils
+from bot.cogs.lib import utils
 
 class VoiceCreateMetricsConfig:
     def __init__(self, file: str):

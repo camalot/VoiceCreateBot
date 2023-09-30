@@ -1,10 +1,6 @@
-from pymongo import MongoClient
 import traceback
-import json
-from .database import Database
-import datetime
-import discord
 import typing
+from bot.cogs.lib.mongodb.database import Database
 
 class ExporterMongoDatabase(Database):
 
@@ -12,7 +8,7 @@ class ExporterMongoDatabase(Database):
         super().__init__()
         pass
 
-    def get_guilds(self):
+    def get_guilds(self) -> typing.Optional[typing.Iterable[dict[str, typing.Any]]]:
         """Get all guilds"""
         try:
             if self.connection is None:
