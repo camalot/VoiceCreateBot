@@ -5,6 +5,9 @@ import typing
 from bot.cogs.lib import database, settings, utils
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.models.category_settings import GuildCategorySettings
+from bot.cogs.lib.models.guild_category_channel import GuildCategoryChannel
+from bot.cogs.lib.models.guild_create_channel_settings import GuildCreateChannelSettings
+
 
 class MongoDatabase(database.Database):
     def __init__(self):
@@ -177,9 +180,9 @@ class MongoDatabase(database.Database):
                 self.open()
             rows = self.connection.create_channels.find({"guildID": guildId})
             if rows:
-                result = settings.GuildCreateChannelSettings(guildId=guildId)
+                result = GuildCreateChannelSettings(guildId=guildId)
                 for r in rows:
-                    result.channels.append(settings.GuildCategoryChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
+                    result.channels.append(GuildCategoryChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
                 return result
             return None
         except Exception as ex:

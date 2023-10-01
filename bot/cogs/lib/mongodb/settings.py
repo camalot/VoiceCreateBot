@@ -1,8 +1,10 @@
-import traceback
+import inspect
 import os
+import traceback
 import typing
 
 from bot.cogs.lib import utils
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.databasebase import DatabaseBase
 from bot.cogs.lib.models.guild_settings import GuildSettings
 from bot.cogs.lib.models.category_settings import GuildCategorySettings
@@ -176,6 +178,7 @@ class SettingsDatabase(DatabaseBase):
         self.connection.guild_settings.update_one({"guild_id": str(guildId)}, { "$set": payload })
 
     def get_guild_category_settings(self, guildId: int, categoryId: int) -> typing.Optional[GuildCategorySettings]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -192,8 +195,41 @@ class SettingsDatabase(DatabaseBase):
                 return result
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def update_guild_create_channel_settings(
+        self, guildId: int, createChannelId: int, categoryId: int, ownerId: int, useStage: bool
+    ) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.create_channels.find_one_and_update(
+                {"guild_id": str(guildId), "voice_channel_id": str(createChannelId)},
+                {
+                    "$set": {
+                        "owner_id": str(ownerId),
+                        "voice_category_id": str(categoryId),
+                        "useStage": useStage,
+                    }
+                }
+            )
+            return True
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
     # def set_guild_settings_language(self, guildId: int, language: str):
     #     if self.connection is None:
     #         self.open()

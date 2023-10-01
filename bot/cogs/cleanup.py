@@ -7,6 +7,7 @@ from bot.cogs.lib import logger, mongo, utils, settings
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.channels import Channels
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
+from bot.cogs.lib.mongodb.guilds import GuildsMongoDatabase
 from discord.ext import commands
 
 class CleanupCog(commands.Cog):
@@ -20,6 +21,7 @@ class CleanupCog(commands.Cog):
         self.channel_helper = Channels(bot)
 
         self.channel_db = ChannelsDatabase()
+        self.guild_db = GuildsMongoDatabase()
 
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -34,16 +36,16 @@ class CleanupCog(commands.Cog):
         try:
             self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", "checking guild create channels")
             createChannelSettings = None
-            # createChannelSettings = self.settings.db.get_guild_create_channel_settings(guildId=guildID)
+            createChannelSettings = self.guild_db.get_guild_create_channel_settings(guildId=guildID)
             if createChannelSettings and createChannelSettings.channels:
                 for cc in createChannelSettings.channels:
                     cc_channel = await self.channel_helper.get_or_fetch_channel(cc.channel_id)
                     if not cc_channel:
                         # delete this channel as it no longer exists.
                         self.log.debug(
-                            guildID,
-                            f"{self._module}.{self._class}.{_method}",
-                            f"Deleting create channel {cc.channel_id} as it does not exist",
+                            guildId=guildID,
+                            method=f"{self._module}.{self._class}.{_method}",
+                            message=f"Deleting create channel {cc.channel_id} as it does not exist",
                         )
                         self.guild_db.delete_guild_create_channel(
                             guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id
@@ -65,7 +67,7 @@ class CleanupCog(commands.Cog):
                                 self.log.debug(
                                     guildID, f"{self._module}.{self._class}.{_method}", "Category ID is different"
                                 )
-                                self.db.update_guild_create_channel_settings(
+                                self.settings.db.update_guild_create_channel_settings(
                                     guildId=guildID,
                                     createChannelId=cc.channel_id,
                                     categoryId=cc_category.id,
@@ -104,13 +106,13 @@ class CleanupCog(commands.Cog):
                         )
                         # how old is the channel?
                         created_at = utils.to_timestamp(voiceChannel.created_at)
-                        # if created at is less than skip window, skip it
+                        # check if the channel is less than 5 seconds old
                         skip_window = 5
-                        if created_at < (utils.get_timestamp() - skip_window):
+                        if created_at + skip_window > utils.get_timestamp():
                             self.log.debug(
                                 guildID,
                                 f"{self._module}.{self._class}.{_method}",
-                                f"Skipping channel {voiceChannelId} because it is less than {skip_window} seconds old",
+                                f"Skipping Channel {voiceChannel} because it is too new",
                             )
                             continue
 

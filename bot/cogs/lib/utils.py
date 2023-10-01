@@ -66,7 +66,7 @@ def to_timestamp(date: datetime.datetime):
     date = date.replace(tzinfo=None)
     return (date - datetime.datetime(1970,1,1)).total_seconds()
 def get_timestamp():
-    return to_timestamp(datetime.datetime.now())
+    return to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
 def load_from_gist(type, count):
     types = [ "adjectives", "nouns", "verbs" ]

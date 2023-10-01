@@ -101,31 +101,3 @@ class Settings:
 
     def get_settings(self, db, guildId: int, name:str) -> typing.Any:
         return db.get_settings(guildId, name)
-
-class GuildCreateChannelSettings:
-    def __init__(self, guildId: int):
-        self.guild_id = guildId
-        self.channels = []
-
-class GuildCategoryChannel:
-    def __init__(self, ownerId: int, categoryId: int, channelId: int, useStage: bool):
-        self.owner_id = int(ownerId)
-        self.category_id = int(categoryId)
-        self.channel_id = int(channelId)
-        self.use_stage = useStage >= 1
-
-class TrackedVoiceChannel:
-    def __init__(self, guildId: int, ownerId: int, voiceChannelId: int):
-        self.guild_id = int(guildId)
-        self.owner_id = int(ownerId)
-        self.voice_channel_id = int(voiceChannelId)
-
-class TrackedTextChannel(TrackedVoiceChannel):
-    def __init__(self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int):
-        super(TrackedTextChannel, self).__init__(guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId)
-        self.text_channel_id = int(textChannelId)
-
-class TrackedChannels:
-    def __init__(self, voiceChannels, textChannels):
-        self.voice_channels = voiceChannels
-        self.text_channels = textChannels
