@@ -10,6 +10,7 @@ from bot.cogs.lib.mongodb.channels import ChannelsDatabase
 from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
 from bot.cogs.lib.mongodb.guilds import GuildsMongoDatabase
 from bot.cogs.lib.models.embedfield import EmbedField
+from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
 
 from discord.ext import commands
 
@@ -71,7 +72,7 @@ class ChannelCreatorCog(commands.Cog):
                     # CHANNEL SETTINGS START
                     limit = 0
                     locked = False
-                    bitrate = self.settings.BITRATE_DEFAULT
+                    bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
                     name = utils.get_random_name()
 
                     default_role_id = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=member.id)
@@ -84,7 +85,7 @@ class ChannelCreatorCog(commands.Cog):
                         else:
                             limit = 0
                             locked = False
-                            bitrate = self.settings.BITRATE_DEFAULT
+                            bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
                     else:
                         name = userSettings.channel_name
                         if guildSettings is None:

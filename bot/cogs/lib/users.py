@@ -8,10 +8,11 @@ class Users():
         self.settings = settings.Settings()
 
     def isInVoiceChannel(self, ctx):
-        return (
-            (ctx.voice and ctx.voice.channel is not None) or
-            (ctx.author and ctx.author.voice and ctx.author.voice.channel is not None)
-        )
+        # if ctx is Member
+        if hasattr(ctx, "voice"):
+            return ctx.voice and ctx.voice.channel is not None
+        # if ctx is Context
+        return ctx.author and ctx.author.voice and ctx.author.voice.channel is not None
 
     def isAdmin(self, ctx):
         guild_settings = self.settings.get(ctx.guild.id)

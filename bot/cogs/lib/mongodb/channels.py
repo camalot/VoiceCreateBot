@@ -80,12 +80,20 @@ class ChannelsDatabase(Database):
                 return None
             if self.connection is None:
                 self.open()
-            item = self.connection.voice_channels.find_one({"guild_id": str(guildId), "voice_channel_id": channelId}, {"user_id": 1})
+            item = self.connection.voice_channels.find_one({"guild_id": str(guildId), "voice_channel_id": str(channelId)}, {"user_id": 1})
             if item:
                 return int(item['user_id'])
-            item = self.connection.text_channels.find_one({"guild_id": str(guildId), "text_channel_id": channelId}, {"user_id": 1})
+            item = self.connection.text_channels.find_one({"guild_id": str(guildId), "text_channel_id": str(channelId)}, {"user_id": 1})
             if item:
                 return int(item['user_id'])
+
+            self.log(
+                guildId,
+                LogLevel.ERROR,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not find channel owner for channel {channelId}",
+                traceback.format_exc(),
+            )
             return None
         except Exception as ex:
             self.log(
@@ -117,8 +125,16 @@ class ChannelsDatabase(Database):
             return None
 
     def get_tracked_voice_channel_id_by_owner(self, guildId: int, ownerId: typing.Optional[int]) -> typing.List[int]:
+        _method = inspect.stack()[0][3]
         try:
             if ownerId is None:
+                self.log(
+                    guildId=guildId,
+                    level=LogLevel.ERROR,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"ownerId is None",
+                    stackTrace=traceback.format_exc(),
+                )
                 return []
             if self.connection is None:
                 self.open()
@@ -126,6 +142,7 @@ class ChannelsDatabase(Database):
                 {"guild_id": str(guildId), "user_id": str(ownerId)}, {"voice_channel_id": 1}
             )
             channel_ids = [int(item['voice_channel_id']) for item in items]
+            print(channel_ids)
             return channel_ids
         except Exception as ex:
             raise ex

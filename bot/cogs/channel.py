@@ -4,7 +4,10 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import channels, logger, messaging, settings, users, utils
+from bot.cogs.lib import channels, logger, messaging, users, utils
+from bot.cogs.lib.models.category_settings import GuildCategorySettings
+from bot.cogs.lib.settings import Settings
+from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb import channels as channels_db
 from bot.cogs.lib.mongodb import usersettings as usersettings_db
@@ -21,7 +24,7 @@ class ChannelCog(commands.Cog):
 
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = settings.Settings()
+        self.settings = Settings()
         self.bot = bot
         self._messaging = messaging.Messaging(bot)
         self._users = users.Users(bot)
@@ -63,7 +66,6 @@ class ChannelCog(commands.Cog):
         voice_channel = None
 
         try:
-            await ctx.message.delete()
             if self._users.isInVoiceChannel(ctx):
                 voice_channel_id = ctx.author.voice.channel.id
                 voice_channel = ctx.author.voice.channel
@@ -90,9 +92,19 @@ class ChannelCog(commands.Cog):
                 )
                 return
             category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-
             default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+
+            if category_settings is None:
+                category_settings = GuildCategorySettings(
+                    guildId=guild_id,
+                    categoryId=category_id,
+                    channelLimit=0,
+                    channelLocked=False,
+                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
+                    defaultRole=temp_default_role.id if temp_default_role else None,
+                )
+
             is_tracked_channel = len(
                 [
                     c for c in self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id)
@@ -130,7 +142,13 @@ class ChannelCog(commands.Cog):
                         defaultRole=temp_default_role.id,
                         autoGame=False,
                     )
-            await self._messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, 'title_update_channel_name'), f'{ctx.author.mention}, {utils.str_replace(self.get_string(guild_id, "info_channel_name_change"), channel=name)}', delete_after=5)
+            await self._messaging.send_embed(
+                ctx.channel,
+                self.settings.get_string(guild_id, 'title_update_channel_name'),
+                f'''{ctx.author.mention}, {
+                    utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=name)
+                }''',
+                delete_after=5)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
@@ -142,7 +160,6 @@ class ChannelCog(commands.Cog):
         channel_id = ctx.author.voice.channel.id
         channel = ctx.author.voice.channel
         try:
-            await ctx.message.delete()
             if not self._users.isInVoiceChannel(ctx):
                 await self._messaging.send_embed(
                     ctx.channel,
@@ -205,8 +222,6 @@ class ChannelCog(commands.Cog):
         guild_id = ctx.guild.id
         _method = inspect.stack()[1][3]
         try:
-            await ctx.message.delete()
-
             author_id = ctx.author.id
             category_id = None
             category = None
@@ -280,7 +295,6 @@ class ChannelCog(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
             author_id = ctx.author.id
             category_id = ctx.author.voice.channel.category.id
             voice_channel = None
@@ -399,7 +413,6 @@ class ChannelCog(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
             author = ctx.author
             author_id = author.id
             channel_id = None
@@ -451,7 +464,6 @@ class ChannelCog(commands.Cog):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
             if not self._users.isInVoiceChannel(ctx):
                 await self._messaging.send_embed(
                     ctx.channel,
@@ -492,7 +504,6 @@ class ChannelCog(commands.Cog):
         found_as_owner = False
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
             if not self._users.isInVoiceChannel(ctx):
                 await self._messaging.send_embed(
                     ctx.channel,

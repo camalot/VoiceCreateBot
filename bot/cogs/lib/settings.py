@@ -11,7 +11,6 @@ from bot.cogs.lib.mongodb.settings import SettingsDatabase
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
-    BITRATE_DEFAULT = 64
 
     def __init__(self):
         try:

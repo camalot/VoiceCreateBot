@@ -21,10 +21,10 @@ class UserSettingsDatabase(Database):
                 return UserSettings(
                     guildId=guildId,
                     userId=int(userId) if userId is not None else 0,
-                    channelName=r['channelName'],
-                    channelLimit=int(r['channelLimit']),
+                    channelName=r['channel_name'],
+                    channelLimit=int(r['channel_limit']),
                     bitrate=int(r['bitrate']),
-                    defaultRole=r['defaultRole'],
+                    defaultRole=r['default_role'],
                     autoGame=r['auto_game'],
                 )
             else:
@@ -42,7 +42,7 @@ class UserSettingsDatabase(Database):
                 self.open()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             self.connection.user_settings.find_one_and_update(
-                {"guildID": str(guildId), "userID": str(userId)}, {"$set": {"channelName": channelName}}
+                {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"channel_name": channelName}}
             )
         except Exception as ex:
             print(ex)
@@ -66,12 +66,12 @@ class UserSettingsDatabase(Database):
                 self.open()
             # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             payload = {
-                "guildID": str(guildId),
-                "userID": str(userId),
-                "channelName": channelName,
-                "channelLimit": channelLimit,
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "channel_name": channelName,
+                "channel_limit": channelLimit,
                 "bitrate": bitrate,
-                "defaultRole": defaultRole,
+                "default_role": defaultRole,
                 "auto_game": autoGame,
                 "timestamp": utils.get_timestamp()
             }

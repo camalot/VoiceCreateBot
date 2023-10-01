@@ -11,11 +11,13 @@ import random
 import re
 import datetime
 
+
 def dict_get(dictionary, key, default_value = None):
     if key in dictionary.keys():
         return dictionary[key] or default_value
     else:
         return default_value
+
 
 def get_scalar_result(conn, sql, default_value = None, *args):
     cursor = conn.cursor()
@@ -27,13 +29,16 @@ def get_scalar_result(conn, sql, default_value = None, *args):
         traceback.print_exc()
         return default_value
 
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "yup", "1", "t", "y", "on")
+
 
 def chunk_list(lst, size):
     # looping till length l
     for i in range(0, len(lst), size):
         yield lst[i:i + size]
+
 
 def get_random_name(noun_count = 1, adjective_count = 1):
     try:
@@ -62,11 +67,15 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
+
 def to_timestamp(date: datetime.datetime):
     date = date.replace(tzinfo=None)
     return (date - datetime.datetime(1970,1,1)).total_seconds()
+
+
 def get_timestamp():
-    return to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
+    return to_timestamp(datetime.datetime.utcnow())
+
 
 def load_from_gist(type, count):
     types = [ "adjectives", "nouns", "verbs" ]
@@ -81,9 +90,11 @@ def load_from_gist(type, count):
     jdata = json.loads(data)
     return random.sample(jdata, count)
 
+
 def get_args_dict(func, args, kwargs):
     args_names = func.__code__.co_varnames[:func.__code__.co_argcount]
     return {**dict(zip(args_names, args)), **kwargs}
+
 
 def str_replace(input_string: str, *args, **kwargs):
     xargs = get_args_dict(str_replace, args, kwargs)
@@ -91,6 +102,7 @@ def str_replace(input_string: str, *args, **kwargs):
     for a in xargs:
         result = result.replace(f"{{{a}}}", kwargs[a])
     return result
+
 
 def get_by_name_or_id(iterable, nameOrId: typing.Optional[typing.Union[int, str]]):
     if isinstance(nameOrId, str):
