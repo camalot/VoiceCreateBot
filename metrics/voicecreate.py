@@ -6,7 +6,7 @@ import traceback
 from prometheus_client import Gauge
 from bot.cogs.lib.mongodb.exporter import ExporterMongoDatabase
 from bot.cogs.lib.logger import Log
-from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib import settings
 
 
@@ -40,6 +40,12 @@ class VoiceCreateMetrics:
             documentation="The guilds that the bot is in",
             labelnames=["guild_id", "name"])
 
+        self.user_settings = Gauge(
+            namespace=self.namespace,
+            name=f"user_settings",
+            documentation="The number of user settings",
+            labelnames=["guild_id"])
+
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
 
 
@@ -72,3 +78,12 @@ class VoiceCreateMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="guilds").set(1)
+
+        try:
+            q_user_settings = self.exporter_db.get_user_settings_count() or []
+            for row in q_user_settings:
+                self.user_settings.labels(guild_id=row['_id']).set(row['total'])
+            self.errors.labels(source="user_settings").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels(source="user_settings").set(1)

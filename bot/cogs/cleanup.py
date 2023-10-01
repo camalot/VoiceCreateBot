@@ -3,7 +3,8 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import logger, loglevel, mongo, utils, settings
+from bot.cogs.lib import logger, mongo, utils, settings
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.channels import Channels
 from discord.ext import commands
 
@@ -19,9 +20,9 @@ class CleanupCog(commands.Cog):
 
         self.db = mongo.MongoDatabase()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._module} cog")

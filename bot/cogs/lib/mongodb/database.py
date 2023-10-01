@@ -4,8 +4,10 @@ import sys
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel, settings, utils
+
+from bot.cogs.lib import settings, utils
 from bot.cogs.lib.colors import Colors
+from bot.cogs.lib.enums.loglevel import LogLevel
 from pymongo import MongoClient
 
 
@@ -39,7 +41,7 @@ class Database():
     def log(
         self,
         guildId: typing.Optional[int],
-        level: loglevel.LogLevel,
+        level: LogLevel,
         method: str,
         message: str,
         stackTrace: typing.Optional[str] = None,
@@ -61,7 +63,7 @@ class Database():
 
         str_out = f"{m_level} {m_method} {m_guild} {m_message}"
         if outIO is None:
-            stdoe = sys.stdout if level < loglevel.LogLevel.ERROR else sys.stderr
+            stdoe = sys.stdout if level < LogLevel.ERROR else sys.stderr
         else:
             stdoe = outIO
 
@@ -69,12 +71,12 @@ class Database():
         if stackTrace:
             print(Colors.colorize(color, stackTrace), file=stdoe)
         try:
-            if level >= loglevel.LogLevel.INFO:
+            if level >= LogLevel.INFO:
                 self.insert_log(guildId=guildId, level=level, method=method, message=message, stackTrace=stackTrace)
         except Exception as ex:
             self.log(
                 guildId=guildId,
-                level=loglevel.LogLevel.PRINT,
+                level=LogLevel.PRINT,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
@@ -85,7 +87,7 @@ class Database():
     def insert_log(
         self,
         guildId: int,
-        level: loglevel.LogLevel,
+        level: LogLevel,
         method: str,
         message: str,
         stackTrace: typing.Optional[str] = None
@@ -106,7 +108,7 @@ class Database():
         except Exception as ex:
             self.log(
                 guildId=guildId,
-                level=loglevel.LogLevel.PRINT,
+                level=LogLevel.PRINT,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),

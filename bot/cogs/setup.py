@@ -6,17 +6,17 @@ from time import gmtime, strftime
 import os
 import typing
 import inspect
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import logger
-from .lib import loglevel
-from .lib import member_helper
-from .lib.bot_helper import BotHelper
-from .lib.messaging import Messaging
-from .lib.enums import AddRemoveEnum
-from .lib.RoleSelectView import RoleSelectView
-from .lib.CategorySelectView import CategorySelectView
+from bot.cogs.lib import utils
+from bot.cogs.lib import settings
+from bot.cogs.lib import mongo
+from bot.cogs.lib import logger
+from bot.cogs.lib.enums.loglevel import LogLevel
+from bot.cogs.lib import member_helper
+from bot.cogs.lib.bot_helper import BotHelper
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.enums.addremove import AddRemoveAction
+from bot.cogs.lib.RoleSelectView import RoleSelectView
+from bot.cogs.lib.CategorySelectView import CategorySelectView
 
 class SetupCog(commands.Cog):
     def __init__(self, bot):
@@ -30,9 +30,9 @@ class SetupCog(commands.Cog):
         self.messaging = Messaging(bot)
         self.bot_helper = BotHelper(bot)
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
@@ -275,7 +275,7 @@ class SetupCog(commands.Cog):
     @role.command(name="admin", aliases=['a'])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def admin(self, ctx, action: typing.Optional[AddRemoveEnum],  role: typing.Optional[typing.Union[str, discord.Role]]):
+    async def admin(self, ctx, action: typing.Optional[AddRemoveAction],  role: typing.Optional[typing.Union[str, discord.Role]]):
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
@@ -293,10 +293,10 @@ class SetupCog(commands.Cog):
             if admin_role is None:
                 raise commands.BadArgument(f"Role {admin_role} not found")
 
-            if action == AddRemoveEnum.ADD:
+            if action == AddRemoveAction.ADD:
                 self.settings.db.add_admin_role(guildId=guild_id, roleId=admin_role.id)
                 ctx.send(f"Added role {admin_role.name}", delete_after=5)
-            elif action == AddRemoveEnum.REMOVE:
+            elif action == AddRemoveAction.REMOVE:
                 self.settings.db.delete_admin_role(guildId=guild_id, roleId=admin_role.id)
                 ctx.send(f"Removed role {admin_role.name}", delete_after=5)
         except Exception as e:

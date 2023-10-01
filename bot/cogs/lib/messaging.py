@@ -24,7 +24,7 @@ from discord.ext.commands import has_permissions, CheckFailure
 
 from . import utils
 from . import logger
-from . import loglevel
+from bot.cogs.lib.enums import loglevel
 from . import settings
 from . import mongo
 from .models import TextWithAttachments

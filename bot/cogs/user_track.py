@@ -12,12 +12,12 @@ import datetime
 
 import inspect
 
-from .lib import settings
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib.mongodb.users import UsersMongoDatabase
+from bot.cogs.lib import settings
+from bot.cogs.lib import logger
+from bot.cogs.lib.enums.loglevel import LogLevel
+from bot.cogs.lib import utils
+from bot.cogs.lib import settings
+from bot.cogs.lib.mongodb.users import UsersMongoDatabase
 class UserTrackingCog(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
@@ -26,9 +26,9 @@ class UserTrackingCog(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.db = UsersMongoDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")

@@ -5,7 +5,7 @@ import inspect
 import os
 from . import settings
 from . import logger
-from . import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 
 
 class ChannelSelect(discord.ui.Select):

@@ -6,7 +6,7 @@ import yaml
 
 from bot.cogs.lib import utils
 from bot.cogs.lib.logger import Log
-from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.settings import Settings
 
 class VoiceCreateMetricsConfig:

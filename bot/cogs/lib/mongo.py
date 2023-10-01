@@ -2,7 +2,8 @@ from pymongo import MongoClient
 import traceback
 import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
-from bot.cogs.lib import database, settings, utils, loglevel
+from bot.cogs.lib import database, settings, utils
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.models import category_settings
 
 class MongoDatabase(database.Database):

@@ -3,7 +3,8 @@ import traceback
 import os
 import typing
 
-from bot.cogs.lib import loglevel, utils
+from bot.cogs.lib import utils
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.database import Database
 from pymongo import MongoClient
 
@@ -34,7 +35,7 @@ class ChannelsDatabase(Database):
         except Exception as ex:
             self.log(
                 guildId,
-                loglevel.LogLevel.ERROR,
+                LogLevel.ERROR,
                 f"{self._module}.{self._class}.{_method}",
                 f"{ex}",
                 traceback.format_exc(),
@@ -62,7 +63,7 @@ class ChannelsDatabase(Database):
         except Exception as ex:
             self.log(
                 guildId,
-                loglevel.LogLevel.ERROR,
+                LogLevel.ERROR,
                 f"{self._module}.{self._class}.{_method}",
                 f"{ex}",
                 traceback.format_exc(),
@@ -85,7 +86,7 @@ class ChannelsDatabase(Database):
         except Exception as ex:
             self.log(
                 guildId,
-                loglevel.LogLevel.ERROR,
+                LogLevel.ERROR,
                 f"{self._module}.{self._class}.{_method}",
                 f"{ex}",
                 traceback.format_exc(),

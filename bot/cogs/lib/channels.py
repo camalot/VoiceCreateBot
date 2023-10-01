@@ -1,7 +1,7 @@
 import discord
 import inspect
 import traceback
-from . import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from . import settings
 from . import logger
 
@@ -11,9 +11,9 @@ class Channels():
         self.settings = settings.Settings()
         self.bot = bot
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
 

@@ -2,7 +2,6 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import  settings
 from bot.cogs.lib.mongodb.database import Database
 
 

@@ -19,7 +19,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import logger
-from .lib import loglevel
+from bot.cogs.lib.enums import loglevel
 
 import inspect
 class EmbedField():

@@ -13,7 +13,8 @@ import glob
 import typing
 import discordhealthcheck
 
-from bot.cogs.lib import logger, loglevel, mongo, settings
+from bot.cogs.lib import logger, mongo, settings
+from bot.cogs.lib.enums import loglevel
 
 
 class VoiceCreate(commands.Bot):

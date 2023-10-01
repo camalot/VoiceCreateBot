@@ -14,7 +14,7 @@ import inspect
 
 from .lib import settings
 from .lib import logger
-from .lib import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from .lib import utils
 from .lib import settings
 from .lib.mongodb import guilds as mongo
@@ -27,9 +27,9 @@ class GuildTrackCog(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.db = mongo.GuildsMongoDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")

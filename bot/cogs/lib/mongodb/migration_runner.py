@@ -2,8 +2,8 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import logger, loglevel, settings
-# from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums.loglevel import LogLevel
 
 
 class MigrationRunner:
@@ -11,7 +11,7 @@ class MigrationRunner:
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         self.log = logger.Log(minimumLogLevel=log_level)
 
         # get migrations from migrations folder

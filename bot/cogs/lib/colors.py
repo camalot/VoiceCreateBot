@@ -1,4 +1,4 @@
-from bot.cogs.lib import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 
 
 class Colors:
@@ -53,18 +53,18 @@ class Colors:
         return f"{color}{text}{Colors.RESET}"
 
     @staticmethod
-    def get_color(level: loglevel.LogLevel):
-        if level == loglevel.LogLevel.PRINT:
+    def get_color(level: LogLevel):
+        if level == LogLevel.PRINT:
             return Colors.OKCYAN
-        elif level == loglevel.LogLevel.DEBUG:
+        elif level == LogLevel.DEBUG:
             return Colors.OKBLUE
-        elif level == loglevel.LogLevel.INFO:
+        elif level == LogLevel.INFO:
             return Colors.OKGREEN
-        elif level == loglevel.LogLevel.WARNING:
+        elif level == LogLevel.WARNING:
             return Colors.WARNING
-        elif level == loglevel.LogLevel.ERROR:
+        elif level == LogLevel.ERROR:
             return Colors.FAIL
-        elif level == loglevel.LogLevel.FATAL:
+        elif level == LogLevel.FATAL:
             return Colors.FAIL
         else:
             return Colors.RESET

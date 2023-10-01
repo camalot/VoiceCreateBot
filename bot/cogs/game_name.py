@@ -7,7 +7,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import logger
-from .lib import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from .lib.channels import Channels
 from .lib.messaging import Messaging
 from .lib.bot_helper import BotHelper
@@ -26,9 +26,9 @@ class GameNameCog(commands.Cog):
 
         self.db = mongo.MongoDatabase()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")

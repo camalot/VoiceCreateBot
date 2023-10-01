@@ -3,7 +3,7 @@ import os
 import traceback
 
 from bot.cogs.lib.mongodb.migration_base import MigrationBase
-from bot.cogs.lib import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 
 
 
@@ -21,7 +21,7 @@ class Migration(MigrationBase):
 
         self.log(
             guildId=0,
-            level=loglevel.LogLevel.DEBUG,
+            level=LogLevel.DEBUG,
             method=f"{self._module}.{self._class}.{_method}",
             message=f"INITIALIZE MIGRATION {self._number} - {self._description}",
         )
@@ -34,7 +34,7 @@ class Migration(MigrationBase):
 
             self.log(
                 guildId=0,
-                level=loglevel.LogLevel.DEBUG,
+                level=LogLevel.DEBUG,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"EXECUTE MIGRATION {self._number}",
             )
@@ -45,7 +45,7 @@ class Migration(MigrationBase):
 
             self.log(
                 guildId=0,
-                level=loglevel.LogLevel.DEBUG,
+                level=LogLevel.DEBUG,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"COMPLETE MIGRATION {self._number}",
             )
@@ -53,7 +53,7 @@ class Migration(MigrationBase):
         except Exception as ex:
             self.log(
                 guildId=0,
-                level=loglevel.LogLevel.ERROR,
+                level=LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"Failed to run migration: {ex}",
                 stackTrace=traceback.format_exc(),

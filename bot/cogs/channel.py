@@ -4,7 +4,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import channels, logger, loglevel, messaging, settings, users, utils
+from bot.cogs.lib import channels, logger, messaging, settings, users, utils
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb import channels as channels_db
 from bot.cogs.lib.mongodb import usersettings as usersettings_db
 from discord.ext import commands
@@ -26,9 +27,9 @@ class ChannelCog(commands.Cog):
         self._users = users.Users(bot)
         self._channels = channels.Channels(bot)
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._module}.{self._class} cog")

@@ -3,7 +3,7 @@ import os
 import traceback
 from prometheus_client import start_http_server, Gauge, Enum
 from bot.cogs.lib.logger import Log
-from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.settings import Settings
 from metrics.voicecreate import VoiceCreateMetrics
 from metrics.config import VoiceCreateMetricsConfig

@@ -1,20 +1,20 @@
 import sys
 import typing
 
-from bot.cogs.lib import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.logs import LogsMongoDatabase
 from bot.cogs.lib.colors import Colors
 
 
 class Log:
-    def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG):
+    def __init__(self, minimumLogLevel: LogLevel = LogLevel.DEBUG):
         self.db = LogsMongoDatabase()
         self.minimum_log_level = minimumLogLevel
 
     def __write(
         self,
         guildId: int,
-        level: loglevel.LogLevel,
+        level: LogLevel,
         method: str,
         message: str,
         stackTrace: typing.Optional[str] = None,
@@ -36,7 +36,7 @@ class Log:
     def debug(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,
-            level=loglevel.LogLevel.DEBUG,
+            level=LogLevel.DEBUG,
             method=method,
             message=message,
             stackTrace=stackTrace,
@@ -46,7 +46,7 @@ class Log:
     def info(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,
-            level=loglevel.LogLevel.INFO,
+            level=LogLevel.INFO,
             method=method,
             message=message,
             stackTrace=stackTrace,
@@ -56,7 +56,7 @@ class Log:
     def warn(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,
-            level=loglevel.LogLevel.WARNING,
+            level=LogLevel.WARNING,
             method=method,
             message=message,
             stackTrace=stackTrace,
@@ -66,7 +66,7 @@ class Log:
     def error(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,
-            level=loglevel.LogLevel.ERROR,
+            level=LogLevel.ERROR,
             method=method,
             message=message,
             stackTrace=stackTrace,
@@ -76,7 +76,7 @@ class Log:
     def fatal(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(
             guildId=guildId,
-            level=loglevel.LogLevel.FATAL,
+            level=LogLevel.FATAL,
             method=method,
             message=message,
             stackTrace=stackTrace,

@@ -2,7 +2,7 @@ import discord
 import inspect
 import traceback
 from . import logger
-from . import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from . import settings
 
 
@@ -10,9 +10,9 @@ class BotHelper():
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
 

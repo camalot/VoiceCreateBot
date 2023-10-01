@@ -3,8 +3,8 @@ import traceback
 import discord
 
 from bot.cogs.lib import utils
-from bot.cogs.lib.database import Database
-from bot.cogs.lib.member_status import MemberStatus
+from bot.cogs.lib.enums.member_status import MemberStatus
+from bot.cogs.lib.mongodb.database import Database
 
 
 class UsersMongoDatabase(Database):

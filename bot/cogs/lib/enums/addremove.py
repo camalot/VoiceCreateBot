@@ -1,5 +1,5 @@
 import enum
 
-class AddRemoveEnum(enum.Enum):
+class AddRemoveAction(enum.Enum):
     ADD = "ADD"
     REMOVE = "REMOVE"

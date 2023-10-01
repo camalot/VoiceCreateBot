@@ -6,7 +6,7 @@ import os
 import typing
 from . import settings
 from . import logger
-from . import loglevel
+from bot.cogs.lib.enums import loglevel
 from . import utils
 
 class YesOrNoView(discord.ui.View):

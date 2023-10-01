@@ -3,7 +3,8 @@ import inspect
 import os
 
 import discord
-from bot.cogs.lib import logger, settings, loglevel
+from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums.loglevel import LogLevel
 from discord.ext import commands
 
 
@@ -14,9 +15,9 @@ class Events(commands.Cog):
         self._class = self.__class__.__name__
         self.bot = bot
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(
