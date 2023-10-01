@@ -22,13 +22,13 @@ from discord import (
 from discord.ui import Button, Select, TextInput
 from discord.ext.commands import has_permissions, CheckFailure
 
-from . import utils
-from . import logger
+from bot.cogs.lib import utils
+from bot.cogs.lib import logger
 from bot.cogs.lib.enums import loglevel
-from . import settings
+from bot.cogs.lib import settings
 from . import mongo
-from .models import TextWithAttachments
-from .YesOrNoView import YesOrNoView
+from bot.cogs.lib.models.text_with_attachments import TextWithAttachments
+from bot.cogs.lib.YesOrNoView import YesOrNoView
 
 
 import inspect

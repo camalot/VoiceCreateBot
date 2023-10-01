@@ -29,6 +29,12 @@ class Settings:
 
         self.db = SettingsDatabase()
 
+        self.commands = {}
+        self.strings = {}
+        self.languages = {}
+        self.name = None
+        self.version = None
+
 
         self.load_language_manifest()
         self.load_strings()

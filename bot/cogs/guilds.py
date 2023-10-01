@@ -24,6 +24,7 @@ class GuildTrackCog(commands.Cog):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
         self.bot = bot
         self.settings = settings.Settings()
         self.db = mongo.GuildsMongoDatabase()
@@ -32,7 +33,7 @@ class GuildTrackCog(commands.Cog):
             log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._class}")
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild) -> None:

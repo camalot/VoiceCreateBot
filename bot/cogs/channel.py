@@ -43,6 +43,15 @@ class ChannelCog(commands.Cog):
         if guild_id != 0:
             await ctx.message.delete()
 
+    # @channel.group(name="name", aliases=["n"])
+    # async def channel_name(self, ctx, *, name: typing.Optional[str] = None):
+    #     if ctx.guild:
+    #         guild_id = ctx.guild.id
+    #     else:
+    #         guild_id = 0
+    #     if guild_id != 0:
+    #         await ctx.message.delete()
+
     @channel.command()
     async def name(self, ctx, *, name: typing.Optional[str] = None):
         await self._name(ctx, name=name, saveSettings=True)

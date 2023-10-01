@@ -2,7 +2,7 @@ import traceback
 import typing
 
 from bot.cogs.lib import utils
-from bot.cogs.lib.mongodb.models.user_settings import UserSettings
+from bot.cogs.lib.models.user_settings import UserSettings
 from bot.cogs.lib.mongodb.database import Database
 
 

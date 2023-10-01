@@ -3,23 +3,24 @@ from discord.ext import commands
 import traceback
 import os
 import inspect
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import logger
+from bot.cogs.lib import utils
+from bot.cogs.lib.settings import Settings
+from bot.cogs.lib import mongo
+from bot.cogs.lib.logger import Log
 from bot.cogs.lib.enums.loglevel import LogLevel
-from .lib.channels import Channels
-from .lib.messaging import Messaging
-from .lib.bot_helper import BotHelper
-from .lib.GameSelect import GameSelectView
+from bot.cogs.lib.channels import Channels
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.bot_helper import BotHelper
+from bot.cogs.lib.GameSelect import GameSelectView
 
 class GameNameCog(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
         self.bot = bot
-        self.settings = settings.Settings()
+        self.settings = Settings()
         self.channel_helper = Channels(bot)
         self.messaging_helper = Messaging(bot)
         self.bot_helper = BotHelper(bot)
@@ -30,9 +31,9 @@ class GameNameCog(commands.Cog):
         if not log_level:
             log_level = LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
+        self.log = Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
-        self.log.debug(0, f"{self._module}.{_method}", f"Initialized {self._module} cog")
+        self.log.debug(0, f"{self._module}.{_method}", f"Initialized {self._class}")
 
     @commands.group(name="game", aliases=["g"], invoke_without_command=True)
     @commands.guild_only()
@@ -64,9 +65,6 @@ class GameNameCog(commands.Cog):
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.messaging_helper.notify_of_error(ctx)
-
-
-
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):

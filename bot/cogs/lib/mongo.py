@@ -3,8 +3,8 @@ import traceback
 import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
 from bot.cogs.lib import database, settings, utils
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.mongodb.models import category_settings
+from bot.cogs.lib.enums.loglevel import LogLevel
+from bot.cogs.lib.models.category_settings import GuildCategorySettings
 
 class MongoDatabase(database.Database):
     def __init__(self):
@@ -247,7 +247,7 @@ class MongoDatabase(database.Database):
                 self.open()
             row = self.connection.category_settings.find_one({ "guild_id": str(guildId), "voice_category_id": str(categoryId)})
             if row:
-                result = category_settings.GuildCategorySettings(
+                result = GuildCategorySettings(
                     guildId=guildId,
                     categoryId=categoryId,
                     channelLimit=row['channel_limit'],

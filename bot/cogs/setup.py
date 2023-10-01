@@ -7,15 +7,15 @@ import os
 import typing
 import inspect
 from bot.cogs.lib import utils
-from bot.cogs.lib import settings
 from bot.cogs.lib import mongo
-from bot.cogs.lib import logger
+from bot.cogs.lib.logger import Log
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib import member_helper
 from bot.cogs.lib.bot_helper import BotHelper
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.enums.addremove import AddRemoveAction
 from bot.cogs.lib.RoleSelectView import RoleSelectView
+from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.CategorySelectView import CategorySelectView
 
 class SetupCog(commands.Cog):
@@ -23,7 +23,8 @@ class SetupCog(commands.Cog):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = settings.Settings()
+        self._class = self.__class__.__name__
+        self.settings = Settings()
         self.bot = bot
 
         self.db = mongo.MongoDatabase()
@@ -34,9 +35,9 @@ class SetupCog(commands.Cog):
         if not log_level:
             log_level = LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
-        self.log.debug(0, f"{self._module}.{_method}", f"Initialized {self._module} cog")
+        self.log = Log(minimumLogLevel=log_level)
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._class}")
 
 
     @commands.group(name='setup', aliases=['s'])

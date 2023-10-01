@@ -6,6 +6,7 @@ import discord
 from bot.cogs.lib import logger, mongo, utils, settings
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.channels import Channels
+from bot.cogs.lib.mongodb.channels import ChannelsDatabase
 from discord.ext import commands
 
 class CleanupCog(commands.Cog):
@@ -18,7 +19,7 @@ class CleanupCog(commands.Cog):
         self.settings = settings.Settings()
         self.channel_helper = Channels(bot)
 
-        self.db = mongo.MongoDatabase()
+        self.channel_db = ChannelsDatabase()
 
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -31,9 +32,9 @@ class CleanupCog(commands.Cog):
         _method = inspect.stack()[1][3]
         self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", "Clean up tracked channels")
         try:
-            self.db.open()
             self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", "checking guild create channels")
-            createChannelSettings = self.db.get_guild_create_channel_settings(guildId=guildID)
+            createChannelSettings = None
+            # createChannelSettings = self.settings.db.get_guild_create_channel_settings(guildId=guildID)
             if createChannelSettings and createChannelSettings.channels:
                 for cc in createChannelSettings.channels:
                     cc_channel = await self.channel_helper.get_or_fetch_channel(cc.channel_id)
@@ -44,7 +45,7 @@ class CleanupCog(commands.Cog):
                             f"{self._module}.{self._class}.{_method}",
                             f"Deleting create channel {cc.channel_id} as it does not exist",
                         )
-                        self.db.delete_guild_create_channel(
+                        self.guild_db.delete_guild_create_channel(
                             guildId=guildID, channelId=cc.channel_id, categoryId=cc.category_id
                         )
                         pass
@@ -72,25 +73,45 @@ class CleanupCog(commands.Cog):
                                     useStage=cc.use_stage,
                                 )
             self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", "checking user created channels")
-            trackedChannels = self.db.get_tracked_voice_channel_ids(guildID)
-            if trackedChannels is None:
+            trackedChannels = self.channel_db.get_tracked_voice_channel_ids(guildID)
+            if trackedChannels is None or len(trackedChannels) == 0:
+                self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", "No tracked channels")
                 return
             for vc in trackedChannels:
+                self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", f"Checking {vc}")
                 textChannel = None
                 voiceChannelId = vc
                 if voiceChannelId:
+                    self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", f"Checking {voiceChannelId}")
                     voiceChannel = await self.channel_helper.get_or_fetch_channel(voiceChannelId)
 
-                    textChannelId = self.db.get_text_channel_id(guildID, voiceChannelId)
+                    textChannelId = self.channel_db.get_text_channel_id(guildID, voiceChannelId) or None
                     if textChannelId:
                         textChannel = await self.channel_helper.get_or_fetch_channel(textChannelId)
 
+                    if not textChannel:
+                        self.log.debug(
+                            guildID,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"Unable to find text channel: {textChannelId}",
+                        )
+
                     if voiceChannel:
+                        self.log.debug(
+                            guildID,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"Found voice channel: {voiceChannelId}",
+                        )
                         # how old is the channel?
                         created_at = utils.to_timestamp(voiceChannel.created_at)
                         # if created at is less than skip window, skip it
                         skip_window = 5
-                        if created_at > (utils.get_timestamp() - skip_window):
+                        if created_at < (utils.get_timestamp() - skip_window):
+                            self.log.debug(
+                                guildID,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Skipping channel {voiceChannelId} because it is less than {skip_window} seconds old",
+                            )
                             continue
 
                         if len(voiceChannel.members) == 0 and len(voiceChannel.voice_states) == 0:
@@ -104,24 +125,31 @@ class CleanupCog(commands.Cog):
                                 f"{self._module}.{self._class}.{_method}",
                                 f"Deleting Channel {voiceChannel} because everyone left",
                             )
-                            self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
+                            self.channel_db.clean_tracked_channels(
+                                guildId=guildID, voiceChannelId=voiceChannelId, textChannelId=textChannelId)
                             if textChannel:
                                 await textChannel.delete()
                             await voiceChannel.delete()
+                        else:
+                            self.log.debug(
+                                guildID,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Skipping Channel {voiceChannel} because it is not empty",
+                            )
                     else:
                         self.log.debug(
                             guildID,
                             f"{self._module}.{self._class}.{_method}",
                             f"Unable to find voice channel: {voiceChannelId}",
                         )
-                        self.db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
+                        self.channel_db.clean_tracked_channels(guildID, voiceChannelId, textChannelId)
+                else:
+                    self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", f"Unable to find voice channel")
         except discord.errors.NotFound as nf:
             self.log.warn(guildID, f"{self._module}.{self._class}.{_method}", str(nf), traceback.format_exc())
             self.log.debug(guildID, f"{self._module}.{self._class}.{_method}", f"Channel Not Found. Already Cleaned Up")
         except Exception as ex:
             self.log.error(guildID, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-        finally:
-             self.db.close()
 
     @commands.Cog.listener()
     async def on_ready(self):

@@ -3,37 +3,17 @@ import os
 import typing
 
 from bot.cogs.lib import utils
-from bot.cogs.lib.mongodb.models.guild_settings import GuildSettings
-from bot.cogs.lib.mongodb.models.category_settings import GuildCategorySettings
-from pymongo import MongoClient
+from bot.cogs.lib.mongodb.databasebase import DatabaseBase
+from bot.cogs.lib.models.guild_settings import GuildSettings
+from bot.cogs.lib.models.category_settings import GuildCategorySettings
 
 
-class SettingsDatabase():
+class SettingsDatabase(DatabaseBase):
     def __init__(self):
-        self.db_url = utils.dict_get(os.environ, "VCB_MONGODB_URL", default_value="")
-        self.db_name = utils.dict_get(os.environ, "VCB_MONGODB_DBNAME", default_value = "voicecreate_v2")
-
-        self.client: typing.Optional[MongoClient] = None
-        self.connection: typing.Optional[typing.Any] = None
+        super().__init__()
+        self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
         pass
-
-    def open(self):
-        if not self.db_url:
-            raise ValueError("VCB_MONGODB_URL is not set")
-        if not self.db_name:
-            raise ValueError("VCB_MONGODB_DBNAME is not set")
-        self.client = MongoClient(self.db_url)
-        self.connection = self.client[self.db_name]
-
-    def close(self):
-        try:
-            if self.client is not None:
-                self.client.close()
-                self.client = None
-                self.connection = None
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
 
     def get(self, guildId: int):
         try:

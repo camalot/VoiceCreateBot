@@ -54,9 +54,9 @@ class VoiceCreateMetrics:
         _method = inspect.stack()[0][3]
         while True:
             try:
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
                 self.fetch()
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
                 self.log.debug(
                     0,
                     f"{self._module}.{self._class}.{_method}",

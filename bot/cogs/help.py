@@ -1,25 +1,17 @@
-import discord
 import math
-import asyncio
-import json
-import datetime
 from discord.ext import commands
 import traceback
 from urllib.parse import quote
-from discord.ext.commands.core import guild_only
-import validators
-from discord.ext.commands.cooldowns import BucketType
 
-from discord.ext.commands import has_permissions, CheckFailure
-from time import gmtime, strftime
 import os
-import glob
-import typing
 import inspect
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import logger
+
+from bot.cogs.lib.logger import Log
+from bot.cogs.lib.settings import Settings
+
+from bot.cogs.lib import utils
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib import mongo
 from bot.cogs.lib.enums.loglevel import LogLevel
 
 class HelpCog(commands.Cog):
@@ -27,18 +19,20 @@ class HelpCog(commands.Cog):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = settings.Settings()
+        self._class = self.__class__.__name__
+        self.settings = Settings()
         self.bot = bot
 
         self.db = mongo.MongoDatabase()
+        self.messaging = Messaging(bot)
 
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
+        self.log = Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
-        self.log.debug(0, f"{self._module}.{_method}", f"Initialized {self._module} cog")
+        self.log.debug(0, f"{self._module}.{_method}", f"Initialized {self._class}")
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)

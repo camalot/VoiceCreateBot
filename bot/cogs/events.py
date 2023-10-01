@@ -8,7 +8,7 @@ from bot.cogs.lib.enums.loglevel import LogLevel
 from discord.ext import commands
 
 
-class Events(commands.Cog):
+class EventsCog(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         self._module = os.path.basename(__file__)[:-3]
@@ -57,4 +57,4 @@ class Events(commands.Cog):
         self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
 
 async def setup(bot):
-    await bot.add_cog(Events(bot))
+    await bot.add_cog(EventsCog(bot))
