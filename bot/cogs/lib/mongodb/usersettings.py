@@ -1,8 +1,10 @@
+import inspect
 import traceback
 import typing
 
 from bot.cogs.lib import utils
 from bot.cogs.lib.models.user_settings import UserSettings
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.database import Database
 
 
@@ -23,9 +25,12 @@ class UserSettingsDatabase(Database):
                     userId=int(userId) if userId is not None else 0,
                     channelName=r['channel_name'],
                     channelLimit=int(r['channel_limit']),
+                    channelLocked=r['channel_locked'],
                     bitrate=int(r['bitrate']),
                     defaultRole=r['default_role'],
                     autoGame=r['auto_game'],
+                    autoName=r['auto_name'],
+                    allowSoundboard=r['allow_soundboard'],
                 )
             else:
                 return None
@@ -34,6 +39,7 @@ class UserSettingsDatabase(Database):
             traceback.print_exc()
 
     def update_user_channel_name(self, guildId: int, userId: typing.Optional[int], channelName: typing.Optional[str]):
+        _method = inspect.stack()[1][3]
         try:
             if userId is None or channelName is None:
                 return
@@ -45,8 +51,13 @@ class UserSettingsDatabase(Database):
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"channel_name": channelName}}
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId,
+                LogLevel.ERROR,
+                f"{self._module}.{self._class}.{_method}",
+                f"{ex}",
+                traceback.format_exc(),
+            )
 
     def insert_user_settings(
             self,
@@ -54,29 +65,40 @@ class UserSettingsDatabase(Database):
             userId: typing.Optional[int],
             channelName: str,
             channelLimit: int,
+            channelLocked: bool,
             bitrate: int,
             defaultRole: int,
             autoGame: bool = False,
+            autoName: bool = True,
+            allowSoundboard: bool = False,
         ):
+        _method = inspect.stack()[1][3]
         try:
             if userId is None:
                 return
 
             if self.connection is None:
                 self.open()
-            # c.execute("UPDATE userSettings SET channelName = ? WHERE userID = ? AND guildID = ?", (channelName, userId, guildId,))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "channel_name": channelName,
                 "channel_limit": channelLimit,
+                "channel_locked": channelLocked,
                 "bitrate": bitrate,
                 "default_role": defaultRole,
                 "auto_game": autoGame,
+                "auto_name": autoName,
+                "allow_soundboard": allowSoundboard,
                 "timestamp": utils.get_timestamp()
             }
             self.connection.user_settings.insert_one(payload)
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId,
+                LogLevel.ERROR,
+                f"{self._module}.{self._class}.{_method}",
+                f"{ex}",
+                traceback.format_exc(),
+            )

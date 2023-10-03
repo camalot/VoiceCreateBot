@@ -3,11 +3,11 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import logger, mongo, utils, settings
+from bot.cogs.lib import logger, utils, settings
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.channels import Channels
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
-from bot.cogs.lib.mongodb.guilds import GuildsMongoDatabase
+from bot.cogs.lib.mongodb.guilds import GuildsDatabase
 from discord.ext import commands
 
 class CleanupCog(commands.Cog):
@@ -21,7 +21,7 @@ class CleanupCog(commands.Cog):
         self.channel_helper = Channels(bot)
 
         self.channel_db = ChannelsDatabase()
-        self.guild_db = GuildsMongoDatabase()
+        self.guild_db = GuildsDatabase()
 
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:

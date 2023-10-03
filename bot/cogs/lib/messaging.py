@@ -1,32 +1,15 @@
-import async_timeout
 import discord
 from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
 import os
-import glob
 import typing
-import collections
 
 from .ChannelSelect import ChannelSelect, ChannelSelectView
 from .RoleSelectView import RoleSelectView, RoleSelect
-
-from discord.ext.commands.cooldowns import BucketType
-from discord import (
-    SelectOption,
-    ActionRow,
-    SelectMenu,
-)
-from discord.ui import Button, Select, TextInput
-from discord.ext.commands import has_permissions, CheckFailure
 
 from bot.cogs.lib import utils
 from bot.cogs.lib import logger
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib import settings
-from . import mongo
 from bot.cogs.lib.models.text_with_attachments import TextWithAttachments
 from bot.cogs.lib.YesOrNoView import YesOrNoView
 
@@ -41,7 +24,7 @@ class Messaging():
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = mongo.MongoDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -49,7 +32,16 @@ class Messaging():
 
     async def send_embed(
         self,
-        channel: typing.Union[discord.abc.GuildChannel, discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member, discord.abc.Messageable],
+        channel: typing.Union[
+            discord.abc.GuildChannel,
+            discord.TextChannel,
+            discord.DMChannel,
+            discord.GroupChannel,
+            discord.Thread,
+            discord.User,
+            discord.Member,
+            discord.abc.Messageable
+        ],
         title: typing.Optional[str] = None,
         message: typing.Optional[str] = None,
         fields: typing.Optional[list[dict[str, typing.Any]]] = None,

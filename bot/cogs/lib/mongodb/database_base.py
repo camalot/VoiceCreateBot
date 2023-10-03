@@ -1,3 +1,4 @@
+
 import inspect
 import os
 import sys
@@ -9,7 +10,6 @@ from bot.cogs.lib import utils
 from bot.cogs.lib.colors import Colors
 from bot.cogs.lib.enums.loglevel import LogLevel
 from pymongo import MongoClient
-
 
 class DatabaseBase():
     def __init__(self):
@@ -122,3 +122,4 @@ class DatabaseBase():
                 outIO=sys.stderr,
                 colorOverride=Colors.FAIL,
             )
+

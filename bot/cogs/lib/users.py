@@ -22,7 +22,8 @@ class Users():
             guild_admin_role = utils.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
             is_in_guild_admin_role = guild_admin_role in ctx.author.roles
         is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
-        return is_bot_owner or is_in_guild_admin_role
+        has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
+        return is_bot_owner or is_in_guild_admin_role or has_admin
 
     async def get_or_fetch_user(self, userId: typing.Optional[int]):
         try:

@@ -7,6 +7,7 @@ class UserSettings():
             userId: int,
             channelName: str,
             channelLimit: int,
+            channelLocked: bool,
             bitrate: int,
             defaultRole: typing.Union[str, int],
             autoGame: bool,
@@ -17,6 +18,7 @@ class UserSettings():
         self.user_id = str(userId)
         self.channel_name = channelName
         self.channel_limit = channelLimit
+        self.channel_locked = channelLocked
         self.bitrate = bitrate
         self.default_role = defaultRole
         self.auto_game = autoGame

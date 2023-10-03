@@ -6,7 +6,7 @@ import typing
 from bot.cogs.lib import utils
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.database import Database
-from pymongo import MongoClient
+
 
 class ChannelsDatabase(Database):
     def __init__(self) -> None:
@@ -29,10 +29,10 @@ class ChannelsDatabase(Database):
             if self.connection is None:
                 self.open()
             owner = self.connection.voice_channels.find_one(
-                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId)}, {"user_id": 1}
+                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId)}, {"owner_id": 1}
             )
             if owner:
-                return int(owner['user_id'])
+                return int(owner['owner_id'])
             return None
         except Exception as ex:
             self.log(
@@ -56,12 +56,12 @@ class ChannelsDatabase(Database):
             if self.connection is None:
                 self.open()
             self.connection.voice_channels.update_one(
-                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId), "user_id": str(ownerId)},
-                {"$set": {"user_id": str(newOwnerId)}},
+                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId), "owner_id": str(ownerId)},
+                {"$set": {"owner_id": str(newOwnerId)}},
             )
             self.connection.text_channels.update_one(
-                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId), "user_id": str(ownerId)},
-                {"$set": {"user_id": str(newOwnerId)}},
+                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId), "owner_id": str(ownerId)},
+                {"$set": {"owner_id": str(newOwnerId)}},
             )
         except Exception as ex:
             self.log(
@@ -80,12 +80,23 @@ class ChannelsDatabase(Database):
                 return None
             if self.connection is None:
                 self.open()
-            item = self.connection.voice_channels.find_one({"guild_id": str(guildId), "voice_channel_id": str(channelId)}, {"user_id": 1})
+            item = self.connection.voice_channels.find_one(
+                {"guild_id": str(guildId), "voice_channel_id": str(channelId)}, {"owner_id": 1}
+            )
             if item:
-                return int(item['user_id'])
-            item = self.connection.text_channels.find_one({"guild_id": str(guildId), "text_channel_id": str(channelId)}, {"user_id": 1})
+                return int(item['owner_id'])
+            item = self.connection.text_channels.find_one(
+                {"guild_id": str(guildId), "text_channel_id": str(channelId)}, {"owner_id": 1}
+            )
             if item:
-                return int(item['user_id'])
+                return int(item['owner_id'])
+
+            # if we dont find a voice channel, or text channel, then check the "create" channel
+            item = self.connection.create_channels.find_one(
+                {"guild_id": str(guildId), "voice_channel_id": str(channelId)}, {"owner_id": 1}
+            )
+            if item:
+                return int(item['owner_id'])
 
             self.log(
                 guildId,
@@ -110,7 +121,9 @@ class ChannelsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.text_channels.find_one({"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId)})
+            result = self.connection.text_channels.find_one(
+                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId)}
+            )
             if result:
                 return int(result['text_channel_id'])
             return None
@@ -139,7 +152,7 @@ class ChannelsDatabase(Database):
             if self.connection is None:
                 self.open()
             items = self.connection.voice_channels.find(
-                {"guild_id": str(guildId), "user_id": str(ownerId)}, {"voice_channel_id": 1}
+                {"guild_id": str(guildId), "owner_id": str(ownerId)}, {"voice_channel_id": 1}
             )
             channel_ids = [int(item['voice_channel_id']) for item in items]
             print(channel_ids)
@@ -172,7 +185,7 @@ class ChannelsDatabase(Database):
             # c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
             payload = {
                 "guild_id": str(guildId),
-                "user_id": str(ownerId),
+                "owner_id": str(ownerId),
                 "voice_channel_id": str(voiceChannelId),
             }
             self.connection.voice_channels.insert_one(payload)
@@ -194,7 +207,7 @@ class ChannelsDatabase(Database):
                 self.open()
             payload = {
                 "guild_id": str(guildId),
-                "user_id": str(ownerId),
+                "owner_id": str(ownerId),
                 "text_channel_id": str(textChannelId),
                 "voice_channel_id": str(voiceChannelId),
             }
@@ -215,11 +228,13 @@ class ChannelsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            tracked = self.connection.text_channels.find_one({ "guild_id": guildId, "voice_channel_id": voiceChannelId, "text_channel_id": textChannelId })
+            tracked = self.connection.text_channels.find_one(
+                {"guild_id": guildId, "voice_channel_id": voiceChannelId, "text_channel_id": textChannelId }
+            )
             if tracked:
                 payload = {
                     "guild_id": str(guildId),
-                    "user_id": str(tracked['user_id']),
+                    "owner_id": str(tracked['owner_id']),
                     "text_channel_id": str(tracked['text_channel_id']),
                     "voice_channel_id": str(tracked['voice_channel_id']),
                     "timestamp": utils.get_timestamp(),
@@ -280,7 +295,7 @@ class ChannelsDatabase(Database):
                     text_channel_id = str(tracked_text['text_channel_id'])
                 payload = {
                     "guild_id": str(guildId),
-                    "user_id": str(tracked_voice['user_id']),
+                    "owner_id": str(tracked_voice['owner_id']),
                     "text_channel_id": text_channel_id,
                     "voice_channel_id": str(tracked_voice['voice_channel_id']),
                     "timestamp": utils.get_timestamp(),

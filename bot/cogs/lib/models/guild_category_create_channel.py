@@ -1,4 +1,4 @@
-class GuildCategoryChannel:
+class GuildCategoryCreateChannel:
     def __init__(self, ownerId: int, categoryId: int, channelId: int, useStage: bool):
         self.owner_id = int(ownerId)
         self.category_id = int(categoryId)

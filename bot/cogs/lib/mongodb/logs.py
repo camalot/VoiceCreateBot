@@ -7,19 +7,18 @@ from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.database import Database
 
 
-class LogsMongoDatabase(Database):
+class LogsDatabase(Database):
     def __init__(self):
         super().__init__()
-        _method = inspect.stack()[0][3]
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
 
-    def clear_log(self, guildId):
+    def clear_log(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            self.connection.logs.delete_many({ "guild_id": guildId })
+            self.connection.logs.delete_many({"guild_id": str(guildId)})
         except Exception as ex:
             self.log(
                 guildId=guildId,

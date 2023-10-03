@@ -4,33 +4,33 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
-	"initMessage": {
+	"init_message": {
 		"title": "help_init_title",
 		"message": "help_init_message",
 		"fields": [
 			{
 				"name": "help_init_field_0",
-				"value": "`.voice name`"
+				"value": "`{{prefix}}channel name`"
 			},
 			{
 				"name": "help_init_field_1",
-				"value": "`.voice help`"
+				"value": "`{{prefix}}help`"
 			}
 		]
 	},
 	"commands": {
 		"name": {
 			"help": "help_command_name",
-			"usage": ".voice name [name]",
-			"example": ".voice name my awesome channel",
+			"usage": "{{prefix}}name [name]",
+			"example": "{{prefix}}name my awesome channel",
 			"admin": false,
 			"aliases": []
 		},
 
 		"enable-auto-game": {
 			"help": "help_command_enable_auto_game",
-			"usage": ".voice enable-auto-game",
-			"example": ".voice eag",
+			"usage": "{{prefix}}enable-auto-game",
+			"example": "{{prefix}}eag",
 			"admin": false,
 			"aliases": [
 				"eag"
@@ -38,78 +38,78 @@
 		},
 		"unlock": {
 			"help": "help_command_unlock",
-			"usage": ".voice unlock",
-			"example": ".voice unlock",
+			"usage": "{{prefix}}unlock",
+			"example": "{{prefix}}unlock",
 			"admin": false,
 			"aliases": []
 		},
 		"lock": {
 			"help": "help_command_lock",
-			"usage": ".voice lock [locked_role]",
-			"example": ".voice lock",
+			"usage": "{{prefix}}lock [locked_role]",
+			"example": "{{prefix}}lock",
 			"admin": false,
 			"aliases": []
 		},
 		"private": {
 			"help": "help_command_private",
-			"usage": ".voice private",
-			"example": ".voice private",
+			"usage": "{{prefix}}private",
+			"example": "{{prefix}}private",
 			"admin": false,
 			"aliases": []
 		},
 		"resync": {
 			"help": "help_command_resync",
-			"usage": ".voice resync",
-			"example": ".voice resync",
+			"usage": "{{prefix}}resync",
+			"example": "{{prefix}}resync",
 			"admin": false,
 			"aliases": []
 		},
 		"mute": {
 			"help": "help_command_mute",
-			"usage": ".voice mute [@role|@user]",
-			"example": ".voice mute @SomeRole",
+			"usage": "{{prefix}}mute [@role|@user]",
+			"example": "{{prefix}}mute @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"unmute": {
 			"help": "help_command_unmute",
-			"usage": ".voice unmute [@role|@user]",
-			"example": ".voice unmute @SomeRole",
+			"usage": "{{prefix}}unmute [@role|@user]",
+			"example": "{{prefix}}unmute @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"hide": {
 			"help": "help_command_hide",
-			"usage": ".voice hide [@role|@user]",
-			"example": ".voice hide @SomeRole",
+			"usage": "{{prefix}}hide [@role|@user]",
+			"example": "{{prefix}}hide @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"show": {
 			"help": "help_command_show",
-			"usage": ".voice show [@role|@user]",
-			"example": ".voice show @SomeRole",
+			"usage": "{{prefix}}show [@role|@user]",
+			"example": "{{prefix}}show @SomeRole",
 			"admin": false,
 			"aliases": []
 		},
 		"limit": {
 			"help": "help_command_limit",
-			"usage": ".voice limit <number>",
-			"example": ".voice limit 3",
+			"usage": "{{prefix}}limit <number>",
+			"example": "{{prefix}}limit 3",
 			"admin": false,
 			"aliases": []
 		},
 		"bitrate": {
 			"help": "help_command_bitrate",
-			"usage": ".voice bitrate [number]",
-			"example": ".voice bitrate 64",
+			"usage": "{{prefix}}bitrate [number]",
+			"example": "{{prefix}}bitrate 64",
 			"admin": false,
 			"aliases": []
 		},
 		"permit": {
 			"help": "help_command_permit",
-			"usage": ".voice permit <@person>",
-			"example": ".voice permit @DarthMinos#1161",
+			"usage": "{{prefix}}permit <@person>",
+			"example": "{{prefix}}permit @DarthMinos#1161",
 			"admin": false,
 			"aliases": [
 				"allow"
@@ -117,8 +117,8 @@
 		},
 		"reject": {
 			"help": "help_command_reject",
-			"usage": ".voice reject <@person>",
-			"example": ".voice reject @DarthMinos#1161",
+			"usage": "{{prefix}}reject <@person>",
+			"example": "{{prefix}}reject @DarthMinos#1161",
 			"admin": false,
 			"aliases": [
 				"deny"
@@ -126,71 +126,71 @@
 		},
 		"claim": {
 			"help": "help_command_claim",
-			"usage": ".voice claim",
-			"example": ".voice claim",
+			"usage": "{{prefix}}claim",
+			"example": "{{prefix}}claim",
 			"admin": false,
 			"aliases": []
 		},
 		"set-prefix": {
 			"help": "help_command_set_prefix",
-			"usage": ".voice set-prefix <prefix>",
-			"example": ".voice set-prefix !",
+			"usage": "{{prefix}}set-prefix <prefix>",
+			"example": "{{prefix}}set-prefix !",
 			"admin": true,
 			"aliases": []
 		},
 		"owner": {
 			"help": "help_command_owner",
-			"usage": ".voice owner <@person>",
-			"example": ".voice owner @DarthMinos#1161",
+			"usage": "{{prefix}}owner <@person>",
+			"example": "{{prefix}}owner @DarthMinos#1161",
 			"admin": true,
 			"aliases": []
 		},
 		"whoowns": {
 			"help": "help_command_whoowns",
-			"usage": ".voice whoowns",
-			"example": ".voice whoowns",
+			"usage": "{{prefix}}whoowns",
+			"example": "{{prefix}}whoowns",
 			"admin": false,
 			"aliases": []
 		},
 		"channels": {
 			"help": "help_command_channels",
-			"usage": ".voice channels",
-			"example": ".voice channels",
+			"usage": "{{prefix}}channels",
+			"example": "{{prefix}}channels",
 			"admin": true,
 			"aliases": []
 		},
 		"rename": {
 			"help": "help_command_rename",
-			"usage": ".voice rename <channel name>",
-			"example": ".voice rename New Channel Name",
+			"usage": "{{prefix}}rename <channel name>",
+			"example": "{{prefix}}rename New Channel Name",
 			"admin": true,
 			"aliases": []
 		},
 		"reset": {
 			"help": "help_command_reset",
-			"usage": ".voice reset",
-			"example": ".voice reset",
+			"usage": "{{prefix}}reset",
+			"example": "{{prefix}}reset",
 			"admin": false,
 			"aliases": []
 		},
 		"cleandb": {
 			"help": "help_command_cleandb",
-			"usage": ".voice cleandb",
-			"example": ".voice cleandb",
+			"usage": "{{prefix}}cleandb",
+			"example": "{{prefix}}cleandb",
 			"admin": true,
 			"aliases": []
 		},
 		"track": {
 			"help": "help_command_track",
-			"usage": ".voice track",
-			"example": ".voice track",
+			"usage": "{{prefix}}track",
+			"example": "{{prefix}}track",
 			"admin": true,
 			"aliases": []
 		},
 		"track-text-channel": {
 			"help": "help_command_track_text",
-			"usage": ".voice track-text-channel <#text-channel>",
-			"example": ".voice track-text-channel #my-text-channel",
+			"usage": "{{prefix}}track-text-channel <#text-channel>",
+			"example": "{{prefix}}track-text-channel #my-text-channel",
 			"admin": true,
 			"aliases": [
 				"ttc"
@@ -198,15 +198,15 @@
 		},
 		"settings": {
 			"help": "help_command_settings",
-			"usage": ".voice settings",
-			"example": ".voice settings",
+			"usage": "{{prefix}}settings",
+			"example": "{{prefix}}settings",
 			"admin": true,
 			"aliases": []
 		},
 		"set-default-role": {
 			"help": "help_command_set_default_role",
-			"usage": ".voice set-default-role \"<role name>\"",
-			"example": ".voice set-default-role \"Role Name\"",
+			"usage": "{{prefix}}set-default-role \"<role name>\"",
+			"example": "{{prefix}}set-default-role \"Role Name\"",
 			"admin": true,
 			"aliases": [
 				"sdr"
@@ -214,8 +214,8 @@
 		},
 		"get-default-role": {
 			"help": "help_command_get_default_role",
-			"usage": ".voice get-default-role",
-			"example": ".voice get-default-role",
+			"usage": "{{prefix}}get-default-role",
+			"example": "{{prefix}}get-default-role",
 			"admin": true,
 			"aliases": [
 				"gdr"
@@ -223,29 +223,29 @@
 		},
 		"init": {
 			"help": "help_command_init",
-			"usage": ".voice init",
-			"example": ".voice init",
+			"usage": "{{prefix}}init",
+			"example": "{{prefix}}init",
 			"admin": true,
 			"aliases": []
 		},
 		"setup": {
 			"help": "help_command_setup",
-			"usage": ".voice setup",
-			"example": ".voice setup",
+			"usage": "{{prefix}}setup",
+			"example": "{{prefix}}setup",
 			"admin": true,
 			"aliases": []
 		},
 		"language": {
 			"help": "help_command_language",
-			"usage": ".voice language",
-			"example": ".voice language",
+			"usage": "{{prefix}}language",
+			"example": "{{prefix}}language",
 			"admin": true,
 			"aliases": []
 		},
 		"set-language": {
 			"help": "help_command_set_language",
-			"usage": ".voice set-language",
-			"example": ".voice set-language",
+			"usage": "{{prefix}}set-language",
+			"example": "{{prefix}}set-language",
 			"admin": true,
 			"aliases": []
 		}

@@ -2,11 +2,10 @@ import discord
 import inspect
 import traceback
 from bot.cogs.lib.enums.loglevel import LogLevel
-from . import settings
-from . import logger
+from bot.cogs.lib import settings
+from bot.cogs.lib import logger
 
 class Channels():
-
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot

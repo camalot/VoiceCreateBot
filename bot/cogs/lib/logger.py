@@ -2,13 +2,13 @@ import sys
 import typing
 
 from bot.cogs.lib.enums.loglevel import LogLevel
-from bot.cogs.lib.mongodb.logs import LogsMongoDatabase
+from bot.cogs.lib.mongodb.logs import LogsDatabase
 from bot.cogs.lib.colors import Colors
 
 
 class Log:
     def __init__(self, minimumLogLevel: LogLevel = LogLevel.DEBUG):
-        self.db = LogsMongoDatabase()
+        self.logs_db = LogsDatabase()
         self.minimum_log_level = minimumLogLevel
 
     def __write(
@@ -31,7 +31,7 @@ class Log:
             print(Colors.colorize(color, stackTrace), file=file)
 
         if level >= self.minimum_log_level:
-            self.db.insert_log(guildId=guildId, level=level, method=method, message=message, stackTrace=stackTrace)
+            self.logs_db.insert_log(guildId=guildId, level=level, method=method, message=message, stackTrace=stackTrace)
 
     def debug(self, guildId: int, method: str, message: str, stackTrace: typing.Optional[str] = None):
         self.__write(

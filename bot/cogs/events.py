@@ -25,7 +25,6 @@ class EventsCog(commands.Cog):
         )
 
 
-
     @commands.Cog.listener()
     async def on_ready(self):
         _method = inspect.stack()[0][3]

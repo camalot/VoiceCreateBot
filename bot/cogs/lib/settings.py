@@ -1,6 +1,5 @@
 import sys
 import os
-import traceback
 import json
 import glob
 import typing
@@ -33,11 +32,14 @@ class Settings:
         self.languages = {}
         self.name = None
         self.version = None
+        self.init_message = None
 
 
         self.load_language_manifest()
         self.load_strings()
 
+    def to_dict(self):
+        return self.__dict__
 
     def load_strings(self):
         self.strings = {}
@@ -89,14 +91,14 @@ class Settings:
         self.strings[str(guildId)] = self.strings[lang]
 
     def get_language(self, guildId: int) -> str:
-        guild_setting = self.db.get_guild_settings(guildId)
+        guild_setting = self.db.get(guildId)
         if not guild_setting:
             return self.language
         return guild_setting.language or self.language
         return self.language
 
     def get(self, name, default_value=None) -> typing.Any:
-        return utils.dict_get(self.__dict__, name, default_value)
+        return utils.dict_get(self.to_dict(), name, default_value)
 
     def get_settings(self, db, guildId: int, name:str) -> typing.Any:
         return db.get_settings(guildId, name)

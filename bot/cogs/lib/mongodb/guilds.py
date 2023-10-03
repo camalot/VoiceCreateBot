@@ -8,25 +8,39 @@ import discord
 from bot.cogs.lib import utils
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.database import Database
-from bot.cogs.lib.models.guild_create_channel_settings import GuildCreateChannelSettings
-from bot.cogs.lib.models.guild_category_channel import GuildCategoryChannel
+from bot.cogs.lib.models.guild_create_channels import GuildCreateChannels
+from bot.cogs.lib.models.guild_category_create_channel import GuildCategoryCreateChannel
 
 
 
-class GuildsMongoDatabase(Database):
+class GuildsDatabase(Database):
 
     def __init__(self):
-        _method = inspect.stack()[0][3]
         super().__init__()
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
-        self.log(
-            guildId=0,
-            level=LogLevel.DEBUG,
-            method=f"{self._module}.{self._class}.{_method}",
-            message=f"Initialized {self._class}",
-        )
-        pass
+
+    def get_use_stage_on_create(self, guildId: int, channelId: int, categoryId: int) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.create_channels.find_one(
+                {"guild_id": str(guildId), "voice_category_id": str(categoryId), "voice_channel_id": str(channelId)},
+                {"use_stage": 1}
+            )
+            if result:
+                return result['use_stage']
+            return False
+        except Exception as ex:
+            self.log(
+                guildId,
+                LogLevel.ERROR,
+                f"{self._module}.{self._class}.{_method}",
+                f"{ex}",
+                traceback.format_exc(),
+            )
+            return False
 
     def get_guild_create_channels(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -48,17 +62,17 @@ class GuildsMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def get_guild_create_channel_settings(self, guildId: int) -> typing.Optional[GuildCreateChannelSettings]:
+    def get_guild_create_channel_settings(self, guildId: int) -> typing.Optional[GuildCreateChannels]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             rows = self.connection.create_channels.find({"guild_id": str(guildId)})
             if rows:
-                result = GuildCreateChannelSettings(guildId=guildId)
+                result = GuildCreateChannels(guildId=guildId)
                 for r in rows:
                     result.channels.append(
-                        GuildCategoryChannel(
+                        GuildCategoryCreateChannel(
                             ownerId=(r['owner_id']),
                             categoryId=int(r['voice_category_id']),
                             channelId=int(r['voice_channel_id']),

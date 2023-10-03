@@ -9,6 +9,10 @@ class LogLevel(Enum):
     ERROR = 3
     FATAL = 99
 
+    @staticmethod
+    def names_to_list():
+        return [x.name for x in LogLevel]
+
     def __ge__(self, other):
         if self.__class__ is other.__class__:
             return self.value >= other.value

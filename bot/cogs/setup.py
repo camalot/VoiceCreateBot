@@ -7,16 +7,18 @@ import os
 import typing
 import inspect
 from bot.cogs.lib import utils
-from bot.cogs.lib import mongo
 from bot.cogs.lib.logger import Log
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib import member_helper
 from bot.cogs.lib.bot_helper import BotHelper
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.enums.addremove import AddRemoveAction
+from bot.cogs.lib.mongodb.channels import ChannelsDatabase
 from bot.cogs.lib.RoleSelectView import RoleSelectView
+from bot.cogs.lib.users import Users
 from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.CategorySelectView import CategorySelectView
+from bot.cogs.lib.models.category_settings import GuildCategorySettings
 
 class SetupCog(commands.Cog):
     def __init__(self, bot):
@@ -27,8 +29,10 @@ class SetupCog(commands.Cog):
         self.settings = Settings()
         self.bot = bot
 
-        self.db = mongo.MongoDatabase()
+        self.channel_db = ChannelsDatabase()
+
         self.messaging = Messaging(bot)
+        self._users = Users(bot)
         self.bot_helper = BotHelper(bot)
 
         log_level = LogLevel[self.settings.log_level.upper()]
@@ -44,6 +48,7 @@ class SetupCog(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def setup(self, ctx) -> None:
+        await ctx.message.delete()
         pass
 
     @setup.command(name="channel", aliases=['c'])
@@ -52,12 +57,99 @@ class SetupCog(commands.Cog):
     async def channel(self, ctx) -> None:
         _method = inspect.stack()[0][3]
         try:
-            await ctx.message.delete()
-
             pass
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"Error: {e}")
-            traceback.print_exc()
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @setup.command(name="category", aliases=['cat'])
+    async def category(self, ctx):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        author = ctx.author
+        try:
+            if self._users.isAdmin(ctx):
+                found_category = await self.set_role_ask_category(ctx)
+
+                if found_category:
+                    bitrate_value = await self.ask_bitrate(
+                        ctx,
+                        title=self.settings.get_string(guild_id, "title_voice_channel_settings")
+                    )
+                    locked = await self.ask_yes_no(
+                        ctx,
+                        question=self.settings.get_string(guild_id, 'ask_default_locked'),
+                        title=self.settings.get_string(guild_id, "title_voice_channel_settings")
+                    )
+                    limit = await self.ask_limit(
+                        ctx,
+                        self.settings.get_string(guild_id, "title_voice_channel_settings")
+                    )
+                    new_default_role = await self.ask_default_role(
+                        ctx, self.settings.get_string(guild_id, "title_voice_channel_settings")
+                    )
+
+                    if not new_default_role:
+                        new_default_role = ctx.guild.default_role
+
+                    self.settings.db.set_guild_category_settings(
+                        GuildCategorySettings(
+                            guildId=guild_id,
+                            categoryId=found_category.id,
+                            channelLimit=limit,
+                            channelLocked=locked,
+                            autoGame=False,
+                            allowSoundboard=False,
+                            autoName=True,
+                            bitrate=bitrate_value,
+                            defaultRole=new_default_role.id,
+                        )
+                    )
+                    embed_fields = list([
+                        {
+                            "name": self.settings.get_string(guild_id, 'category'),
+                            "value": found_category.name,
+                        },
+                        {
+                            "name": self.settings.get_string(guild_id, 'locked'),
+                            "value": str(locked)
+                        },
+                        {
+                            "name": self.settings.get_string(guild_id, 'limit'),
+                            "value": str(limit)
+                        },
+                        {
+                            "name": self.settings.get_string(guild_id, 'bitrate'),
+                            "value": f"{str(bitrate_value)}kbps"
+                        },
+                        {
+                            "name": self.settings.get_string(guild_id, 'default_role'),
+                            "value": f"{new_default_role.name}"
+                        }
+                    ])
+
+                    await self.messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, "title_voice_channel_settings"),
+                        f"""{author.mention}, {
+                            utils.str_replace(self.settings.get_string(guild_id, 'info_category_settings'), category=found_category.name)
+                        }""",
+                        fields=embed_fields,
+                        delete_after=5,
+                    )
+
+                else:
+                    self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
+            else:
+                await self.messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_voice_channel_settings"),
+                    f"{author.mention}, {self.settings.get_string(guild_id, 'setup_no_permission')}",
+                    delete_after=5,
+                )
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
 
     @setup.command(name='init', aliases=['i'])
     @commands.guild_only()
@@ -66,22 +158,15 @@ class SetupCog(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
-
-
             # this should be configurable
             exclude_roles = [r.id for r in ctx.guild.roles if r.name.lower().startswith('lfg-')]
-
-
             async def rsv_callback(view, interaction):
                 await interaction.response.defer()
                 await rsv_message.delete()
-
                 # get the role
                 role_id = int(interaction.data['values'][0])
                 # get the role object
                 role = utils.get_by_name_or_id(ctx.guild.roles, role_id)
-
                 if role is None:
                     await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_role_not_found"), f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_role_not_found')}", delete_after=5)
                     return
@@ -113,7 +198,6 @@ class SetupCog(commands.Cog):
                         await ctx.send("Category not found", delete_after=5)
                     selected_category = category
                     await ctx.send(f"Category selected: {category.name}")
-
 
 
                 async def csv_timeout_callback(view):
@@ -156,8 +240,7 @@ class SetupCog(commands.Cog):
             )
             rsv_message = await ctx.send(view=rsv)
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"Error: {e}")
-            traceback.print_exc()
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
     @setup.group(name="role", aliases=['r'])
     @commands.guild_only()
@@ -173,8 +256,6 @@ class SetupCog(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             guild_id = ctx.guild.id
-            await ctx.message.delete()
-
             if len(prefixes) == 0:
                 prefixes = self.settings.db.get_prefixes(guildId=guild_id)
                 if prefixes is None:
@@ -216,15 +297,11 @@ class SetupCog(commands.Cog):
         try:
             guild_id = ctx.guild.id
             author = ctx.author
-
-            await ctx.message.delete()
-
             if inputRole is None:
                 # NO ROLE PASSED IN. Treat this as a get command
                 if member_helper.is_in_voice_channel(ctx.author):
                     voice_channel = ctx.author.voice.channel
-                    self.db.open()
-                    user_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel.id)
+                    user_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel.id)
                     result_role_id = self.settings.db.get_default_role(
                         guildId=guild_id,
                         categoryId=voice_channel.category.id,
@@ -254,8 +331,6 @@ class SetupCog(commands.Cog):
                         delete_after=5
                     )
                 return
-
-
             default_role: discord.Role = ctx.guild.default_role
 
             if isinstance(inputRole, str):
@@ -265,13 +340,10 @@ class SetupCog(commands.Cog):
 
             if default_role is None:
                 raise commands.BadArgument(f"Role {default_role} not found")
-
-
             # self.db.set_default_role_for_guild(ctx.guild.id, default_role.id)
             ctx.send(f"Default role set to {default_role.name}")
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"Error: {e}")
-            traceback.print_exc()
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
     @role.command(name="admin", aliases=['a'])
     @commands.guild_only()
@@ -280,7 +352,6 @@ class SetupCog(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
-            await ctx.message.delete()
             if action is None and role is None:
                 # return the list of admin roles
                 pass
@@ -302,8 +373,7 @@ class SetupCog(commands.Cog):
                 ctx.send(f"Removed role {admin_role.name}", delete_after=5)
         except Exception as e:
             await self.messaging.notify_of_error(ctx)
-            self.log.error(guild_id, f"{self._module}.{_method}", f"Error: {e}")
-            traceback.print_exc()
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
 
 async def setup(bot):

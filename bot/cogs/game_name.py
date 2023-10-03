@@ -5,9 +5,10 @@ import os
 import inspect
 from bot.cogs.lib import utils
 from bot.cogs.lib.settings import Settings
-from bot.cogs.lib import mongo
 from bot.cogs.lib.logger import Log
 from bot.cogs.lib.enums.loglevel import LogLevel
+from bot.cogs.lib.mongodb.channels import ChannelsDatabase
+from bot.cogs.lib.mongodb.users import UsersDatabase
 from bot.cogs.lib.channels import Channels
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.bot_helper import BotHelper
@@ -25,7 +26,8 @@ class GameNameCog(commands.Cog):
         self.messaging_helper = Messaging(bot)
         self.bot_helper = BotHelper(bot)
 
-        self.db = mongo.MongoDatabase()
+        self.channel_db = ChannelsDatabase()
+        self.user_db = UsersDatabase()
 
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -75,11 +77,10 @@ class GameNameCog(commands.Cog):
                 return
             is_in_channel = after is not None and after.voice is not None and after.voice.channel is not None
             if is_in_channel:
-                self.db.open()
                 self.log.debug(guild_id, _method , f"Member Update Start of user: '{after.name}'")
                 voice_channel = after.voice.channel
                 voice_channel_id = voice_channel.id
-                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+                owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
                 if owner_id is None:
                     # user is in a channel, but not a channel we are tracking
                     self.log.debug(guild_id, _method , f"User:{str(after.id)} is in a channel, but not a channel we are tracking.")
@@ -94,10 +95,10 @@ class GameNameCog(commands.Cog):
                     return
 
                 owner = await self.bot_helper.get_or_fetch_member(after.guild, owner_id)
-                user_settings = self.db.get_user_settings(guild_id, after.id)
+                user_settings = self.user_db.get_user_settings(guild_id, after.id)
 
                 if user_settings and user_settings.auto_game:
-                    text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
+                    text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
                     text_channel = None
                     if text_channel_id:
                         text_channel = await self.channel_helper.get_or_fetch_channel(int(text_channel_id))
@@ -183,8 +184,6 @@ class GameNameCog(commands.Cog):
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-        finally:
-            self.db.close()
 
 
 async def setup(bot):

@@ -20,12 +20,9 @@ from .lib import settings
 from .lib import mongo
 from .lib import logger
 from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.models.embedfield import EmbedField
 
 import inspect
-class EmbedField():
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
 
 class voice(commands.Cog):
     def __init__(self, bot):
@@ -295,7 +292,12 @@ class voice(commands.Cog):
                         # title, message, fields=None, delete_after=None, footer=None
                         fields = []
                         for f in range(len(initMessage['fields'])):
-                            fields.append(EmbedField(self.get_string(guild_id, initMessage['fields'][f]['name']), initMessage['fields'][f]['value']).__dict__)
+                            fields.append(
+                                EmbedField(
+                                    self.get_string(guild_id, initMessage['fields'][f]['name']),
+                                    initMessage['fields'][f]['value']
+                                ).to_dict()
+                            )
                         await self.sendEmbed(textChannel, self.get_string(guild_id, initMessage['title']), f"{member.mention}, {self.get_string(guild_id, initMessage['message'])}", fields=fields, delete_after=None, footer=None)
             except discord.errors.NotFound as nf:
                 self.log.warn(guild_id, _method , str(nf))

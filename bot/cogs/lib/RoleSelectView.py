@@ -5,8 +5,8 @@ import inspect
 import os
 import typing
 
-from . import settings
-from . import logger
+from bot.cogs.lib import settings
+from bot.cogs.lib import logger
 from bot.cogs.lib.enums import loglevel
 
 

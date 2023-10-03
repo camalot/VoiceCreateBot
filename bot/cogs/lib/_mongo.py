@@ -5,8 +5,8 @@ import typing
 from bot.cogs.lib import database, settings, utils
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.models.category_settings import GuildCategorySettings
-from bot.cogs.lib.models.guild_category_channel import GuildCategoryChannel
-from bot.cogs.lib.models.guild_create_channel_settings import GuildCreateChannelSettings
+from bot.cogs.lib.models.guild_category_create_channel import GuildCategoryCreateChannel
+from bot.cogs.lib.models.guild_create_channels import GuildCreateChannels
 
 
 class MongoDatabase(database.Database):
@@ -105,7 +105,7 @@ class MongoDatabase(database.Database):
                     text_channel_id = tracked_text['channelID']
                 payload = {
                     "guild_id": guildId,
-                    "user_id": tracked_voice['userID'],
+                    "owner_id": tracked_voice['userID'],
                     "text_channel_id": text_channel_id,
                     "voice_channel_id": tracked_voice['voiceID'],
                     "timestamp": utils.get_timestamp()
@@ -116,15 +116,8 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def clean_guild_user_settings(self, guildId):
-        try:
-            if self.connection is None:
-                self.open()
-            # c.execute("DELETE FROM `userSettings` WHERE guildID = ?", (guildId, ))
-            self.connection.user_settings.delete_many({"guildID": guildId})
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+
+
     def clean_user_settings(self, guildId, userId):
         try:
             if self.connection is None:
@@ -134,6 +127,7 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
     def get_tracked_voice_channel_id_by_owner(self, guildId, ownerId):
         try:
             if self.connection is None:
@@ -180,9 +174,9 @@ class MongoDatabase(database.Database):
                 self.open()
             rows = self.connection.create_channels.find({"guildID": guildId})
             if rows:
-                result = GuildCreateChannelSettings(guildId=guildId)
+                result = GuildCreateChannels(guildId=guildId)
                 for r in rows:
-                    result.channels.append(GuildCategoryChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
+                    result.channels.append(GuildCategoryCreateChannel(ownerId=(r['ownerID']), categoryId=int(r['voiceCategoryID']), channelId=int(r['voiceChannelID']), useStage=r['useStage']))
                 return result
             return None
         except Exception as ex:

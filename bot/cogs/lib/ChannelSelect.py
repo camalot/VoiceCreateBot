@@ -3,8 +3,8 @@ from discord.ext import commands
 import traceback
 import inspect
 import os
-from . import settings
-from . import logger
+from bot.cogs.lib import settings
+from bot.cogs.lib import logger
 from bot.cogs.lib.enums.loglevel import LogLevel
 
 
@@ -18,7 +18,7 @@ class ChannelSelect(discord.ui.Select):
         self.ctx = ctx
 
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         self.log = logger.Log(minimumLogLevel=log_level)
         options = []
 
@@ -53,7 +53,7 @@ class ChannelSelectView(discord.ui.View):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         self.log = logger.Log(minimumLogLevel=log_level)
 
         self.ctx = ctx

@@ -9,7 +9,7 @@ from bot.cogs.lib.enums.member_status import MemberStatus
 from bot.cogs.lib.mongodb.database import Database
 
 
-class UsersMongoDatabase(Database):
+class UsersDatabase(Database):
     def __init__(self):
         super().__init__()
         pass

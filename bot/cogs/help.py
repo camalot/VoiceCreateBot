@@ -11,7 +11,6 @@ from bot.cogs.lib.settings import Settings
 
 from bot.cogs.lib import utils
 from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib import mongo
 from bot.cogs.lib.enums.loglevel import LogLevel
 
 class HelpCog(commands.Cog):
@@ -23,7 +22,6 @@ class HelpCog(commands.Cog):
         self.settings = Settings()
         self.bot = bot
 
-        self.db = mongo.MongoDatabase()
         self.messaging = Messaging(bot)
 
         log_level = LogLevel[self.settings.log_level.upper()]

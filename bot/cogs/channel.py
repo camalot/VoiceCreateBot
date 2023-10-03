@@ -9,8 +9,8 @@ from bot.cogs.lib.models.category_settings import GuildCategorySettings
 from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
 from bot.cogs.lib.enums.loglevel import LogLevel
-from bot.cogs.lib.mongodb import channels as channels_db
-from bot.cogs.lib.mongodb import usersettings as usersettings_db
+from bot.cogs.lib.mongodb.channels import ChannelsDatabase
+from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
 from discord.ext import commands
 
 
@@ -19,8 +19,8 @@ class ChannelCog(commands.Cog):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
 
-        self.channel_db = channels_db.ChannelsDatabase()
-        self.usersettings_db = usersettings_db.UserSettingsDatabase()
+        self.channel_db = ChannelsDatabase()
+        self.usersettings_db = UserSettingsDatabase()
 
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -35,7 +35,7 @@ class ChannelCog(commands.Cog):
             log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._module}.{self._class} cog")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._class}")
 
     @commands.group(name="channel", aliases=["ch"])
     async def channel(self, ctx):
@@ -138,9 +138,12 @@ class ChannelCog(commands.Cog):
                         userId=owner_id,
                         channelName=name,
                         channelLimit=category_settings.channel_limit,
+                        channelLocked=category_settings.channel_locked,
                         bitrate=category_settings.bitrate,
                         defaultRole=temp_default_role.id,
                         autoGame=False,
+                        autoName=True,
+                        allowSoundboard=False,
                     )
             await self._messaging.send_embed(
                 ctx.channel,
@@ -172,7 +175,7 @@ class ChannelCog(commands.Cog):
                 if not name or name == "":
                     name = utils.get_random_name()
                 category_id = ctx.author.voice.channel.category.id
-                guild_category_settings = self.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+                guild_category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
                 owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
                 if not owner_id:
                     await self._messaging.send_embed(
@@ -206,10 +209,16 @@ class ChannelCog(commands.Cog):
                         guildId=guild_id,
                         userId=owner_id,
                         channelName=name,
+                        # TODO: get the category settings from the database
+                        # lockChannel=guild_category_settings.channel_locked,
+                        channelLocked=False,
                         channelLimit=guild_category_settings.channel_limit,
                         bitrate=guild_category_settings.bitrate,
                         defaultRole=temp_default_role.id,
                         autoGame=False,
+                        # TODO: get the category settings from the database
+                        autoName=True,
+                        allowSoundboard=False,
                     )
             else:
                 self.log.debug(guild_id, _method, f"{ctx.author} tried to run command 'rename'")

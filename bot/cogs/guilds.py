@@ -12,12 +12,11 @@ import datetime
 
 import inspect
 
-from .lib import settings
+from bot.cogs.lib.settings import Settings
 from .lib import logger
 from bot.cogs.lib.enums.loglevel import LogLevel
-from .lib import utils
-from .lib import settings
-from .lib.mongodb import guilds as mongo
+from bot.cogs.lib import utils
+from bot.cogs.lib.mongodb.guilds import GuildsDatabase
 
 class GuildTrackCog(commands.Cog):
     def __init__(self, bot):
@@ -26,8 +25,8 @@ class GuildTrackCog(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         self.bot = bot
-        self.settings = settings.Settings()
-        self.db = mongo.GuildsMongoDatabase()
+        self.settings = Settings()
+        self.guild_db = GuildsDatabase()
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = LogLevel.DEBUG
@@ -42,10 +41,10 @@ class GuildTrackCog(commands.Cog):
             if guild is None:
                 return
 
-            self.log.debug(guild.id, f"{self._module}.{_method}", f"Guild ({guild.id}) is available")
-            self.db.track_guild(guild=guild)
+            self.log.debug(guild.id, f"{self._module}.{self._class}.{_method}", f"Guild ({guild.id}) is available")
+            self.guild_db.track_guild(guild=guild)
         except Exception as e:
-            self.log.error(guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after) -> None:
@@ -54,10 +53,10 @@ class GuildTrackCog(commands.Cog):
             if after is None:
                 return
 
-            self.log.debug(before.id, f"{self._module}.{_method}", f"Guild ({before.id}) is updated")
-            self.db.track_guild(guild=after)
+            self.log.debug(before.id, f"{self._module}.{self._class}.{_method}", f"Guild ({before.id}) is updated")
+            self.guild_db.track_guild(guild=after)
         except Exception as e:
-            self.log.error(before.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(before.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
 async def setup(bot):
     await bot.add_cog(GuildTrackCog(bot))
