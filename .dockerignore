@@ -1,0 +1,10 @@
+*.env
+.env
+.editorconfig
+.git/
+.dockerignore
+.gitignore
+__pycache__/**
+.vscode/**
+.github/**
+README.md
