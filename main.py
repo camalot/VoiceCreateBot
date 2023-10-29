@@ -12,24 +12,12 @@ from bot.cogs.lib.colors import Colors
 from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
 
-def sighandler(signum, frame):
+def sighandler(signum: int, frame):
     match signum:
         case signal.SIGTERM:
             print(Colors.colorize(Colors.FGYELLOW, "<SIGTERM received>"))
         case signal.SIGINT:
             print(Colors.colorize(Colors.FGYELLOW, "<SIGINT received>"))
-        case signal.SIGSEGV:
-            print(Colors.colorize(Colors.FGYELLOW, "<SIGSEGV received>"))
-        case signal.SIGILL:
-            print(Colors.colorize(Colors.FGYELLOW, "<SIGILL received>"))
-        case signal.SIGABRT:
-            print(Colors.colorize(Colors.FGYELLOW, "<SIGABRT received>"))
-        case signal.SIGFPE:
-            print(Colors.colorize(Colors.FGYELLOW, "<SIGFPE received>"))
-        case signal.SIGBREAK:
-            print(Colors.colorize(Colors.FGYELLOW, "<SIGBREAK received>"))
-        case _:
-            print(Colors.colorize(Colors.FGYELLOW, f"<Unknown SIGNAL {signum} received>"))
     exit(0)
 
 
@@ -38,7 +26,7 @@ def main():
         migrations = MigrationRunner()
         migrations.start_migrations()
 
-        DISCORD_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+        DISCORD_TOKEN = os.environ.get("VCB_DISCORD_BOT_TOKEN", "")
         intents = discord.Intents.all()
         intents.message_content = True
         intents.members = True
@@ -72,10 +60,6 @@ if __name__ == '__main__':
     try:
         signal.signal(signal.SIGTERM, sighandler)
         signal.signal(signal.SIGINT, sighandler)
-        signal.signal(signal.SIGSEGV, sighandler)
-        signal.signal(signal.SIGABRT, sighandler)
-        signal.signal(signal.SIGFPE, sighandler)
-        signal.signal(signal.SIGBREAK, sighandler)
 
         executor = ProcessPoolExecutor(2)
         loop.run_in_executor(executor, main)

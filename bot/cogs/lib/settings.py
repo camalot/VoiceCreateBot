@@ -20,9 +20,9 @@ class Settings:
 
         self.db_url = utils.dict_get(os.environ, "VCB_MONGODB_URL", default_value="")
 
-        self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
-        self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
-        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
+        self.bot_owner = utils.dict_get(os.environ, 'VCB_BOT_OWNER', default_value= '262031734260891648')
+        self.log_level = utils.dict_get(os.environ, 'VCB_LOG_LEVEL', default_value = 'DEBUG')
+        self.language = utils.dict_get(os.environ, "VCB_LANGUAGE", default_value = "en-us").lower()
         self.db_name = utils.dict_get(os.environ, "VCB_MONGODB_DBNAME", default_value = "voicecreate_v2")
 
         self.db = SettingsDatabase()

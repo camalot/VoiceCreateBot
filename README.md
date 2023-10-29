@@ -28,19 +28,20 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 
 ## ENVIRONMENT VARIABLES
 
-| NAME | DESCRIPTION | REQUIRED | DEFAULT |  
-|---|---|---|---|  
-| VCB_MONGODB_URL | MongoDB connection string | `false` | `null` |  
-| VCB_MONGODB_DBNAME | MongoDB database name | `true` | `voicecreate_v2` |  
-| DISCORD_BOT_TOKEN | The discord bot token | `true` | `null` |  
-| VCB_DISCORD_CLIENT_ID | The app client id | `true` | `null` |  
-| BOT_OWNER | The discord ID of the bot owner | `true` | `null` |  
-| LOG_LEVEL | The minimum log level. `[DEBUG\|INFO\|WARNING\|ERROR\|FATAL]` | `false` | `DEBUG` |  
-| LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |  
-| | | | |  
-| VCBE_CONFIG_METRICS_ENABLED | Enable the prometheus exporter | `false` | `false` |  
-| VCBE_CONFIG_METRICS_PORT | Running port for the prometheus exporter | `false` | `8932` |  
-| VCBE_CONFIG_METRICS_POLLING_INTERVAL | How often, in seconds, to poll the metrics | `false` | `60` |  
+| NAME | DESCRIPTION | REQUIRED | DEFAULT |
+|---|---|---|---|
+| VCB_MONGODB_URL | MongoDB connection string | `false` | `null` |
+| VCB_MONGODB_DBNAME | MongoDB database name | `true` | `voicecreate_v2` |
+| VCB_DISCORD_BOT_TOKEN | The discord bot token | `true` | `null` |
+| VCB_DISCORD_CLIENT_ID | The app client id | `true` | `null` |
+| VCB_BOT_OWNER | The discord ID of the bot owner | `true` | `null` |
+| VCB_LOG_LEVEL | The minimum log level. `[DEBUG\|INFO\|WARNING\|ERROR\|FATAL]` | `false` | `DEBUG` |
+| VCB_LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |
+| | | | |
+| VCBE_CONFIG_METRICS_ENABLED | Enable the prometheus exporter | `false` | `false` |
+| VCBE_CONFIG_METRICS_PORT | Running port for the prometheus exporter | `false` | `8932` |
+| VCBE_CONFIG_METRICS_POLLING_INTERVAL | How often, in seconds, to poll the metrics | `false` | `60` |
+
 ## DATABASE SUPPORT
 
 ## HOW TO RUN THE BOT LOCALLY
