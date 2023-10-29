@@ -83,8 +83,3 @@ camalot/voice-create-bot-docker:latest
 ## INVITE TO DISCORD
 
 `https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&permissions=8&scope=bot`
-
-## CONTRIBUTORS
-
-_Note:
-This started out as a fork of the bot by [@SamSanai](https://github.com/SamSanai). It has sense been completely rewritten and is no longer anything that it once was._

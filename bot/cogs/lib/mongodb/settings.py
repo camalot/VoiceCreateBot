@@ -235,16 +235,30 @@ class SettingsDatabase(DatabaseBase):
             payload = {
                 "guild_id": settings.guild_id,
                 "voice_category_id": settings.category_id,
-                "channel_limit": settings.channel_limit,
-                "channel_locked": settings.channel_locked,
-                "bitrate": settings.bitrate,
-                "default_role": settings.default_role,
-                "auto_game": settings.auto_game,
-                "allow_soundboard": settings.allow_soundboard,
-                "auto_name": settings.auto_name,
                 "timestamp": utils.get_timestamp(),
             }
-            self.connection.category_settings.update_one({"guild_id": settings.guild_id, "voice_category_id": settings.category_id}, { "$set": payload }, upsert=True)
+
+            if settings.channel_limit is not None:
+                payload['channel_limit'] = settings.channel_limit
+            if settings.channel_locked is not None:
+                payload['channel_locked'] = settings.channel_locked
+            if settings.bitrate is not None:
+                payload['bitrate'] = settings.bitrate
+            if settings.default_role is not None:
+                payload['default_role'] = settings.default_role
+            if settings.auto_game is not None:
+                payload['auto_game'] = settings.auto_game
+            if settings.allow_soundboard is not None:
+                payload['allow_soundboard'] = settings.allow_soundboard
+            if settings.auto_name is not None:
+                payload['auto_name'] = settings.auto_name
+
+
+            self.connection.category_settings.update_one(
+                {"guild_id": settings.guild_id, "voice_category_id": settings.category_id},
+                { "$set": payload },
+                upsert=True,
+            )
             return True
         except Exception as ex:
             self.log(

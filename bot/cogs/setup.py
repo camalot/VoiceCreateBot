@@ -19,6 +19,7 @@ from bot.cogs.lib.users import Users
 from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.CategorySelectView import CategorySelectView
 from bot.cogs.lib.models.category_settings import GuildCategorySettings
+from bot.cogs.lib.models.category_settings import PartialGuildCategorySettings
 
 class SetupCog(commands.Cog):
     def __init__(self, bot):
@@ -62,94 +63,314 @@ class SetupCog(commands.Cog):
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
-    @setup.command(name="category", aliases=['cat'])
-    async def category(self, ctx):
-        _method = inspect.stack()[1][3]
+    @commands.guild_only()
+    # @commands.has_permissions(administrator=True)
+    async def bitrate(
+        self,
+        ctx,
+        category: typing.Optional[typing.Union[str, discord.CategoryChannel, int]] = None,
+        bitrate: typing.Optional[int] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
-        author = ctx.author
+
         try:
-            if self._users.isAdmin(ctx):
-                found_category = await self.set_role_ask_category(ctx)
+            if not self._users.isAdmin(ctx):
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{ctx.author.name} is not an admin")
+                return
 
-                if found_category:
-                    bitrate_value = await self.ask_bitrate(
-                        ctx,
-                        title=self.settings.get_string(guild_id, "title_voice_channel_settings")
-                    )
-                    locked = await self.ask_yes_no(
-                        ctx,
-                        question=self.settings.get_string(guild_id, 'ask_default_locked'),
-                        title=self.settings.get_string(guild_id, "title_voice_channel_settings")
-                    )
-                    limit = await self.ask_limit(
-                        ctx,
-                        self.settings.get_string(guild_id, "title_voice_channel_settings")
-                    )
-                    new_default_role = await self.ask_default_role(
-                        ctx, self.settings.get_string(guild_id, "title_voice_channel_settings")
-                    )
+            discord_category = None
+            if category is None:
+                # TODO: ask for the category
+                # get the category for the current channel
+                discord_category = ctx.channel.category
 
-                    if not new_default_role:
-                        new_default_role = ctx.guild.default_role
+            if isinstance(category, str):
+                discord_category = discord.utils.get(ctx.guild.categories, name=category)
+            elif isinstance(category, int):
+                discord_category = discord.utils.get(ctx.guild.categories, id=category)
 
-                    self.settings.db.set_guild_category_settings(
-                        GuildCategorySettings(
-                            guildId=guild_id,
-                            categoryId=found_category.id,
-                            channelLimit=limit,
-                            channelLocked=locked,
-                            autoGame=False,
-                            allowSoundboard=False,
-                            autoName=True,
-                            bitrate=bitrate_value,
-                            defaultRole=new_default_role.id,
-                        )
-                    )
-                    embed_fields = list([
-                        {
-                            "name": self.settings.get_string(guild_id, 'category'),
-                            "value": found_category.name,
-                        },
-                        {
-                            "name": self.settings.get_string(guild_id, 'locked'),
-                            "value": str(locked)
-                        },
-                        {
-                            "name": self.settings.get_string(guild_id, 'limit'),
-                            "value": str(limit)
-                        },
-                        {
-                            "name": self.settings.get_string(guild_id, 'bitrate'),
-                            "value": f"{str(bitrate_value)}kbps"
-                        },
-                        {
-                            "name": self.settings.get_string(guild_id, 'default_role'),
-                            "value": f"{new_default_role.name}"
-                        }
-                    ])
+            if discord_category is None:
+                raise commands.BadArgument(f"Category {category} not found")
 
-                    await self.messaging.send_embed(
-                        ctx.channel,
-                        self.settings.get_string(guild_id, "title_voice_channel_settings"),
-                        f"""{author.mention}, {
-                            utils.str_replace(self.settings.get_string(guild_id, 'info_category_settings'), category=found_category.name)
-                        }""",
-                        fields=embed_fields,
-                        delete_after=5,
-                    )
-
-                else:
-                    self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
-            else:
-                await self.messaging.send_embed(
-                    ctx.channel,
-                    self.settings.get_string(guild_id, "title_voice_channel_settings"),
-                    f"{author.mention}, {self.settings.get_string(guild_id, 'setup_no_permission')}",
-                    delete_after=5,
+            bitrate_min = 8
+            bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+            bitrate_value = bitrate
+            if bitrate_value is None or bitrate_value < bitrate_min or bitrate_value > bitrate_limit:
+                bitrate_value = await self.messaging.ask_number(
+                    ctx=ctx,
+                    title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+                    message=utils.str_replace(
+                        self.settings.get_string(guild_id, "info_bitrate"),
+                        bitrate_min=str(bitrate_min),
+                        bitrate_limit=str(bitrate_limit)
+                    ),
+                    min_value=8,
+                    max_value=bitrate_limit,
+                    timeout=60,
+                    required_user=ctx.author,
                 )
-        except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+
+                if bitrate_value is None:
+                    bitrate_value = bitrate_limit
+
+            self.settings.db.set_guild_category_settings(
+                PartialGuildCategorySettings(
+                    guildId=guild_id,
+                    categoryId=discord_category.id,
+                    bitrate=bitrate_value
+                )
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
+    @commands.guild_only()
+    async def limit(
+        self,
+        ctx,
+        category: typing.Optional[typing.Union[str, discord.CategoryChannel, int]] = None,
+        limit: typing.Optional[int] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
+
+        try:
+            if not self._users.isAdmin(ctx):
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{ctx.author.name} is not an admin")
+                return
+
+            discord_category = None
+            if category is None:
+                # TODO: ask for the category
+                # get the category for the current channel
+                discord_category = ctx.channel.category
+
+            if isinstance(category, str):
+                discord_category = discord.utils.get(ctx.guild.categories, name=category)
+            elif isinstance(category, int):
+                discord_category = discord.utils.get(ctx.guild.categories, id=category)
+
+            if discord_category is None:
+                raise commands.BadArgument(f"Category {category} not found")
+
+            limit_min = 0
+            limit_max = 100
+            limit_value = limit
+            if limit_value is None or limit_value < limit_min or limit_value > limit_max:
+                limit_value = await self.messaging.ask_number(
+                    ctx=ctx,
+                    title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+                    message=self.settings.get_string(guild_id, 'ask_limit'),
+                    min_value=limit_min,
+                    max_value=limit_max,
+                    timeout=60,
+                    required_user=ctx.author,
+                )
+
+                if limit_value is None:
+                    limit_value = 0
+
+            self.settings.db.set_guild_category_settings(
+                PartialGuildCategorySettings(
+                    guildId=guild_id,
+                    categoryId=discord_category.id,
+                    limit=limit_value
+                )
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @commands.guild_only()
+    async def locked(
+        self,
+        ctx,
+        category: typing.Optional[typing.Union[str, discord.CategoryChannel, int]] = None,
+        locked: typing.Optional[bool] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
+
+        try:
+            if not self._users.isAdmin(ctx):
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{ctx.author.name} is not an admin")
+                return
+
+            discord_category = None
+            if category is None:
+                # TODO: ask for the category
+                # get the category for the current channel
+                discord_category = ctx.channel.category
+
+            if isinstance(category, str):
+                discord_category = discord.utils.get(ctx.guild.categories, name=category)
+            elif isinstance(category, int):
+                discord_category = discord.utils.get(ctx.guild.categories, id=category)
+
+            if discord_category is None:
+                raise commands.BadArgument(f"Category {category} not found")
+
+            locked_value = locked
+            if locked_value is None:
+                locked_value = await self.messaging.ask_yes_no(
+                    ctx=ctx,
+                    title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+                    question=self.settings.get_string(guild_id, 'ask_default_locked'),
+                    timeout=60,
+                    required_user=ctx.author,
+                )
+
+                if locked_value is None:
+                    locked_value = False
+
+            self.settings.db.set_guild_category_settings(
+                PartialGuildCategorySettings(
+                    guildId=guild_id,
+                    categoryId=discord_category.id,
+                    locked=locked_value
+                )
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @commands.guild_only()
+    async def default_role(
+        self,
+        ctx,
+        category: typing.Optional[typing.Union[str, discord.CategoryChannel, int]] = None,
+        default_role: typing.Optional[typing.Union[str, discord.Role, int]] = None,
+    ) -> None:
+        pass
+
+    # @setup.command(name="category", aliases=['cat'])
+    # @commands.guild_only()
+    # async def category(self, ctx):
+    #     _method = inspect.stack()[1][3]
+    #     guild_id = ctx.guild.id
+    #     author = ctx.author
+
+    #     new_default_role = None
+    #     locked = False
+    #     limit = 0
+    #     bitrate_value = 0
+
+    #     try:
+    #         if self._users.isAdmin(ctx):
+    #             found_category = await self.set_role_ask_category(ctx)
+    #             bitrate_min = 8
+    #             bitrate_limit = int(round(ctx.guild.bitrate_limit / 1000))
+    #             if found_category:
+    #                 bitrate_value = await self.messaging.ask_number(
+    #                     ctx=ctx,
+    #                     title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                     message=utils.str_replace(
+    #                         self.settings.get_string(guild_id, "info_bitrate"),
+    #                         bitrate_min=str(bitrate_min),
+    #                         bitrate_limit=str(bitrate_limit)
+    #                     ),
+    #                     min_value=8,
+    #                     max_value=bitrate_limit,
+    #                     timeout=60,
+    #                     required_user=ctx.author,
+    #                 )
+
+    #                 def default_role_callback(result):
+    #                     new_default_role = result
+    #                     if not new_default_role:
+    #                         new_default_role = ctx.guild.default_role
+
+    #                 def locked_yes_no_callback(result):
+    #                     locked = result
+
+    #                     limit = self.messaging.ask_number(
+    #                         ctx=ctx,
+    #                         title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                         message=self.settings.get_string(guild_id, 'ask_limit'),
+    #                         min_value=0,
+    #                         max_value=99,
+    #                         timeout=60,
+    #                         required_user=ctx.author,
+    #                     )
+
+    #                     ask_role = self.messaging.ask_role_list(
+    #                         ctx=ctx,
+    #                         title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                         message=self.settings.get_string(guild_id, 'ask_default_role'),
+    #                         timeout=60,
+    #                         required_user=ctx.author,
+    #                         select_callback=default_role_callback,
+    #                     )
+
+    #                 ask_locked = await self.messaging.ask_yes_no(
+    #                     ctx=ctx,
+    #                     targetChannel=ctx.channel,
+    #                     question=self.settings.get_string(guild_id, 'ask_default_locked'),
+    #                     title=self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                     timeout=60,
+    #                     required_user=ctx.author,
+    #                     result_callback=locked_yes_no_callback
+    #                 )
+
+    #                 self.settings.db.set_guild_category_settings(
+    #                     GuildCategorySettings(
+    #                         guildId=guild_id,
+    #                         categoryId=found_category.id,
+    #                         channelLimit=limit,
+    #                         channelLocked=locked,
+    #                         autoGame=False,
+    #                         allowSoundboard=False,
+    #                         autoName=True,
+    #                         bitrate=bitrate_value,
+    #                         defaultRole=new_default_role.id,
+    #                     )
+    #                 )
+    #                 embed_fields = list([
+    #                     {
+    #                         "name": self.settings.get_string(guild_id, 'category'),
+    #                         "value": found_category.name,
+    #                     },
+    #                     {
+    #                         "name": self.settings.get_string(guild_id, 'locked'),
+    #                         "value": str(locked)
+    #                     },
+    #                     {
+    #                         "name": self.settings.get_string(guild_id, 'limit'),
+    #                         "value": str(limit)
+    #                     },
+    #                     {
+    #                         "name": self.settings.get_string(guild_id, 'bitrate'),
+    #                         "value": f"{str(bitrate_value)}kbps"
+    #                     },
+    #                     {
+    #                         "name": self.settings.get_string(guild_id, 'default_role'),
+    #                         "value": f"{new_default_role.name}"
+    #                     }
+    #                 ])
+
+    #                 await self.messaging.send_embed(
+    #                     ctx.channel,
+    #                     self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                     f"""{author.mention}, {
+    #                         utils.str_replace(self.settings.get_string(guild_id, 'info_category_settings'), category=found_category.name)
+    #                     }""",
+    #                     fields=embed_fields,
+    #                     delete_after=5,
+    #                 )
+
+    #             else:
+    #                 self.log.error(guild_id, _method, f"No Category found for '{found_category}'")
+    #         else:
+    #             await self.messaging.send_embed(
+    #                 ctx.channel,
+    #                 self.settings.get_string(guild_id, "title_voice_channel_settings"),
+    #                 f"{author.mention}, {self.settings.get_string(guild_id, 'setup_no_permission')}",
+    #                 delete_after=5,
+    #             )
+    #     except Exception as ex:
+    #         self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+    #         await self.messaging.notify_of_error(ctx)
 
     @setup.command(name='init', aliases=['i'])
     @commands.guild_only()
@@ -168,7 +389,12 @@ class SetupCog(commands.Cog):
                 # get the role object
                 role = utils.get_by_name_or_id(ctx.guild.roles, role_id)
                 if role is None:
-                    await self.messaging.send_embed(ctx.channel, self.settings.get_string(guild_id, "title_role_not_found"), f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_role_not_found')}", delete_after=5)
+                    await self.messaging.send_embed(
+                        ctx.channel,
+                        self.settings.get_string(guild_id, "title_role_not_found"),
+                        f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_role_not_found')}",
+                        delete_after=5,
+                    )
                     return
 
                 await ctx.send(f"Role selected: {role.name}")

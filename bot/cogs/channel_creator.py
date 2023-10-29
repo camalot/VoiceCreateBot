@@ -92,13 +92,27 @@ class ChannelCreatorCog(commands.Cog):
                     allow_soundboard = False
                     bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
                     name = utils.get_random_name()
+                    user_name = name
+                    # get game activity from all activities
+                    game_activity = None
+                    for activity in member.activities:
+                        if activity.type == discord.ActivityType.playing:
+                            game_activity = activity
+                            break
+
+                    is_playing = game_activity is not None
 
                     default_role_id = self.settings.db.get_default_role(
                         guildId=guild_id, categoryId=category_id, userId=member.id
                     )
-                    default_role = utils.get_by_name_or_id(
-                        member.guild.roles, default_role_id
-                    ) or member.guild.default_role
+
+                    if default_role_id is None:
+                        default_role = member.guild.default_role
+                    else:
+                        default_role = utils.get_by_name_or_id(
+                            member.guild.roles, default_role_id
+                        ) or member.guild.default_role
+
                     if userSettings is None:
                         if guildSettings is not None:
                             limit = guildSettings.channel_limit
@@ -108,7 +122,7 @@ class ChannelCreatorCog(commands.Cog):
                             auto_game = guildSettings.auto_game
                             allow_soundboard = guildSettings.allow_soundboard
                     else:
-                        name = userSettings.channel_name
+                        user_name = userSettings.channel_name
                         if guildSettings is None:
                             limit = userSettings.channel_limit
                             bitrate = userSettings.bitrate
@@ -120,9 +134,15 @@ class ChannelCreatorCog(commands.Cog):
                             limit = userSettings.channel_limit or guildSettings.channel_limit
                             locked = userSettings.channel_locked or guildSettings.channel_locked or False
                             bitrate = userSettings.bitrate or guildSettings.bitrate
-                            auto_name = userSettings.auto_name or guildSettings.auto_name
-                            auto_game = userSettings.auto_game or guildSettings.auto_game
-                            allow_soundboard = userSettings.allow_soundboard or guildSettings.allow_soundboard
+                            auto_name = userSettings.auto_name if userSettings is not None else guildSettings.auto_name
+                            auto_game = userSettings.auto_game if userSettings is not None else guildSettings.auto_game
+                            allow_soundboard = userSettings.allow_soundboard if userSettings is not None else guildSettings.allow_soundboard
+
+                        if not auto_name:
+                            if auto_game and is_playing:
+                                name = game_activity.name
+                            else:
+                                name = user_name
 
                     # CHANNEL SETTINGS END
 
