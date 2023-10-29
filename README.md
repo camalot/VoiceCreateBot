@@ -1,7 +1,7 @@
 # VoiceCreateBot
 
 
-[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![Docker Pulls](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) 
+[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![Docker Pulls](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker)
 
 A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
@@ -11,7 +11,7 @@ A dedicated bot for creating dynamic voice channels. Keep your voice channel cou
 |---|---|---|
 | Multiple Create Channels | :heavy_check_mark: | |
 | Different Permissions Per Create Channel | :heavy_check_mark: | |
-| Random Channel Names | :heavy_check_mark: | | 
+| Random Channel Names | :heavy_check_mark: | |
 | Ability for user to change channel name | :heavy_check_mark: | |
 | Stage Channels | :heavy_check_mark: | |
 | Per-Server Language | :heavy_check_mark: | |
@@ -20,20 +20,20 @@ A dedicated bot for creating dynamic voice channels. Keep your voice channel cou
 | Admin commands | :heavy_check_mark: | |
 | Set channel limits | :heavy_check_mark: | |
 | Set channel bitrate | :heavy_check_mark: | |
-| User specific settings | :heavy_check_mark: | | 
+| User specific settings | :heavy_check_mark: | |
 | Set channel name from game | :heavy_check_mark: | |
 
 For help with the code, or the bot [join the discord](http://discord.darthminos.tv)
-# INSTALL
+## INSTALL
 
-## ENVIRONMENT VARIABLES
+### ENVIRONMENT VARIABLES
 
 | NAME | DESCRIPTION | REQUIRED | DEFAULT |
 |---|---|---|---|
 | VCB_MONGODB_URL | MongoDB connection string | `false` | `null` |
 | VCB_MONGODB_DBNAME | MongoDB database name | `true` | `voicecreate_v2` |
 | VCB_DISCORD_BOT_TOKEN | The discord bot token | `true` | `null` |
-| VCB_DISCORD_CLIENT_ID | The app client id | `true` | `null` |
+| VCB_DISCORD_CLIENT_ID | The app client ID | `true` | `null` |
 | VCB_BOT_OWNER | The discord ID of the bot owner | `true` | `null` |
 | VCB_LOG_LEVEL | The minimum log level. `[DEBUG\|INFO\|WARNING\|ERROR\|FATAL]` | `false` | `DEBUG` |
 | VCB_LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |
@@ -46,7 +46,7 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 
 ## HOW TO RUN THE BOT LOCALLY
 
-- clone the repo
+- clone the repository
 - Create a `.env` file in the root directory with the above environment variables
 - run `pip install -r ./setup/requirements.txt`
 - run `python ./main.py`

@@ -1,16 +1,17 @@
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
-import bot.voicecreate as vc
-import discord
+import asyncio
 import os
 import signal
-import asyncio
-
-from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
-from bot.cogs.lib.colors import Colors
-from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
+
+import bot.voicecreate as vc
+import discord
+from bot.cogs.lib.colors import Colors
+from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
+from metrics.exporter import MetricsExporter
+
 
 def sighandler(signum: int, frame):
     match signum:
@@ -41,6 +42,7 @@ def main():
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
         exit(0)
+
 
 def exporter():
     try:
