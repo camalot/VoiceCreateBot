@@ -1,99 +1,112 @@
-name: VoiceCreate Publish
+---
+name: Docker Build Publish
 on:
   push:
     branches:
       - develop
-    #   - beta/*
+env:
+  GITHUB_TOKEN: "${{ github.token }}"
+  IMAGE_ORG: "${{ github.repository_owner }}"
+  IMAGE_NAME: "${{ github.event.repository.name }}"
+  GH_IMAGE_REGISTRY: "ghcr.io"
+  BUILD_TAGS: ""
+  BUILD_DATE: ""
 jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
       app_version: ${{ steps.semvers.outputs.patch }} # set the app_version to be the PATCH updated version
       tag: ${{ steps.semvers.outputs.v_patch }} # set the tag to be the PATCH updated version.
-    env:
-      GITHUB_TOKEN: "${{ github.token }}"
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    # Get the current tag
-    - name: 'Get Previous tag'
-      id: previoustag
-      uses: "WyriHaximus/github-action-get-previous-tag@v1"
-      with:
-        fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
-    # calculate the next version
-    - name: 'Get next minor version'
-      id: semvers
-      uses: "WyriHaximus/github-action-next-semvers@v1"
-      with:
-        version: ${{ steps.previoustag.outputs.tag }}
-    - run: echo "app_version ${{ steps.semvers.outputs.patch }}"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Get the current tag
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          prefix: 'v' # Optional prefix to filter tags by
+          fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
+      # calculate the next version
+      - name: 'Get next minor version'
+        id: semvers
+        uses: "WyriHaximus/github-action-next-semvers@v1"
+        with:
+          version: ${{ steps.previoustag.outputs.tag }}
+      - run: echo "app_version ${{ steps.semvers.outputs.patch }}"
   docker:
     runs-on: ubuntu-latest
     needs: version
-    # env:
-    #   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
     steps:
-    - name: Prepare
-      id: prep
-      run: |
-        GHCR_IMAGE="ghcr.io/camalot/voicecreate";
-        BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
-        TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
-        echo BUILD_TAGS=${TAGSZ} >> $GITHUB_ENV;
-        echo BUILD_DATE=${BUILD_DATEZ} >> $GITHUB_ENV;
+      - name: Prepare
+        id: prep
+        run: |
+          # lower case the container org
+          IMAGE_ORG="${IMAGE_ORG,,}";
+          # lower case the container name
+          IMAGE_NAME="${IMAGE_NAME,,}";
+          GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v2
+          BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
+          TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
+          {
+            echo "BUILD_TAGS=${TAGSZ}"
+            echo "BUILD_DATE=${BUILD_DATEZ}"
+          } >> "$GITHUB_ENV";
 
-    - name: Login to GHCR
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build and Push GHCR
-      id: docker_build
-      uses: docker/build-push-action@v4
-      with:
-        push: true
-        build-args: |
-          PROJECT_NAME=VoiceCreate
-          BUILD_VERSION=${{ needs.version.outputs.app_version }}
-          BUILD_REF=${{ github.ref }}
-          BUILD_SHA=${{ github.sha }}
-          BUILD_DATE=${{ env.BUILD_DATE }}
-        tags: ${{ env.BUILD_TAGS }}
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: "${{ env.GH_IMAGE_REGISTRY }}"
+          username: "${{ github.actor }}"
+          password: "${{ github.token }}"
+
+      - name: Build and Push GHCR
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          provenance: false
+          push: true
+          build-args: |
+            PROJECT_NAME=${{ env.IMAGE_NAME }}
+            MAINTAINER=${{ env.IMAGE_ORG }}
+            BUILD_VERSION=${{ needs.version.outputs.app_version }}
+            BUILD_REF=${{ github.ref }}
+            BUILD_SHA=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+          tags: ${{ env.BUILD_TAGS }}
   merge:
     runs-on: ubuntu-latest
     needs:
-    - docker
-    - version
+      - docker
+      - version
     steps:
 
-    - uses: actions/checkout@v3
-    - name: Merge develop -> main
-      uses: devmasx/merge-branch@1.4.0
-      with:
-        type: now
-        from_branch: develop
-        target_branch: main
-        github_token: ${{ github.token }}
-    # https://github.com/rickstaa/action-create-tag
-    - uses: rickstaa/action-create-tag@v1
-      with:
-        tag: ${{ needs.version.outputs.tag }}
-        tag_exists_error: false
-        message: ''
+      - uses: actions/checkout@v4
+      - name: Merge develop -> main
+        uses: devmasx/merge-branch@1.4.0
+        with:
+          type: now
+          from_branch: develop
+          target_branch: main
+          github_token: ${{ github.token }}
+      # https://github.com/rickstaa/action-create-tag
+      - uses: rickstaa/action-create-tag@v1
+        with:
+          tag: ${{ needs.version.outputs.tag }}
+          tag_exists_error: false
+          message: ''
   # dispatch_documentation:
   #   runs-on: ubuntu-latest
   #   needs:
-  #   - merge
+  #     - merge
   #   steps:
   #   - name: dispatch build event
   #     # ACTION_DISPATCH_TOKEN Format: user:token

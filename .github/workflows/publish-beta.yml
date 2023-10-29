@@ -1,44 +1,65 @@
-name: VoiceCreate Publish Beta
+---
+name: Docker Build Publish Beta
 on:
   push:
     branches:
-    - 'beta/*'
-    - 'topic/*'
+      - '**'
+      - '!develop'
+      - '!master'
+      - '!main'
+env:
+  GITHUB_TOKEN: "${{ github.token }}"
+  IMAGE_ORG: "${{ github.repository_owner }}"
+  IMAGE_NAME: "${{ github.event.repository.name }}"
+  GH_IMAGE_REGISTRY: "ghcr.io"
+  BUILD_TAGS: ""
+  BUILD_DATE: ""
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-    - name: Prepare
-      id: prep
-      run: |
-        GHCR_IMAGE="ghcr.io/camalot/voicecreate";
-        BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
-        TAGSZ="${GHCR_IMAGE}:beta,${GHCR_IMAGE}:beta-${{ github.sha }}";
-        echo BUILD_TAGS=${TAGSZ} >> $GITHUB_ENV;
-        echo BUILD_DATE=${BUILD_DATEZ} >> $GITHUB_ENV;
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare
+        id: prep
+        run: |
+          # lower case the container org
+          IMAGE_ORG="${IMAGE_ORG,,}";
+          # lower case the container name
+          IMAGE_NAME="${IMAGE_NAME,,}";
+          GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v2
+          BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
+          TAGSZ="${GHCR_IMAGE}:beta,${GHCR_IMAGE}:beta-${{ github.sha }}";
+          {
+            echo "BUILD_TAGS=${TAGSZ}"
+            echo "BUILD_DATE=${BUILD_DATEZ}"
+          } >> "$GITHUB_ENV";
 
-    - name: Login to GHCR
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build and Push GHCR
-      id: docker_build
-      uses: docker/build-push-action@v4
-      with:
-        push: true
-        build-args: |
-          PROJECT_NAME=VoiceCreate
-          BUILD_VERSION=beta-${{ github.sha }}
-          BUILD_REF=${{ github.ref }}
-          BUILD_SHA=${{ github.sha }}
-          BUILD_DATE=${{ env.BUILD_DATE }}
-        tags: ${{ env.BUILD_TAGS }}
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and Push GHCR
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          provenance: false
+          push: true
+          build-args: |
+            PROJECT_NAME=VoiceCreate
+            BUILD_VERSION=beta-${{ github.sha }}
+            BUILD_REF=${{ github.ref }}
+            BUILD_SHA=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+          tags: ${{ env.BUILD_TAGS }}
