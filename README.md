@@ -1,10 +1,7 @@
 # VoiceCreateBot
 
 
-[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) 
-
-<!-- ![](https://dcbadge.vercel.app/api/shield/262031734260891648)  -->
-<!-- ![](https://dcbadge.vercel.app/api/shield/bot/571011576618811402) -->
+[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![Docker Pulls](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker) 
 
 A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
@@ -46,10 +43,6 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 | VCBE_CONFIG_METRICS_POLLING_INTERVAL | How often, in seconds, to poll the metrics | `false` | `60` |  
 ## DATABASE SUPPORT
 
-MongoDB is the preferred database provider. SQLITE might not be fully compatible.
-
-If using SQLITE provider, you will want to mount the /data volume, so the database file is persisted 
-
 ## HOW TO RUN THE BOT LOCALLY
 
 - clone the repo
@@ -68,7 +61,7 @@ If using SQLITE provider, you will want to mount the /data volume, so the databa
 
 ### DOCKER
 
-```shell
+``` shell
 docker run --rm \
 --restart=unless-stopped \
 -e VCB_DISCORD_CLIENT_ID="<FILL IN YOUR DISCORD CLIENT ID>" \
@@ -77,8 +70,7 @@ docker run --rm \
 -e VCB_MONGODB_URL="mongodb://mdbroot:toorbdm@mongodb:27017/admin" \
 -e LANGUAGE="en-us" \
 -e LOG_LEVEL="INFO" \
--e DB_PROVIDER="MONGODB" \
-camalot/voice-create-bot-docker:latest
+ghcr.io/camalot/voicecreatebot:latest
 
 ```
 
