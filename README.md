@@ -33,15 +33,17 @@ For help with the code, or the bot [join the discord](http://discord.darthminos.
 
 | NAME | DESCRIPTION | REQUIRED | DEFAULT |  
 |---|---|---|---|  
-| VCB_DB_PATH | The path to the SQLITE database file | `false` | `./voice.db` |  
 | VCB_MONGODB_URL | MongoDB connection string | `false` | `null` |  
+| VCB_MONGODB_DBNAME | MongoDB database name | `true` | `voicecreate_v2` |  
 | DISCORD_BOT_TOKEN | The discord bot token | `true` | `null` |  
 | VCB_DISCORD_CLIENT_ID | The app client id | `true` | `null` |  
 | BOT_OWNER | The discord ID of the bot owner | `true` | `null` |  
 | LOG_LEVEL | The minimum log level. `[DEBUG\|INFO\|WARNING\|ERROR\|FATAL]` | `false` | `DEBUG` |  
-| DB_PROVIDER | The database provider to use `[MONGODB\|SQLITE]` | `false` | `MONGODB` |  
-| LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |
-
+| LANGUAGE | The default language of the bot to fall back to | `false` | `en-us` |  
+| | | | |  
+| VCBE_CONFIG_METRICS_ENABLED | Enable the prometheus exporter | `false` | `false` |  
+| VCBE_CONFIG_METRICS_PORT | Running port for the prometheus exporter | `false` | `8932` |  
+| VCBE_CONFIG_METRICS_POLLING_INTERVAL | How often, in seconds, to poll the metrics | `false` | `60` |  
 ## DATABASE SUPPORT
 
 MongoDB is the preferred database provider. SQLITE might not be fully compatible.
