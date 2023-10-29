@@ -28,6 +28,11 @@ def main():
         migrations.start_migrations()
 
         DISCORD_TOKEN = os.environ.get("VCB_DISCORD_BOT_TOKEN", "")
+
+        if not DISCORD_TOKEN:
+            print(Colors.colorize(Colors.FGRED, "<VCB_DISCORD_BOT_TOKEN not set>"))
+            exit(1)
+
         intents = discord.Intents.all()
         intents.message_content = True
         intents.members = True
