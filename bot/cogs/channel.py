@@ -249,7 +249,10 @@ class ChannelCog(commands.Cog):
                 )
                 return
             owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-            owner = await self._users.get_or_fetch_user(owner_id)
+            if owner_id is None:
+                # no owner found for this channel
+                self.log.warn(guild_id, _method, f"No owner found for channel {voice_channel_id}")
+                return
 
             if (not self._users.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
                 await self._messaging.send_embed(
@@ -259,6 +262,8 @@ class ChannelCog(commands.Cog):
                     delete_after=5,
                 )
                 return
+
+            owner = await self._users.get_or_fetch_user(owner_id)
 
             default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
@@ -319,7 +324,10 @@ class ChannelCog(commands.Cog):
                 )
                 return
             owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
-            owner = await self._users.get_or_fetch_user(owner_id)
+            if owner_id is None:
+                # no owner found for this channel
+                self.log.warn(guild_id, _method, f"No owner found for channel {voice_channel_id}")
+                return
             if (not self._users.isAdmin(ctx) and author_id != owner_id) or owner_id is None:
                 await self._messaging.send_embed(
                     ctx.channel,
@@ -329,6 +337,7 @@ class ChannelCog(commands.Cog):
                 )
                 return
 
+            owner = await self._users.get_or_fetch_user(owner_id)
             default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)

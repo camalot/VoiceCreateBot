@@ -1,8 +1,5 @@
 # VoiceCreateBot
 
-
-[![Docker Publish](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml/badge.svg)](https://github.com/camalot/voice-create-bot-docker/actions/workflows/publish-main.yml) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/camalot/voice-create-bot-docker) ![Docker Pulls](https://img.shields.io/docker/pulls/camalot/voice-create-bot-docker)
-
 A dedicated bot for creating dynamic voice channels. Keep your voice channel count down. Allowing users to create their own channels without having to give them permissions to do so.
 
 ## FEATURES

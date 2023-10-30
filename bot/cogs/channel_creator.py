@@ -74,6 +74,9 @@ class ChannelCreatorCog(commands.Cog):
                     channel_owner_id = self.channel_db.get_channel_owner_id(
                         guildId=guild_id, channelId=source_channel_id
                     )
+                    if channel_owner_id is None:
+                        channel_owner_id = member.id
+                        
                     userSettings = self.usersettings_db.get_user_settings(
                         guildId=guild_id, userId=channel_owner_id or member.id
                     )

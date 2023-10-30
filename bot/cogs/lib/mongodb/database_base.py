@@ -104,7 +104,7 @@ class DatabaseBase():
             if self.connection is None:
                 self.open()
             payload = {
-                "guild_id": guildId,
+                "guild_id": str(guildId),
                 "timestamp": utils.get_timestamp(),
                 "level": level.name,
                 "method": method,
@@ -122,4 +122,3 @@ class DatabaseBase():
                 outIO=sys.stderr,
                 colorOverride=Colors.FAIL,
             )
-
