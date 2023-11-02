@@ -1,7 +1,7 @@
 {
 	"took_too_long": "Took too long to answer. ⏱",
 	"footer_60_seconds": "**You have 60 seconds to answer**",
-
+	"developed_by": "{{bot_name}} {{version}} developed by {{user}}",
 	"yes": "YES",
 	"no": "NO",
 	"new": "->NEW<-",
@@ -145,9 +145,9 @@
 
 	"setup_no_permission": "Only the owner or admins of the server can setup the bot.",
 
-	"help_init_title": "Customize the name of your channel by using the voice bot 'name' command",
-	"help_init_message": "Type in this channel: `.voice name my awesome channel`",
-	"help_init_field_0": "**NEW**: Give your channel a random name",
+	"help_init_title": "Customize the name of your channel by using the voice bot `channel name` command",
+	"help_init_message": "Type in this channel: `{{prefix}} channel name my awesome channel`",
+	"help_init_field_0": "Give your channel a random name",
 	"help_init_field_1": "View more commands to control your channel",
 
 	"help_info_usage": "**Usage**",

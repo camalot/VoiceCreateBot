@@ -3,7 +3,7 @@
 	"url": "http://darthminos.tv",
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
-	"author": "DarthMinos#1161",
+	"author": "@DarthMinos",
 	"init_message": {
 		"title": "help_init_title",
 		"message": "help_init_message",

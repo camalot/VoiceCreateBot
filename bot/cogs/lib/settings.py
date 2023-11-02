@@ -1,10 +1,13 @@
-import sys
-import os
-import json
 import glob
-import typing
 import inspect
+import json
+import os
+import sys
+import traceback
+import typing
+
 from bot.cogs.lib import utils
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.settings import SettingsDatabase
 
 
@@ -12,6 +15,17 @@ class Settings:
     APP_VERSION = "1.0.0-snapshot"
 
     def __init__(self):
+        self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
+
+        self.commands = {}
+        self.strings = {}
+        self.languages = {}
+        self.name = None
+        self.version = None
+        self.init_message = None
+
+
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
@@ -27,14 +41,6 @@ class Settings:
 
         self.db = SettingsDatabase()
 
-        self.commands = {}
-        self.strings = {}
-        self.languages = {}
-        self.name = None
-        self.version = None
-        self.init_message = None
-
-
         self.load_language_manifest()
         self.load_strings()
 
@@ -42,6 +48,7 @@ class Settings:
         return self.__dict__
 
     def load_strings(self):
+        _method = inspect.stack()[1][3]
         self.strings = {}
 
         lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json"))
@@ -51,11 +58,25 @@ class Settings:
             try:
                 lang_json = os.path.join("languages", f"{lang}.json")
                 if not os.path.exists(lang_json) or not os.path.isfile(lang_json):
+                    self.db.log(
+                        guildId=0,
+                        level=LogLevel.FATAL,
+                        method=f"{self._module}.{self._class}.{_method}",
+                        message=f"Language file {lang_json} does not exist",
+                        stackTrace=traceback.format_exc(),
+                    )
                     # THIS SHOULD NEVER GET HERE
                     continue
 
                 with open(lang_json, encoding="UTF-8") as lang_file:
                     self.strings[lang].update(json.load(lang_file))
+
+                self.db.log(
+                    guildId=0,
+                    level=LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"Loaded language file {lang_json}",
+                )
             except Exception as e:
                 print(e, file=sys.stderr)
                 raise e

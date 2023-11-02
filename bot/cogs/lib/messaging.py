@@ -81,8 +81,8 @@ class Messaging():
                     guild_id,
                     "developed_by",
                     user=self.settings.get("author", "Unknown"),
-                    bot_name=self.settings.get("name", "Unknown"),
-                    version=self.settings.get("version", "Unknown"),
+                    bot_name=self.settings.name,
+                    version=self.settings.version,
                 )
             )
         else:

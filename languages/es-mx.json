@@ -1,6 +1,7 @@
 {
 	"took_too_long": "Me tomó demasiado tiempo responder.",
 	"footer_60_seconds": "**Tienes 60 segundos para contestar**",
+	"developed_by": "{{bot_name}} {{version}} developed by {{user}}",
 	"yes": "SÍ",
 	"no": "NO",
 	"new": "->NUEVO<-",

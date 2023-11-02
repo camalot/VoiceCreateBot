@@ -5,11 +5,13 @@ import traceback
 import discord
 from bot.cogs.lib import channels, logger, messaging, settings, users, utils
 from bot.cogs.lib.enums.loglevel import LogLevel
-from bot.cogs.lib.mongodb.channels import ChannelsDatabase
-from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
-from bot.cogs.lib.mongodb.guilds import GuildsDatabase
-from bot.cogs.lib.models.embedfield import EmbedField
 from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
+from bot.cogs.lib.enums.system_actions import SystemActions
+from bot.cogs.lib.models.embedfield import EmbedField
+from bot.cogs.lib.mongodb.channels import ChannelsDatabase
+from bot.cogs.lib.mongodb.guilds import GuildsDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
 from discord.ext import commands
 
 
@@ -21,6 +23,7 @@ class ChannelCreatorCog(commands.Cog):
         self.channel_db = ChannelsDatabase()
         self.usersettings_db = UserSettingsDatabase()
         self.guild_db = GuildsDatabase()
+        self.tracking_db = TrackingDatabase()
 
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -76,7 +79,7 @@ class ChannelCreatorCog(commands.Cog):
                     )
                     if channel_owner_id is None:
                         channel_owner_id = member.id
-                        
+
                     userSettings = self.usersettings_db.get_user_settings(
                         guildId=guild_id, userId=channel_owner_id or member.id
                     )
@@ -169,12 +172,18 @@ class ChannelCreatorCog(commands.Cog):
                             reason="Create Stage Channel Request by {member}",
                             position=0,
                         )
+                        self.tracking_db.track_system_action(
+                            guildId=guild_id, userId=member.id, action=SystemActions.CREATE_STAGE_CHANNEL
+                        )
                     else:
                         self.log.debug(
                             guild_id, f"{self._module}.{self._class}.{_method}", f"Created Voice Channel"
                         )
                         voiceChannel = await source_channel.clone(
                             name=name, reason="Create Channel Request by {member}"
+                        )
+                        self.tracking_db.track_system_action(
+                            guildId=guild_id, userId=member.id, action=SystemActions.CREATE_VOICE_CHANNEL
                         )
 
                     textChannel = await member.guild.create_text_channel(name, category=category, position=0)
@@ -291,7 +300,7 @@ class ChannelCreatorCog(commands.Cog):
                         await self._messaging.send_embed(
                             textChannel,
                             self.settings.get_string(guild_id, init_message['title']),
-                            f"{member.mention}, {self.settings.get_string(guild_id, init_message['message'])}",
+                            f"{member.mention}, {self.settings.get_string(guild_id, init_message['message'], prefix=prefix)}",
                             fields=fields,
                             delete_after=None,
                             footer=None,

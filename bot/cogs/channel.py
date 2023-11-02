@@ -6,11 +6,12 @@ import typing
 import discord
 from bot.cogs.lib import channels, logger, messaging, users, utils
 from bot.cogs.lib.models.category_settings import GuildCategorySettings
-from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
+from bot.cogs.lib.settings import Settings
 from discord.ext import commands
 
 
@@ -21,6 +22,7 @@ class ChannelCog(commands.Cog):
 
         self.channel_db = ChannelsDatabase()
         self.usersettings_db = UserSettingsDatabase()
+        self.tracking_db = TrackingDatabase()
 
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -128,6 +130,8 @@ class ChannelCog(commands.Cog):
                 await text_channel.edit(name=name)
 
             await voice_channel.edit(name=name)
+            self.tracking_db.track_command(guildId=guild_id, userId=author_id, command="name", args={"name": name})
+            
             if saveSettings:
                 user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
                 if user_settings:
