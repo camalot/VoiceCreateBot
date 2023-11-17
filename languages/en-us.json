@@ -161,8 +161,9 @@
 	"help_info_admin_title": "Admin Command",
 	"help_info_admin": "Can only be ran by a server admin",
 
-	"help_command_name": "**Change your channel name**\n\nLeaving the [name] blank will generate a random name.",
-	"help_command_enable_auto_game": "**Automatically change your channel to the name of the game you are playing**",
+  "help_command_name": "**Change your channel name**\n\nLeaving the [name] blank will generate a random name.",
+  "help_command_save": "**Save your channel settings**",
+  "help_command_enable_auto_game": "**Automatically change your channel to the name of the game you are playing**",
 	"help_command_unlock": "**Unlock your channel**",
 	"help_command_lock": "**Lock your channel**",
 	"help_command_private": "**Lock your channel for only those in it. Requires Push to Talk**",
