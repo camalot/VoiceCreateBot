@@ -58,6 +58,87 @@ class ChannelCog(commands.Cog):
     #         await ctx.message.delete()
 
     @channel.command()
+    async def save(self, ctx):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        try:
+            if self._users.isInVoiceChannel(ctx):
+                voice_channel_id = ctx.author.voice.channel.id
+                voice_channel = ctx.author.voice.channel
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{ctx.author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+
+            author_id = ctx.author.id
+            category_id = ctx.author.voice.channel.category.id
+
+            owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=voice_channel_id)
+            if owner_id != author_id and not self._users.isAdmin(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_permission_denied'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_permission_denied')}",
+                    delete_after=5,
+                )
+                return
+
+            category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
+
+            if category_settings is None:
+                category_settings = GuildCategorySettings(
+                    guildId=guild_id,
+                    categoryId=category_id,
+                    channelLimit=0,
+                    channelLocked=False,
+                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
+                    defaultRole=temp_default_role.id if temp_default_role else None,
+                )
+
+            is_tracked_channel = len(
+                [
+                    c for c in self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id)
+                    if c == voice_channel_id
+                ]
+            ) >= 1
+            if not is_tracked_channel:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, 'title_update_channel_name'),
+                    f"{ctx.author.mention}, {self.settings.get_string(guild_id, 'info_voice_not_tracked')}",
+                    delete_after=5,
+                )
+                return
+
+            user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
+            if user_settings:
+                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=ctx.channel.name)
+            else:
+                self.usersettings_db.insert_user_settings(
+                    guildId=guild_id,
+                    userId=owner_id,
+                    channelName=ctx.channel.name,
+                    channelLimit=category_settings.channel_limit,
+                    channelLocked=category_settings.channel_locked,
+                    bitrate=category_settings.bitrate,
+                    defaultRole=temp_default_role.id,
+                    autoGame=False,
+                    autoName=False,
+                    allowSoundboard=False,
+                )
+            self.tracking_db.track_command(guildId=guild_id, userId=author_id, command="save", args={})
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+            return
+
+    @channel.command()
     async def name(self, ctx, *, name: typing.Optional[str] = None):
         await self._name(ctx, name=name, saveSettings=True)
 
@@ -131,7 +212,7 @@ class ChannelCog(commands.Cog):
 
             await voice_channel.edit(name=name)
             self.tracking_db.track_command(guildId=guild_id, userId=author_id, command="name", args={"name": name})
-            
+
             if saveSettings:
                 user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
                 if user_settings:

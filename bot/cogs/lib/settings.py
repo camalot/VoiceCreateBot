@@ -25,7 +25,6 @@ class Settings:
         self.version = None
         self.init_message = None
 
-
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
@@ -78,7 +77,13 @@ class Settings:
                     message=f"Loaded language file {lang_json}",
                 )
             except Exception as e:
-                print(e, file=sys.stderr)
+                self.db.log(
+                    guildId=0,
+                    level=LogLevel.FATAL,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"{e}",
+                    stackTrace=traceback.format_exc(),
+                )
                 raise e
 
     def load_language_manifest(self):
@@ -116,7 +121,6 @@ class Settings:
         if not guild_setting:
             return self.language
         return guild_setting.language or self.language
-        return self.language
 
     def get(self, name, default_value=None) -> typing.Any:
         return utils.dict_get(self.to_dict(), name, default_value)
