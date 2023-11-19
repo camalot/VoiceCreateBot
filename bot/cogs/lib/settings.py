@@ -70,12 +70,6 @@ class Settings:
                 with open(lang_json, encoding="UTF-8") as lang_file:
                     self.strings[lang].update(json.load(lang_file))
 
-                self.db.log(
-                    guildId=0,
-                    level=LogLevel.DEBUG,
-                    method=f"{self._module}.{self._class}.{_method}",
-                    message=f"Loaded language file {lang_json}",
-                )
             except Exception as e:
                 self.db.log(
                     guildId=0,

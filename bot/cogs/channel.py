@@ -118,12 +118,12 @@ class ChannelCog(commands.Cog):
 
             user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
             if user_settings:
-                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=ctx.channel.name)
+                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=voice_channel.name)
             else:
                 self.usersettings_db.insert_user_settings(
                     guildId=guild_id,
                     userId=owner_id,
-                    channelName=ctx.channel.name,
+                    channelName=voice_channel.name,
                     channelLimit=category_settings.channel_limit,
                     channelLocked=category_settings.channel_locked,
                     bitrate=category_settings.bitrate,

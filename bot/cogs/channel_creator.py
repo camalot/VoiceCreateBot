@@ -127,28 +127,26 @@ class ChannelCreatorCog(commands.Cog):
                             auto_name = guildSettings.auto_name
                             auto_game = guildSettings.auto_game
                             allow_soundboard = guildSettings.allow_soundboard
+                        else:
+                            limit = CategorySettingsDefaults.CHANNEL_LIMIT_DEFAULT.value
+                            locked = False
+                            bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
+                            auto_name = True
+                            auto_game = False
+                            allow_soundboard = False
                     else:
                         user_name = userSettings.channel_name
-                        if guildSettings is None:
-                            limit = userSettings.channel_limit
-                            bitrate = userSettings.bitrate
-                            locked = userSettings.channel_locked
-                            auto_name = userSettings.auto_name
-                            auto_game = userSettings.auto_game
-                            allow_soundboard = userSettings.allow_soundboard
-                        else:
-                            limit = userSettings.channel_limit or guildSettings.channel_limit
-                            locked = userSettings.channel_locked or guildSettings.channel_locked or False
-                            bitrate = userSettings.bitrate or guildSettings.bitrate
-                            auto_name = userSettings.auto_name if userSettings is not None else guildSettings.auto_name
-                            auto_game = userSettings.auto_game if userSettings is not None else guildSettings.auto_game
-                            allow_soundboard = userSettings.allow_soundboard if userSettings is not None else guildSettings.allow_soundboard
+                        limit = userSettings.channel_limit
+                        bitrate = userSettings.bitrate
+                        locked = userSettings.channel_locked
+                        auto_name = userSettings.auto_name
+                        auto_game = userSettings.auto_game
+                        allow_soundboard = userSettings.allow_soundboard
 
                         if not auto_name:
-                            if auto_game and is_playing:
-                                name = game_activity.name
-                            else:
-                                name = user_name
+                            name = user_name
+                        if auto_game and is_playing:
+                            name = game_activity.name
 
                     # CHANNEL SETTINGS END
 

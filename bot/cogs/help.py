@@ -4,7 +4,7 @@ import os
 import re
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib import logger, settings, utils
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
@@ -19,7 +19,6 @@ class Help(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
