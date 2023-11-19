@@ -40,6 +40,93 @@ class ChannelCreatorCog(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._class}")
 
+
+    @commands.Cog.listener()
+    async def on_guild_channel_update(self, before, after):
+        _method = inspect.stack()[1][3]
+        guild_id = 0
+        try:
+            if before and after:
+                if before.id == after.id:
+                    # This handles a manual channel rename. it changes the text channel name to match.
+                    guild_id = before.guild.id or after.guild.id
+                    channel = await self._channels.get_or_fetch_channel(after.id)
+                    if channel is None or not channel.category:
+                        self.log.debug(guild_id, _method, "Unable to locate category", traceback.format_exc())
+                        return
+                    category_id = channel.category.id
+                    owner_id = self.channel_db.get_channel_owner_id(guild_id, after.id)
+                    if owner_id:
+                        owner = await self._users.get_or_fetch_member(before.guild, owner_id)
+                        if not owner:
+                            self.log.warn(guild_id, _method, f"Unable to find owner [user:{owner_id}] for the channel: {channel}")
+                            return
+
+                        if before.name == after.name:
+                            # same name. ignore
+                            self.log.debug(guild_id, _method , "Channel Names are the same. Nothing to do")
+                            return
+                        else:
+                            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                            self.log.debug(guild_id, _method, f"default_role: {default_role}")
+                            temp_default_role = utils.get_by_name_or_id(after.guild.roles, default_role)
+                            self.log.debug(guild_id, _method, f"temp_default_role: {temp_default_role}")
+                            user_settings = self.usersettings_db.get_user_settings(guild_id, owner_id)
+
+                            self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
+
+                            if after.type == discord.ChannelType.voice:
+                                # new channel name
+                                text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=after.id)
+                                text_channel = None
+                                if text_channel_id:
+                                    text_channel = await self._channels.get_or_fetch_channel(int(text_channel_id))
+                                if text_channel:
+                                    self.log.debug(guild_id, _method , f"Change Text Channel Name: {after.name}")
+                                    await text_channel.edit(name=after.name)
+                                    await self._messaging.send_embed(
+                                        text_channel,
+                                        self.settings.get_string(guild_id, 'title_update_channel_name'),
+                                        f'{owner.mention}, {utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=text_channel.name)}',
+                                        delete_after=5,
+                                    )
+                                else:
+                                    self.log.warn(guild_id, _method , f"Unable to locate text channel for voice channel: {after.name}")
+                            if after.type == discord.ChannelType.text:
+                                voiceChannel = None
+                                voice_channel_id = self.channel_db.get_voice_channel_id_from_text_channel(guildId=guild_id, textChannelId=after.id)
+                                if voice_channel_id:
+                                    voiceChannel = await self._channels.get_or_fetch_channel(voice_channel_id)
+                                if voiceChannel:
+                                    self.log.debug(guild_id, _method , f"Change Voice Channel Name: {after.name}")
+                                    await voiceChannel.edit(name=after.name)
+                                    await self._messaging.send_embed(
+                                        after,
+                                        self.settings.get_string(guild_id, 'title_update_channel_name'),
+                                        f'{owner.mention}, {utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=after.name)}',
+                                        delete_after=5,
+                                    )
+
+
+                            if user_settings:
+                                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=after.name)
+                            else:
+                                self.usersettings_db.insert_user_settings(
+                                    guildId=guild_id,
+                                    userId=owner_id,
+                                    channelName=after.name,
+                                    channelLimit=0,
+                                    channelLocked=False,
+                                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
+                                    defaultRole=temp_default_role.id,
+                                    autoGame=False,
+                                    autoName=True,
+                                    allowSoundboard=False,)
+        except discord.errors.NotFound as nf:
+            self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
+        except Exception as e:
+            self.log.error(guild_id, _method , str(e), traceback.format_exc())
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         _method = inspect.stack()[1][3]

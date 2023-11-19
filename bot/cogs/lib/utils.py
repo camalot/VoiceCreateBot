@@ -130,10 +130,15 @@ def str_replace(input_string: str, *args, **kwargs) -> str:
 
 def get_by_name_or_id(iterable, nameOrId: typing.Optional[typing.Union[int, str]]):
     if isinstance(nameOrId, str):
-        return discord.utils.get(iterable, name=str(nameOrId))
+        val = discord.utils.get(iterable, name=nameOrId)
+        print(val)
+        return val
     elif isinstance(nameOrId, int):
-        return discord.utils.get(iterable, id=int(nameOrId))
+        val = discord.utils.get(iterable, id=nameOrId)
+        print(val)
+        return val
     else:
+        print("get_by_name_or_id: nameOrId is not a string or int")
         return None
 
 def get_last_section_in_url(name) -> str:

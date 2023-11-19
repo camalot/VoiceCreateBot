@@ -137,6 +137,18 @@ class ChannelsDatabase(Database):
             )
             return None
 
+    def get_voice_channel_id_from_text_channel(self, guildId: int, textChannelId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.text_channels.find_one({"guild_id": guildId, "text_channel_id": textChannelId})
+            if result:
+                return result['voice_channel_id']
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
     def get_tracked_voice_channel_id_by_owner(self, guildId: int, ownerId: typing.Optional[int]) -> typing.List[int]:
         _method = inspect.stack()[0][3]
         try:
