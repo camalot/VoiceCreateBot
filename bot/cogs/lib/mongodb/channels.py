@@ -100,7 +100,7 @@ class ChannelsDatabase(Database):
 
             self.log(
                 guildId,
-                LogLevel.ERROR,
+                LogLevel.DEBUG,
                 f"{self._module}.{self._class}.{_method}",
                 f"Could not find channel owner for channel {channelId}",
                 traceback.format_exc(),
