@@ -150,6 +150,7 @@
   "help_info_list_description": "Liste der verfügbaren Befehle",
   "help_info_more_help": "Mehr Hilfe",
   "help_info_admin_title": "Nur Administrator-Befehl",
+  "help_no_command": "Der Befehl `{{command}}` wurde in der Hilfe nicht gefunden.",
   "help_command_name": "**Ändere deinen Kanalnamen**\n\nWenn Sie den Namen leer lassen, wird ein Zufallsgenerator generiert.",
   "help_command_save": "**Speichern Sie Ihre Kanaleinstellungen**",
   "help_command_enable_auto_game": "**Ändere deinen Kanal automatisch auf den Namen des Spiels, das du spielst**",

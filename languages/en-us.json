@@ -150,6 +150,7 @@
   "help_info_more_help": "More Help",
   "help_info_admin_title": "Admin Command",
   "help_info_admin": "Can only be ran by a server admin",
+  "help_no_command": "The command `{{command}}` is not found in the help.",
   "help_command_name": "**Change your channel name**\n\nLeaving the [name] blank will generate a random name.",
   "help_command_save": "**Save your channel settings**",
   "help_command_enable_auto_game": "**Automatically change your channel to the name of the game you are playing**",

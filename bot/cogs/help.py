@@ -82,12 +82,10 @@ class Help(commands.Cog):
                     )
                 page += 1
 
-            self.tracking_db.track_command_usage(
+            self.tracking_db.track_command(
                 guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel else None,
                 userId=ctx.author.id,
                 command="changelog",
-                subcommand=None,
                 args=None,
             )
         except Exception as ex:
@@ -104,23 +102,19 @@ class Help(commands.Cog):
             await ctx.message.delete()
         if command is None:
             await self.root_help(ctx)
-            self.tracking_db.track_command_usage(
+            self.tracking_db.track_command(
                 guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel else None,
                 userId=ctx.author.id,
                 command="help",
-                subcommand=None,
-                args=[{"type": "command"}],
+                args={"type": "command"},
             )
         else:
             await self.subcommand_help(ctx, command, subcommand)
-            self.tracking_db.track_command_usage(
+            self.tracking_db.track_command(
                 guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel else None,
                 userId=ctx.author.id,
                 command="help",
-                subcommand=command,
-                args=[{"type": "command"}, {"subcommand": subcommand}],
+                args={"type": "command", "subcommand": subcommand},
             )
 
     async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
@@ -138,7 +132,7 @@ class Help(commands.Cog):
             if command not in command_list.keys():
                 await self.messaging.send_embed(
                     ctx.channel,
-                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
+                    self.settings.get_string(guild_id, "help_info_title", command=command),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
                     color=0xFF0000,
                     delete_after=20,
@@ -152,11 +146,16 @@ class Help(commands.Cog):
             if 'admin' in cmd:
                 is_admin = cmd['admin']
             shield = '🛡️' if is_admin else ''
-            fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
+            fields.append(
+                {
+                    "name": f"{shield}{self.settings.get_string(guild_id, cmd['title'])}",
+                    "value": self.settings.get_string(guild_id, cmd['description']),
+                }
+            )
             fields.append({"name": 'help', "value": f"`{self._prefix(guild_id, cmd['usage'])}`"})
             fields.append({
                 "name": 'more',
-                "value": self._prefix(guild_id, f'`{{{{prefix}}}} help {command.lower()}`'),
+                "value": self._prefix(guild_id, f'`{{{{prefix}}}}help {command.lower()}`'),
             })
             if 'examples' in cmd:
                 example_list = [f"`{self._prefix(guild_id, e)}`" for e in cmd['examples']]
@@ -190,16 +189,21 @@ class Help(commands.Cog):
                     if 'admin' in scmd:
                         is_admin = scmd['admin']
                     shield = '🛡️' if is_admin else ''
-                    fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['description']})
+                    fields.append(
+                        {
+                            "name": f"{shield}{self.settings.get_string(guild_id, scmd['title'])}",
+                            "value": self.settings.get_string(guild_id, scmd['description']),
+                        }
+                    )
                     fields.append({"name": 'help', "value": f"`{self._prefix(guild_id, scmd['usage'])}`"})
                     fields.append(
                         {
                             "name": 'more',
-                            "value": self._prefix(guild_id, f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`'),
+                            "value": self._prefix(guild_id, f'`{{{{prefix}}}}help {command.lower()} {k.lower()}`'),
                         }
                     )
                     if 'examples' in scmd:
-                        example_list = [f"`{self._prefix(e)}`" for e in scmd['examples']]
+                        example_list = [f"`{self._prefix(guild_id, e)}`" for e in scmd['examples']]
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})

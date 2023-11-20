@@ -150,6 +150,7 @@
   "help_info_list_description": "Lista de comandos disponibles",
   "help_info_more_help": "Más ayuda",
   "help_info_admin_title": "Comando de administración",
+  "help_no_command": "El comando `{{command}}` no se encuentra en la ayuda.",
   "help_command_name": "**Cambia el nombre de tu canal**\n\nDejar el nombre vacío generará un nombre aleatorio.",
   "help_command_save": "**Guarda la configuración de tu canal**",
   "help_command_enable_auto_game": "**Cambia automáticamente tu canal por el nombre del juego al que estás jugando**",

@@ -25,208 +25,262 @@
   ],
   "commands": {
     "channel": {
-      "help": "help_command_channel",
+      "title": "help_command_channel",
+      "description": "",
       "usage": "{{prefix}}channel <subcommand>",
-      "example": "{{prefix}}channel",
+      "examples": [
+        "{{prefix}}channel"
+      ],
       "admin": false,
       "aliases": [],
       "subcommands": {
         "name": {
-          "help": "help_command_name",
+          "title": "help_command_name",
+          "description": "",
           "usage": "{{prefix}}channel name [name]",
-          "example": "{{prefix}}channel name my awesome channel",
+          "examples": [
+            "{{prefix}}channel name my awesome channel"
+          ],
           "admin": false,
           "aliases": []
         },
         "save": {
-          "help": "help_command_save",
+          "title": "help_command_save",
           "usage": "{{prefix}}channel save",
-          "example": "{{prefix}}channel save",
+          "examples": [
+            "{{prefix}}channel save"
+          ],
           "admin": false,
           "aliases": []
         }
       }
     },
     "enable-auto-game": {
-      "help": "help_command_enable_auto_game",
+      "title": "help_command_enable_auto_game",
       "usage": "{{prefix}}enable-auto-game",
-      "example": "{{prefix}}eag",
+      "examples": [
+        "{{prefix}}eag"
+      ],
       "admin": false,
       "aliases": [
         "eag"
       ]
     },
     "unlock": {
-      "help": "help_command_unlock",
+      "title": "help_command_unlock",
       "usage": "{{prefix}}unlock",
-      "example": "{{prefix}}unlock",
+      "examples": [
+        "{{prefix}}unlock"
+      ],
       "admin": false,
       "aliases": []
     },
     "lock": {
-      "help": "help_command_lock",
+      "title": "help_command_lock",
       "usage": "{{prefix}}lock [locked_role]",
-      "example": "{{prefix}}lock",
+      "examples": [
+        "{{prefix}}lock"
+      ],
       "admin": false,
       "aliases": []
     },
     "private": {
-      "help": "help_command_private",
+      "title": "help_command_private",
       "usage": "{{prefix}}private",
-      "example": "{{prefix}}private",
+      "examples": [
+        "{{prefix}}private"
+      ],
       "admin": false,
       "aliases": []
     },
     "resync": {
-      "help": "help_command_resync",
+      "title": "help_command_resync",
       "usage": "{{prefix}}resync",
-      "example": "{{prefix}}resync",
+      "examples": [
+        "{{prefix}}resync"
+      ],
       "admin": false,
       "aliases": []
     },
     "mute": {
-      "help": "help_command_mute",
+      "title": "help_command_mute",
       "usage": "{{prefix}}mute [@role|@user]",
-      "example": "{{prefix}}mute @SomeRole",
+      "examples": [
+        "{{prefix}}mute @SomeRole"
+      ],
       "admin": false,
       "aliases": []
     },
     "unmute": {
-      "help": "help_command_unmute",
+      "title": "help_command_unmute",
       "usage": "{{prefix}}unmute [@role|@user]",
-      "example": "{{prefix}}unmute @SomeRole",
+      "examples": [
+        "{{prefix}}unmute @SomeRole"
+      ],
       "admin": false,
       "aliases": []
     },
     "hide": {
-      "help": "help_command_hide",
+      "title": "help_command_hide",
       "usage": "{{prefix}}hide [@role|@user]",
-      "example": "{{prefix}}hide @SomeRole",
+      "examples": [
+        "{{prefix}}hide @SomeRole"
+      ],
       "admin": false,
       "aliases": []
     },
     "show": {
-      "help": "help_command_show",
+      "title": "help_command_show",
       "usage": "{{prefix}}show [@role|@user]",
-      "example": "{{prefix}}show @SomeRole",
+      "examples": [
+        "{{prefix}}show @SomeRole"
+      ],
       "admin": false,
       "aliases": []
     },
     "limit": {
-      "help": "help_command_limit",
+      "title": "help_command_limit",
       "usage": "{{prefix}}limit <number>",
-      "example": "{{prefix}}limit 3",
+      "example": [
+        "{{prefix}}limit 3"
+      ],
       "admin": false,
       "aliases": []
     },
     "bitrate": {
-      "help": "help_command_bitrate",
+      "title": "help_command_bitrate",
       "usage": "{{prefix}}bitrate [number]",
-      "example": "{{prefix}}bitrate 64",
+      "examples": [
+        "{{prefix}}bitrate 64"
+      ],
       "admin": false,
       "aliases": []
     },
     "permit": {
-      "help": "help_command_permit",
+      "title": "help_command_permit",
       "usage": "{{prefix}}permit <@person>",
-      "example": "{{prefix}}permit @DarthMinos#1161",
+      "examples": [
+        "{{prefix}}permit @DarthMinos"
+      ],
       "admin": false,
       "aliases": [
         "allow"
       ]
     },
     "reject": {
-      "help": "help_command_reject",
+      "title": "help_command_reject",
       "usage": "{{prefix}}reject <@person>",
-      "example": "{{prefix}}reject @DarthMinos#1161",
+      "examples": [
+        "{{prefix}}reject @DarthMinos"
+      ],
       "admin": false,
       "aliases": [
         "deny"
       ]
     },
     "claim": {
-      "help": "help_command_claim",
+      "title": "help_command_claim",
       "usage": "{{prefix}}claim",
-      "example": "{{prefix}}claim",
+      "examples": [
+        "{{prefix}}claim"
+      ],
       "admin": false,
       "aliases": []
     },
     "set-prefix": {
-      "help": "help_command_set_prefix",
+      "title": "help_command_set_prefix",
       "usage": "{{prefix}}set-prefix <prefix>",
-      "example": "{{prefix}}set-prefix !",
+      "examples": [
+        "{{prefix}}set-prefix !vcb"
+      ],
       "admin": true,
       "aliases": []
     },
     "owner": {
-      "help": "help_command_owner",
+      "title": "help_command_owner",
       "usage": "{{prefix}}owner <@person>",
-      "example": "{{prefix}}owner @DarthMinos#1161",
+      "examples": [
+        "{{prefix}}owner @DarthMinos"
+      ],
       "admin": true,
       "aliases": []
     },
     "whoowns": {
-      "help": "help_command_whoowns",
+      "title": "help_command_whoowns",
       "usage": "{{prefix}}whoowns",
-      "example": "{{prefix}}whoowns",
+      "examples": [
+        "{{prefix}}whoowns"
+      ],
       "admin": false,
       "aliases": []
     },
     "channels": {
-      "help": "help_command_channels",
+      "title": "help_command_channels",
       "usage": "{{prefix}}channels",
-      "example": "{{prefix}}channels",
+      "example": [
+        "{{prefix}}channels"
+      ],
       "admin": true,
       "aliases": []
     },
     "rename": {
-      "help": "help_command_rename",
+      "title": "help_command_rename",
       "usage": "{{prefix}}rename <channel name>",
-      "example": "{{prefix}}rename New Channel Name",
+      "examples": [
+        "{{prefix}}rename New Channel Name"
+      ],
       "admin": true,
       "aliases": []
     },
     "reset": {
-      "help": "help_command_reset",
+      "title": "help_command_reset",
       "usage": "{{prefix}}reset",
-      "example": "{{prefix}}reset",
+      "examples": [
+        "{{prefix}}reset"
+      ],
       "admin": false,
       "aliases": []
     },
     "cleandb": {
-      "help": "help_command_cleandb",
+      "title": "help_command_cleandb",
       "usage": "{{prefix}}cleandb",
-      "example": "{{prefix}}cleandb",
+      "examples": [
+        "{{prefix}}cleandb"
+      ],
       "admin": true,
       "aliases": []
     },
     "track": {
-      "help": "help_command_track",
+      "title": "help_command_track",
       "usage": "{{prefix}}track",
-      "example": "{{prefix}}track",
+      "examples": "{{prefix}}track",
       "admin": true,
       "aliases": []
     },
     "track-text-channel": {
-      "help": "help_command_track_text",
+      "title": "help_command_track_text",
       "usage": "{{prefix}}track-text-channel <#text-channel>",
-      "example": "{{prefix}}track-text-channel #my-text-channel",
+      "examples": [
+        "{{prefix}}track-text-channel #my-text-channel"
+      ],
       "admin": true,
       "aliases": [
         "ttc"
       ]
     },
     "settings": {
-      "help": "help_command_settings",
+      "title": "help_command_settings",
       "usage": "{{prefix}}settings",
-      "example": "{{prefix}}settings",
+      "examples": "{{prefix}}settings",
       "admin": true,
       "aliases": []
     },
     "set-default-role": {
-      "help": "help_command_set_default_role",
+      "title": "help_command_set_default_role",
       "usage": "{{prefix}}set-default-role \"<role name>\"",
-      "example": "{{prefix}}set-default-role \"Role Name\"",
+      "examples": [
+        "{{prefix}}set-default-role \"Role Name\""
+      ],
       "admin": true,
       "aliases": [
         "sdr"
@@ -235,37 +289,47 @@
     "get-default-role": {
       "help": "help_command_get_default_role",
       "usage": "{{prefix}}get-default-role",
-      "example": "{{prefix}}get-default-role",
+      "examples": [
+        "{{prefix}}get-default-role"
+      ],
       "admin": true,
       "aliases": [
         "gdr"
       ]
     },
     "init": {
-      "help": "help_command_init",
+      "title": "help_command_init",
       "usage": "{{prefix}}init",
-      "example": "{{prefix}}init",
+      "examples": [
+        "{{prefix}}init"
+      ],
       "admin": true,
       "aliases": []
     },
     "setup": {
-      "help": "help_command_setup",
+      "title": "help_command_setup",
       "usage": "{{prefix}}setup",
-      "example": "{{prefix}}setup",
+      "examples": [
+        "{{prefix}}setup"
+      ],
       "admin": true,
       "aliases": []
     },
     "language": {
-      "help": "help_command_language",
+      "title": "help_command_language",
       "usage": "{{prefix}}language",
-      "example": "{{prefix}}language",
+      "examples": [
+        "{{prefix}}language"
+      ],
       "admin": true,
       "aliases": []
     },
     "set-language": {
-      "help": "help_command_set_language",
+      "title": "help_command_set_language",
       "usage": "{{prefix}}set-language",
-      "example": "{{prefix}}set-language",
+      "examples": [
+        "{{prefix}}set-language"
+      ],
       "admin": true,
       "aliases": []
     }
