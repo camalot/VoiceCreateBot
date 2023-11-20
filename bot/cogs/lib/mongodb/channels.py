@@ -183,7 +183,7 @@ class ChannelsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            cursor = self.connection.voice_channels.find({"guild_id": str(guildId)}, { "voice_channel_id": 1})
+            cursor = self.connection.voice_channels.find({"guild_id": str(guildId)}, {"voice_channel_id": 1})
             items = [int(i['voice_channel_id']) for i in cursor]
             return items
         except Exception as ex:
