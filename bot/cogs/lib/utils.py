@@ -131,7 +131,8 @@ def str_replace(input_string: str, *args, **kwargs) -> str:
 def get_by_name_or_id(iterable, nameOrId: typing.Optional[typing.Union[int, str]]):
     if isinstance(nameOrId, str):
         val = discord.utils.get(iterable, name=nameOrId)
-        print(val)
+        if val is None:
+            val = discord.utils.get(iterable, id=int(nameOrId))
         return val
     elif isinstance(nameOrId, int):
         val = discord.utils.get(iterable, id=nameOrId)
