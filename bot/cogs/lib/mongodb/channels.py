@@ -177,7 +177,6 @@ class ChannelsDatabase(Database):
             )
             return []
 
-
     def get_tracked_voice_channel_ids(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
