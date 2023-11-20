@@ -45,15 +45,15 @@ class PartialGuildCategorySettings(GuildCategorySettings):
             if not isinstance(kwargs.get("channel_limit"), int):
                 raise ValueError("channel_limit must be an integer")
             # if channel_limit is less than 0
-            if kwargs.get("channel_limit", CategorySettingsDefaults.CHANNEL_LIMIT_DEFAULT.value) < 0:
+            if kwargs.get("channel_limit", CategorySettingsDefaults.CHANNEL_LIMIT) < 0:
                 raise ValueError("channel_limit must be greater than or equal to 0")
-            self.channel_limit = int(kwargs.get("channel_limit", CategorySettingsDefaults.CHANNEL_LIMIT_DEFAULT.value))
+            self.channel_limit = int(kwargs.get("channel_limit", CategorySettingsDefaults.CHANNEL_LIMIT))
 
         self.channel_locked = kwargs.get("channel_locked", False)
         if kwargs.get("bitrate") is not None:
             if not isinstance(kwargs.get("bitrate"), int):
                 raise ValueError("bitrate must be an integer")
-            if kwargs.get("bitrate", CategorySettingsDefaults.BITRATE_DEFAULT.value) < 0:
+            if kwargs.get("bitrate", CategorySettingsDefaults.BITRATE) < 0:
                 raise ValueError("bitrate must be greater than or equal to 0")
             self.bitrate = kwargs.get("bitrate")
         if kwargs.get("default_role") is not None:

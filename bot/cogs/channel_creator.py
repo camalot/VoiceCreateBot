@@ -72,6 +72,7 @@ class ChannelCreatorCog(commands.Cog):
                             temp_default_role = utils.get_by_name_or_id(after.guild.roles, default_role)
                             self.log.debug(guild_id, _method, f"temp_default_role: {temp_default_role}")
                             user_settings = self.usersettings_db.get_user_settings(guild_id, owner_id)
+                            system_default_role = after.guild.default_role
 
                             self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
 
@@ -115,13 +116,14 @@ class ChannelCreatorCog(commands.Cog):
                                     guildId=guild_id,
                                     userId=owner_id,
                                     channelName=after.name,
-                                    channelLimit=0,
-                                    channelLocked=False,
-                                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
-                                    defaultRole=temp_default_role.id,
-                                    autoGame=False,
-                                    autoName=True,
-                                    allowSoundboard=False,)
+                                    channelLimit=CategorySettingsDefaults.CHANNEL_LIMIT,
+                                    channelLocked=CategorySettingsDefaults.LOCKED,
+                                    bitrate=CategorySettingsDefaults.BITRATE,
+                                    defaultRole=temp_default_role.id if temp_default_role else system_default_role.id,
+                                    autoGame=CategorySettingsDefaults.AUTO_GAME,
+                                    autoName=CategorySettingsDefaults.AUTO_NAME,
+                                    allowSoundboard=CategorySettingsDefaults.ALLOW_SOUNDBOARD,
+                                )
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
@@ -178,12 +180,12 @@ class ChannelCreatorCog(commands.Cog):
                     ) or 0
 
                     # CHANNEL SETTINGS START
-                    limit = CategorySettingsDefaults.CHANNEL_LIMIT_DEFAULT.value
-                    locked = False
-                    auto_name = True
-                    auto_game = False
-                    allow_soundboard = False
-                    bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
+                    limit = CategorySettingsDefaults.CHANNEL_LIMIT
+                    locked = CategorySettingsDefaults.LOCKED
+                    auto_name = CategorySettingsDefaults.AUTO_NAME
+                    auto_game = CategorySettingsDefaults.AUTO_GAME
+                    allow_soundboard = CategorySettingsDefaults.ALLOW_SOUNDBOARD
+                    bitrate = CategorySettingsDefaults.BITRATE
                     name = utils.get_random_name()
                     user_name = name
                     # get game activity from all activities
@@ -215,12 +217,12 @@ class ChannelCreatorCog(commands.Cog):
                             auto_game = guildSettings.auto_game
                             allow_soundboard = guildSettings.allow_soundboard
                         else:
-                            limit = CategorySettingsDefaults.CHANNEL_LIMIT_DEFAULT.value
-                            locked = False
-                            bitrate = CategorySettingsDefaults.BITRATE_DEFAULT.value
-                            auto_name = True
-                            auto_game = False
-                            allow_soundboard = False
+                            limit = CategorySettingsDefaults.CHANNEL_LIMIT
+                            locked = CategorySettingsDefaults.LOCKED
+                            bitrate = CategorySettingsDefaults.BITRATE
+                            auto_name = CategorySettingsDefaults.AUTO_NAME
+                            auto_game = CategorySettingsDefaults.AUTO_GAME
+                            allow_soundboard = CategorySettingsDefaults.ALLOW_SOUNDBOARD
                     else:
                         user_name = userSettings.channel_name
                         limit = userSettings.channel_limit

@@ -97,7 +97,7 @@ class ChannelCog(commands.Cog):
                     categoryId=category_id,
                     channelLimit=0,
                     channelLocked=False,
-                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
+                    bitrate=CategorySettingsDefaults.BITRATE
                     defaultRole=temp_default_role.id if temp_default_role else None,
                 )
 
@@ -184,7 +184,7 @@ class ChannelCog(commands.Cog):
                     categoryId=category_id,
                     channelLimit=0,
                     channelLocked=False,
-                    bitrate=CategorySettingsDefaults.BITRATE_DEFAULT.value,
+                    bitrate=CategorySettingsDefaults.BITRATE,
                     defaultRole=temp_default_role.id if temp_default_role else None,
                 )
 
