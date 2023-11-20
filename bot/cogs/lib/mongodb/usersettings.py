@@ -86,7 +86,7 @@ class UserSettingsDatabase(Database):
                 "channel_limit": channelLimit,
                 "channel_locked": channelLocked,
                 "bitrate": bitrate,
-                "default_role": defaultRole,
+                "default_role": str(defaultRole),
                 "auto_game": autoGame,
                 "auto_name": autoName,
                 "allow_soundboard": allowSoundboard,
