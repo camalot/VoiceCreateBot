@@ -36,21 +36,21 @@ class ChannelsDatabase(Database):
             return None
         except Exception as ex:
             self.log(
-                guildId,
-                LogLevel.ERROR,
-                f"{self._module}.{self._class}.{_method}",
-                f"{ex}",
-                traceback.format_exc(),
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
             )
             return None
 
     def update_tracked_channel_owner(
-            self,
-            guildId: int,
-            voiceChannelId: typing.Optional[int],
-            ownerId: typing.Optional[int],
-            newOwnerId: typing.Optional[int],
-        ) -> None:
+        self,
+        guildId: int,
+        voiceChannelId: typing.Optional[int],
+        ownerId: typing.Optional[int],
+        newOwnerId: typing.Optional[int],
+    ) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -65,11 +65,11 @@ class ChannelsDatabase(Database):
             )
         except Exception as ex:
             self.log(
-                guildId,
-                LogLevel.ERROR,
-                f"{self._module}.{self._class}.{_method}",
-                f"{ex}",
-                traceback.format_exc(),
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
             )
             return None
 
@@ -108,11 +108,11 @@ class ChannelsDatabase(Database):
             return None
         except Exception as ex:
             self.log(
-                guildId,
-                LogLevel.ERROR,
-                f"{self._module}.{self._class}.{_method}",
-                f"{ex}",
-                traceback.format_exc(),
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
             )
             return None
 
@@ -138,6 +138,7 @@ class ChannelsDatabase(Database):
             return None
 
     def get_voice_channel_id_from_text_channel(self, guildId: int, textChannelId: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -146,20 +147,18 @@ class ChannelsDatabase(Database):
                 return result['voice_channel_id']
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_tracked_voice_channel_id_by_owner(self, guildId: int, ownerId: typing.Optional[int]) -> typing.List[int]:
         _method = inspect.stack()[0][3]
         try:
             if ownerId is None:
-                self.log(
-                    guildId=guildId,
-                    level=LogLevel.ERROR,
-                    method=f"{self._module}.{self._class}.{_method}",
-                    message=f"ownerId is None",
-                    stackTrace=traceback.format_exc(),
-                )
                 return []
             if self.connection is None:
                 self.open()
@@ -167,17 +166,24 @@ class ChannelsDatabase(Database):
                 {"guild_id": str(guildId), "owner_id": str(ownerId)}, {"voice_channel_id": 1}
             )
             channel_ids = [int(item['voice_channel_id']) for item in items]
-            print(channel_ids)
             return channel_ids
         except Exception as ex:
-            raise ex
+            self.log(
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return []
+
 
     def get_tracked_voice_channel_ids(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            cursor = self.connection.voice_channels.find({"guild_id": str(guildId)}, { "voice_channel_id": 1 })
+            cursor = self.connection.voice_channels.find({"guild_id": str(guildId)}, { "voice_channel_id": 1})
             items = [int(i['voice_channel_id']) for i in cursor]
             return items
         except Exception as ex:
@@ -194,12 +200,7 @@ class ChannelsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            # c.execute("INSERT INTO voiceChannel VALUES (?, ?, ?)", (guildId, ownerId, voiceChannelId,))
-            payload = {
-                "guild_id": str(guildId),
-                "owner_id": str(ownerId),
-                "voice_channel_id": str(voiceChannelId),
-            }
+            payload = {"guild_id": str(guildId), "owner_id": str(ownerId), "voice_channel_id": str(voiceChannelId)}
             self.connection.voice_channels.insert_one(payload)
             return True
         except Exception as ex:
@@ -241,7 +242,7 @@ class ChannelsDatabase(Database):
             if self.connection is None:
                 self.open()
             tracked = self.connection.text_channels.find_one(
-                {"guild_id": guildId, "voice_channel_id": voiceChannelId, "text_channel_id": textChannelId }
+                {"guild_id": guildId, "voice_channel_id": voiceChannelId, "text_channel_id": textChannelId}
             )
             if tracked:
                 payload = {
@@ -252,11 +253,13 @@ class ChannelsDatabase(Database):
                     "timestamp": utils.get_timestamp(),
                 }
                 self.connection.tracked_channels_history.insert_one(payload)
-            self.connection.text_channels.delete_one({
-                "guild_id": str(guildId),
-                "voice_channel_id": str(voiceChannelId),
-                "text_channel_id": str(textChannelId),
-            })
+            self.connection.text_channels.delete_one(
+                {
+                    "guild_id": str(guildId),
+                    "voice_channel_id": str(voiceChannelId),
+                    "text_channel_id": str(textChannelId),
+                }
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -288,6 +291,7 @@ class ChannelsDatabase(Database):
             return False
 
     def clean_tracked_channels(self, guildId: int, voiceChannelId: int, textChannelId: typing.Optional[int]):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -318,5 +322,10 @@ class ChannelsDatabase(Database):
             )
             self.connection.text_channels.delete_one({"guild_id": str(guildId), "text_channel_id": str(textChannelId)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
