@@ -1,6 +1,7 @@
 import math
 from discord.ext import commands
 import traceback
+import typing
 from urllib.parse import quote
 
 import os
@@ -34,19 +35,20 @@ class HelpCog(commands.Cog):
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
-    async def help(self, ctx, command: str = "", subcommand: str = ""):
+    async def help(self, ctx, command: typing.Optional[str] = None, subcommand: typing.Optional[str] = None):
         if ctx.guild:
             guild_id = ctx.guild.id
         else:
             guild_id = 0
         if guild_id != 0:
             await ctx.message.delete()
-        if command is None:
+        if command is None or command == "":
+            print("NO COMMAND")
             await self.root_help(ctx)
         else:
             await self.subcommand_help(ctx, command, subcommand)
 
-    async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
+    async def subcommand_help(self, ctx, command: typing.Optional[str] = None, subcommand: typing.Optional[str] = None):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -56,6 +58,11 @@ class HelpCog(commands.Cog):
         try:
             command = command.lower() if command else ""
             subcommand = subcommand.lower() if subcommand else ""
+
+            if command == "" or command is None:
+                print("NO COMMAND")
+                await self.root_help(ctx)
+                return
 
             command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():

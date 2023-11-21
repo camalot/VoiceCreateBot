@@ -29,7 +29,8 @@
       "description": "",
       "usage": "{{prefix}}channel <subcommand>",
       "examples": [
-        "{{prefix}}channel"
+        "{{prefix}}channel name",
+        "{{prefix}}channel save"
       ],
       "admin": false,
       "aliases": [],
@@ -52,286 +53,309 @@
           ],
           "admin": false,
           "aliases": []
+        },
+        "rename": {
+          "title": "help_command_rename",
+          "usage": "{{prefix}}rename <channel name>",
+          "examples": [
+            "{{prefix}}rename New Channel Name"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "mute": {
+          "title": "help_command_mute",
+          "usage": "{{prefix}}mute [@role|@user]",
+          "examples": [
+            "{{prefix}}mute @SomeRole"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "unmute": {
+          "title": "help_command_unmute",
+          "usage": "{{prefix}}unmute [@role|@user]",
+          "examples": [
+            "{{prefix}}unmute @SomeRole"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "owner": {
+          "title": "help_command_owner",
+          "usage": "{{prefix}}owner <@person>",
+          "examples": [
+            "{{prefix}}owner @DarthMinos"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "give": {
+          "title": "help_command_give",
+          "usage": "{{prefix}}give <@person>",
+          "examples": [
+            "{{prefix}}give @DarthMinos"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "claim": {
+          "title": "help_command_claim",
+          "usage": "{{prefix}}claim",
+          "examples": [
+            "{{prefix}}claim"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "game": {
+          "title": "help_command_game",
+          "usage": "{{prefix}}game",
+          "examples": [
+            "{{prefix}}game"
+          ],
+          "admin": false,
+          "aliases": []
         }
       }
     },
-    "enable-auto-game": {
-      "title": "help_command_enable_auto_game",
-      "usage": "{{prefix}}enable-auto-game",
-      "examples": [
-        "{{prefix}}eag"
-      ],
-      "admin": false,
-      "aliases": [
-        "eag"
-      ]
-    },
-    "unlock": {
-      "title": "help_command_unlock",
-      "usage": "{{prefix}}unlock",
-      "examples": [
-        "{{prefix}}unlock"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "lock": {
-      "title": "help_command_lock",
-      "usage": "{{prefix}}lock [locked_role]",
-      "examples": [
-        "{{prefix}}lock"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "private": {
-      "title": "help_command_private",
-      "usage": "{{prefix}}private",
-      "examples": [
-        "{{prefix}}private"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "resync": {
-      "title": "help_command_resync",
-      "usage": "{{prefix}}resync",
-      "examples": [
-        "{{prefix}}resync"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "mute": {
-      "title": "help_command_mute",
-      "usage": "{{prefix}}mute [@role|@user]",
-      "examples": [
-        "{{prefix}}mute @SomeRole"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "unmute": {
-      "title": "help_command_unmute",
-      "usage": "{{prefix}}unmute [@role|@user]",
-      "examples": [
-        "{{prefix}}unmute @SomeRole"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "hide": {
-      "title": "help_command_hide",
-      "usage": "{{prefix}}hide [@role|@user]",
-      "examples": [
-        "{{prefix}}hide @SomeRole"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "show": {
-      "title": "help_command_show",
-      "usage": "{{prefix}}show [@role|@user]",
-      "examples": [
-        "{{prefix}}show @SomeRole"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "limit": {
-      "title": "help_command_limit",
-      "usage": "{{prefix}}limit <number>",
-      "example": [
-        "{{prefix}}limit 3"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "bitrate": {
-      "title": "help_command_bitrate",
-      "usage": "{{prefix}}bitrate [number]",
-      "examples": [
-        "{{prefix}}bitrate 64"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "permit": {
-      "title": "help_command_permit",
-      "usage": "{{prefix}}permit <@person>",
-      "examples": [
-        "{{prefix}}permit @DarthMinos"
-      ],
-      "admin": false,
-      "aliases": [
-        "allow"
-      ]
-    },
-    "reject": {
-      "title": "help_command_reject",
-      "usage": "{{prefix}}reject <@person>",
-      "examples": [
-        "{{prefix}}reject @DarthMinos"
-      ],
-      "admin": false,
-      "aliases": [
-        "deny"
-      ]
-    },
-    "claim": {
-      "title": "help_command_claim",
-      "usage": "{{prefix}}claim",
-      "examples": [
-        "{{prefix}}claim"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "set-prefix": {
-      "title": "help_command_set_prefix",
-      "usage": "{{prefix}}set-prefix <prefix>",
-      "examples": [
-        "{{prefix}}set-prefix !vcb"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "owner": {
-      "title": "help_command_owner",
-      "usage": "{{prefix}}owner <@person>",
-      "examples": [
-        "{{prefix}}owner @DarthMinos"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "whoowns": {
-      "title": "help_command_whoowns",
-      "usage": "{{prefix}}whoowns",
-      "examples": [
-        "{{prefix}}whoowns"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "channels": {
-      "title": "help_command_channels",
-      "usage": "{{prefix}}channels",
-      "example": [
-        "{{prefix}}channels"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "rename": {
-      "title": "help_command_rename",
-      "usage": "{{prefix}}rename <channel name>",
-      "examples": [
-        "{{prefix}}rename New Channel Name"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "reset": {
-      "title": "help_command_reset",
-      "usage": "{{prefix}}reset",
-      "examples": [
-        "{{prefix}}reset"
-      ],
-      "admin": false,
-      "aliases": []
-    },
-    "cleandb": {
-      "title": "help_command_cleandb",
-      "usage": "{{prefix}}cleandb",
-      "examples": [
-        "{{prefix}}cleandb"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "track": {
-      "title": "help_command_track",
-      "usage": "{{prefix}}track",
-      "examples": "{{prefix}}track",
-      "admin": true,
-      "aliases": []
-    },
-    "track-text-channel": {
-      "title": "help_command_track_text",
-      "usage": "{{prefix}}track-text-channel <#text-channel>",
-      "examples": [
-        "{{prefix}}track-text-channel #my-text-channel"
-      ],
-      "admin": true,
-      "aliases": [
-        "ttc"
-      ]
-    },
-    "settings": {
-      "title": "help_command_settings",
-      "usage": "{{prefix}}settings",
-      "examples": "{{prefix}}settings",
-      "admin": true,
-      "aliases": []
-    },
-    "set-default-role": {
-      "title": "help_command_set_default_role",
-      "usage": "{{prefix}}set-default-role \"<role name>\"",
-      "examples": [
-        "{{prefix}}set-default-role \"Role Name\""
-      ],
-      "admin": true,
-      "aliases": [
-        "sdr"
-      ]
-    },
-    "get-default-role": {
-      "help": "help_command_get_default_role",
-      "usage": "{{prefix}}get-default-role",
-      "examples": [
-        "{{prefix}}get-default-role"
-      ],
-      "admin": true,
-      "aliases": [
-        "gdr"
-      ]
-    },
-    "init": {
-      "title": "help_command_init",
-      "usage": "{{prefix}}init",
-      "examples": [
-        "{{prefix}}init"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "setup": {
-      "title": "help_command_setup",
-      "usage": "{{prefix}}setup",
-      "examples": [
-        "{{prefix}}setup"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "language": {
-      "title": "help_command_language",
-      "usage": "{{prefix}}language",
-      "examples": [
-        "{{prefix}}language"
-      ],
-      "admin": true,
-      "aliases": []
-    },
-    "set-language": {
-      "title": "help_command_set_language",
-      "usage": "{{prefix}}set-language",
-      "examples": [
-        "{{prefix}}set-language"
-      ],
-      "admin": true,
-      "aliases": []
+    "deprecated": {
+      "hidden": true,
+      "subcommands": {
+        "enable-auto-game": {
+          "title": "help_command_enable_auto_game",
+          "usage": "{{prefix}}enable-auto-game",
+          "examples": [
+            "{{prefix}}eag"
+          ],
+          "admin": false,
+          "aliases": [
+            "eag"
+          ]
+        },
+        "unlock": {
+          "title": "help_command_unlock",
+          "usage": "{{prefix}}unlock",
+          "examples": [
+            "{{prefix}}unlock"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "lock": {
+          "title": "help_command_lock",
+          "usage": "{{prefix}}lock [locked_role]",
+          "examples": [
+            "{{prefix}}lock"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "private": {
+          "title": "help_command_private",
+          "usage": "{{prefix}}private",
+          "examples": [
+            "{{prefix}}private"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "resync": {
+          "title": "help_command_resync",
+          "usage": "{{prefix}}resync",
+          "examples": [
+            "{{prefix}}resync"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "hide": {
+          "title": "help_command_hide",
+          "usage": "{{prefix}}hide [@role|@user]",
+          "examples": [
+            "{{prefix}}hide @SomeRole"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "show": {
+          "title": "help_command_show",
+          "usage": "{{prefix}}show [@role|@user]",
+          "examples": [
+            "{{prefix}}show @SomeRole"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "limit": {
+          "title": "help_command_limit",
+          "usage": "{{prefix}}limit <number>",
+          "example": [
+            "{{prefix}}limit 3"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "bitrate": {
+          "title": "help_command_bitrate",
+          "usage": "{{prefix}}bitrate [number]",
+          "examples": [
+            "{{prefix}}bitrate 64"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "permit": {
+          "title": "help_command_permit",
+          "usage": "{{prefix}}permit <@person>",
+          "examples": [
+            "{{prefix}}permit @DarthMinos"
+          ],
+          "admin": false,
+          "aliases": [
+            "allow"
+          ]
+        },
+        "reject": {
+          "title": "help_command_reject",
+          "usage": "{{prefix}}reject <@person>",
+          "examples": [
+            "{{prefix}}reject @DarthMinos"
+          ],
+          "admin": false,
+          "aliases": [
+            "deny"
+          ]
+        },
+        "set-prefix": {
+          "title": "help_command_set_prefix",
+          "usage": "{{prefix}}set-prefix <prefix>",
+          "examples": [
+            "{{prefix}}set-prefix !vcb"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "whoowns": {
+          "title": "help_command_whoowns",
+          "usage": "{{prefix}}whoowns",
+          "examples": [
+            "{{prefix}}whoowns"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "channels": {
+          "title": "help_command_channels",
+          "usage": "{{prefix}}channels",
+          "example": [
+            "{{prefix}}channels"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "reset": {
+          "title": "help_command_reset",
+          "usage": "{{prefix}}reset",
+          "examples": [
+            "{{prefix}}reset"
+          ],
+          "admin": false,
+          "aliases": []
+        },
+        "cleandb": {
+          "title": "help_command_cleandb",
+          "usage": "{{prefix}}cleandb",
+          "examples": [
+            "{{prefix}}cleandb"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "track": {
+          "title": "help_command_track",
+          "usage": "{{prefix}}track",
+          "examples": "{{prefix}}track",
+          "admin": true,
+          "aliases": []
+        },
+        "track-text-channel": {
+          "title": "help_command_track_text",
+          "usage": "{{prefix}}track-text-channel <#text-channel>",
+          "examples": [
+            "{{prefix}}track-text-channel #my-text-channel"
+          ],
+          "admin": true,
+          "aliases": [
+            "ttc"
+          ]
+        },
+        "settings": {
+          "title": "help_command_settings",
+          "usage": "{{prefix}}settings",
+          "examples": "{{prefix}}settings",
+          "admin": true,
+          "aliases": []
+        },
+        "set-default-role": {
+          "title": "help_command_set_default_role",
+          "usage": "{{prefix}}set-default-role \"<role name>\"",
+          "examples": [
+            "{{prefix}}set-default-role \"Role Name\""
+          ],
+          "admin": true,
+          "aliases": [
+            "sdr"
+          ]
+        },
+        "get-default-role": {
+          "help": "help_command_get_default_role",
+          "usage": "{{prefix}}get-default-role",
+          "examples": [
+            "{{prefix}}get-default-role"
+          ],
+          "admin": true,
+          "aliases": [
+            "gdr"
+          ]
+        },
+        "init": {
+          "title": "help_command_init",
+          "usage": "{{prefix}}init",
+          "examples": [
+            "{{prefix}}init"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "setup": {
+          "title": "help_command_setup",
+          "usage": "{{prefix}}setup",
+          "examples": [
+            "{{prefix}}setup"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "language": {
+          "title": "help_command_language",
+          "usage": "{{prefix}}language",
+          "examples": [
+            "{{prefix}}language"
+          ],
+          "admin": true,
+          "aliases": []
+        },
+        "set-language": {
+          "title": "help_command_set_language",
+          "usage": "{{prefix}}set-language",
+          "examples": [
+            "{{prefix}}set-language"
+          ],
+          "admin": true,
+          "aliases": []
+        }
+      }
     }
   }
 }

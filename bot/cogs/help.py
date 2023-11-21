@@ -3,6 +3,7 @@ import math
 import os
 import re
 import traceback
+import typing
 
 from bot.cogs.lib import logger, settings, utils
 from bot.cogs.lib.enums import loglevel
@@ -93,14 +94,14 @@ class Help(commands.Cog):
             await self.messaging.notify_of_error(ctx)
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
-    async def help(self, ctx, command: str = "", subcommand: str = ""):
+    async def help(self, ctx, command: typing.Optional[str] = None, subcommand: typing.Optional[str] = None):
         if ctx.guild:
             guild_id = ctx.guild.id
         else:
             guild_id = 0
         if guild_id != 0:
             await ctx.message.delete()
-        if command is None:
+        if command is None or command == "":
             await self.root_help(ctx)
             self.tracking_db.track_command(
                 guildId=guild_id,
@@ -117,7 +118,7 @@ class Help(commands.Cog):
                 args={"type": "command", "subcommand": subcommand},
             )
 
-    async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
+    async def subcommand_help(self, ctx, command: typing.Optional[str] = None, subcommand: typing.Optional[str] = None):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -127,6 +128,10 @@ class Help(commands.Cog):
         try:
             command = command.lower() if command else ""
             subcommand = subcommand.lower() if subcommand else ""
+
+            if command == "" or command is None:
+                await self.root_help(ctx)
+                return
 
             command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
@@ -242,13 +247,20 @@ class Help(commands.Cog):
                 fields = list()
                 for k in chunk:
                     cmd = command_list[k.lower()]
+                    if 'hidden' in cmd and cmd['hidden']:
+                        continue
                     is_admin = False
                     if 'admin' in cmd:
                         is_admin = cmd['admin']
                     shield = '🛡️' if is_admin else ''
-                    fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
+                    fields.append(
+                        {
+                            "name": f"{shield}{self.settings.get_string(guild_id, cmd['title'])}",
+                            "value": self.settings.get_string(guild_id, cmd['description'])
+                        }
+                    )
                     fields.append({"name": 'help', "value": f"`{self._prefix(guild_id, cmd['usage'])}`"})
-                    fields.append({"name": 'more', "value": self._prefix(guild_id, f'`{{{{prefix}}}} help {k.lower()}`')})
+                    fields.append({"name": 'more', "value": self._prefix(guild_id, f'`{{{{prefix}}}}help {k.lower()}`')})
                     if 'examples' in cmd:
                         example_list = [f"`{self._prefix(guild_id, e)}`" for e in cmd['examples']]
                         if example_list and len(example_list) > 0:
