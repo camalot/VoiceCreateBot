@@ -88,7 +88,9 @@ class ChannelCog(commands.Cog):
                 return
 
             category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            default_role = self.settings.db.get_default_role(
+                guildId=guild_id, categoryId=category_id, userId=owner_id
+            )
             temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
 
             if category_settings is None:
@@ -183,7 +185,9 @@ class ChannelCog(commands.Cog):
                 )
                 return
             category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            default_role = self.settings.db.get_default_role(
+                guildId=guild_id, categoryId=category_id, userId=owner_id
+            )
             temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
 
             if category_settings is None:
@@ -275,7 +279,9 @@ class ChannelCog(commands.Cog):
                 if not name or name == "":
                     name = utils.get_random_name()
                 category_id = ctx.author.voice.channel.category.id
-                guild_category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
+                guild_category_settings = self.settings.db.get_guild_category_settings(
+                    guildId=guild_id, categoryId=category_id
+                )
                 owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=channel_id)
                 if not owner_id:
                     await self._messaging.send_embed(
@@ -286,7 +292,9 @@ class ChannelCog(commands.Cog):
                     )
                     return
                 user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
-                default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                default_role = self.settings.db.get_default_role(
+                    guildId=guild_id, categoryId=category_id, userId=owner_id
+                )
                 temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
                 # text channel rename is automatically handled by the change event on the voice channel.
 
@@ -365,7 +373,9 @@ class ChannelCog(commands.Cog):
 
             owner = await self._users.get_or_fetch_user(owner_id)
 
-            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            default_role = self.settings.db.get_default_role(
+                guildId=guild_id, categoryId=category_id, userId=owner_id
+            )
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             text_channel = None
@@ -438,7 +448,9 @@ class ChannelCog(commands.Cog):
                 return
 
             owner = await self._users.get_or_fetch_user(owner_id)
-            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+            default_role = self.settings.db.get_default_role(
+                guildId=guild_id, categoryId=category_id, userId=owner_id
+            )
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             text_channel = None

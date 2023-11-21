@@ -67,7 +67,9 @@ class ChannelCreatorCog(commands.Cog):
                             self.log.debug(guild_id, _method , "Channel Names are the same. Nothing to do")
                             return
                         else:
-                            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+                            default_role = self.settings.db.get_default_role(
+                                guildId=guild_id, categoryId=category_id, userId=owner_id
+                            )
                             self.log.debug(guild_id, _method, f"default_role: {default_role}")
                             temp_default_role = utils.get_by_name_or_id(after.guild.roles, default_role)
                             self.log.debug(guild_id, _method, f"temp_default_role: {temp_default_role}")
