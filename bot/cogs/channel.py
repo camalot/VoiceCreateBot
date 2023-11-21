@@ -5,9 +5,9 @@ import typing
 
 import discord
 from bot.cogs.lib import channels, logger, messaging, users, utils
-from bot.cogs.lib.models.category_settings import GuildCategorySettings
 from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
 from bot.cogs.lib.enums.loglevel import LogLevel
+from bot.cogs.lib.models.category_settings import GuildCategorySettings
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
@@ -88,9 +88,7 @@ class ChannelCog(commands.Cog):
                 return
 
             category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-            default_role = self.settings.db.get_default_role(
-                guildId=guild_id, categoryId=category_id, userId=owner_id
-            )
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
 
             if category_settings is None:
@@ -185,9 +183,7 @@ class ChannelCog(commands.Cog):
                 )
                 return
             category_settings = self.settings.db.get_guild_category_settings(guildId=guild_id, categoryId=category_id)
-            default_role = self.settings.db.get_default_role(
-                guildId=guild_id, categoryId=category_id, userId=owner_id
-            )
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             temp_default_role = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
 
             if category_settings is None:
@@ -373,9 +369,7 @@ class ChannelCog(commands.Cog):
 
             owner = await self._users.get_or_fetch_user(owner_id)
 
-            default_role = self.settings.db.get_default_role(
-                guildId=guild_id, categoryId=category_id, userId=owner_id
-            )
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             text_channel = None
@@ -448,9 +442,7 @@ class ChannelCog(commands.Cog):
                 return
 
             owner = await self._users.get_or_fetch_user(owner_id)
-            default_role = self.settings.db.get_default_role(
-                guildId=guild_id, categoryId=category_id, userId=owner_id
-            )
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
             everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role) or ctx.guild.default_role
             text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=voice_channel_id)
             text_channel = None
@@ -572,7 +564,7 @@ class ChannelCog(commands.Cog):
                 selected_title = await self.ask_game_for_user(
                     targetChannel=ctx.channel,
                     user=owner,
-                    title=self.settings.get_string(guild_id, "title_update_to_game")
+                    title=self.settings.get_string(guild_id, "title_update_to_game"),
                 )
                 if selected_title:
                     await self._name(ctx, selected_title, False)

@@ -4,8 +4,8 @@ import traceback
 
 import discord
 from bot.cogs.lib import channels, logger, messaging, settings, users, utils
-from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.enums.category_settings_defaults import CategorySettingsDefaults
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.enums.system_actions import SystemActions
 from bot.cogs.lib.models.embedfield import EmbedField
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
@@ -40,7 +40,6 @@ class ChannelCreatorCog(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized {self._class}")
 
-
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
         _method = inspect.stack()[1][3]
@@ -59,12 +58,14 @@ class ChannelCreatorCog(commands.Cog):
                     if owner_id:
                         owner = await self._users.get_or_fetch_member(before.guild, owner_id)
                         if not owner:
-                            self.log.warn(guild_id, _method, f"Unable to find owner [user:{owner_id}] for the channel: {channel}")
+                            self.log.warn(
+                                guild_id, _method, f"Unable to find owner [user:{owner_id}] for the channel: {channel}"
+                            )
                             return
 
                         if before.name == after.name:
                             # same name. ignore
-                            self.log.debug(guild_id, _method , "Channel Names are the same. Nothing to do")
+                            self.log.debug(guild_id, _method, "Channel Names are the same. Nothing to do")
                             return
                         else:
                             default_role = self.settings.db.get_default_role(
@@ -76,7 +77,7 @@ class ChannelCreatorCog(commands.Cog):
                             user_settings = self.usersettings_db.get_user_settings(guild_id, owner_id)
                             system_default_role = after.guild.default_role
 
-                            self.log.debug(guild_id, _method , f"Channel Type: {after.type}")
+                            self.log.debug(guild_id, _method, f"Channel Type: {after.type}")
 
                             if after.type == discord.ChannelType.voice:
                                 # new channel name
@@ -85,7 +86,7 @@ class ChannelCreatorCog(commands.Cog):
                                 if text_channel_id:
                                     text_channel = await self._channels.get_or_fetch_channel(int(text_channel_id))
                                 if text_channel:
-                                    self.log.debug(guild_id, _method , f"Change Text Channel Name: {after.name}")
+                                    self.log.debug(guild_id, _method, f"Change Text Channel Name: {after.name}")
                                     await text_channel.edit(name=after.name)
                                     await self._messaging.send_embed(
                                         text_channel,
@@ -94,14 +95,16 @@ class ChannelCreatorCog(commands.Cog):
                                         delete_after=5,
                                     )
                                 else:
-                                    self.log.warn(guild_id, _method , f"Unable to locate text channel for voice channel: {after.name}")
+                                    self.log.warn(guild_id, _method, f"Unable to locate text channel for voice channel: {after.name}")
                             if after.type == discord.ChannelType.text:
                                 voiceChannel = None
-                                voice_channel_id = self.channel_db.get_voice_channel_id_from_text_channel(guildId=guild_id, textChannelId=after.id)
+                                voice_channel_id = self.channel_db.get_voice_channel_id_from_text_channel(
+                                    guildId=guild_id, textChannelId=after.id
+                                )
                                 if voice_channel_id:
                                     voiceChannel = await self._channels.get_or_fetch_channel(voice_channel_id)
                                 if voiceChannel:
-                                    self.log.debug(guild_id, _method , f"Change Voice Channel Name: {after.name}")
+                                    self.log.debug(guild_id, _method, f"Change Voice Channel Name: {after.name}")
                                     await voiceChannel.edit(name=after.name)
                                     await self._messaging.send_embed(
                                         after,
@@ -112,7 +115,9 @@ class ChannelCreatorCog(commands.Cog):
 
 
                             if user_settings:
-                                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=after.name)
+                                self.usersettings_db.update_user_channel_name(
+                                    guildId=guild_id, userId=owner_id, channelName=after.name
+                                )
                             else:
                                 self.usersettings_db.insert_user_settings(
                                     guildId=guild_id,
@@ -129,7 +134,7 @@ class ChannelCreatorCog(commands.Cog):
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
-            self.log.error(guild_id, _method , str(e), traceback.format_exc())
+            self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -147,9 +152,7 @@ class ChannelCreatorCog(commands.Cog):
             pass
         else:
             try:
-                self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Check for user in Create Channel"
-                )
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Check for user in Create Channel")
                 for voiceChannel in voiceChannels:
                     self.log.debug(
                         guild_id,
@@ -177,9 +180,12 @@ class ChannelCreatorCog(commands.Cog):
                     guildSettings = self.settings.db.get_guild_category_settings(
                         guildId=guild_id, categoryId=category_id
                     )
-                    useStage = self.guild_db.get_use_stage_on_create(
-                        guildId=guild_id, channelId=source_channel_id, categoryId=category_id
-                    ) or 0
+                    useStage = (
+                        self.guild_db.get_use_stage_on_create(
+                            guildId=guild_id, channelId=source_channel_id, categoryId=category_id
+                        )
+                        or 0
+                    )
 
                     # CHANNEL SETTINGS START
                     limit = CategorySettingsDefaults.CHANNEL_LIMIT
@@ -206,9 +212,9 @@ class ChannelCreatorCog(commands.Cog):
                     if default_role_id is None:
                         default_role = member.guild.default_role
                     else:
-                        default_role = utils.get_by_name_or_id(
-                            member.guild.roles, default_role_id
-                        ) or member.guild.default_role
+                        default_role = (
+                            utils.get_by_name_or_id(member.guild.roles, default_role_id) or member.guild.default_role
+                        )
 
                     if userSettings is None:
                         if guildSettings is not None:
@@ -250,9 +256,7 @@ class ChannelCreatorCog(commands.Cog):
                     )
                     is_community = member.guild.features.count("COMMUNITY") > 0
                     if(useStage and is_community):
-                        self.log.debug(
-                            guild_id, f"{self._module}.{self._class}.{_method}", f"Creating Stage Channel"
-                        )
+                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Creating Stage Channel")
                         stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
                         voiceChannel = await member.guild.create_stage_channel(
                             name,
@@ -265,9 +269,7 @@ class ChannelCreatorCog(commands.Cog):
                             guildId=guild_id, userId=member.id, action=SystemActions.CREATE_STAGE_CHANNEL
                         )
                     else:
-                        self.log.debug(
-                            guild_id, f"{self._module}.{self._class}.{_method}", f"Created Voice Channel"
-                        )
+                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Created Voice Channel")
                         voiceChannel = await source_channel.clone(
                             name=name, reason="Create Channel Request by {member}"
                         )
@@ -285,7 +287,7 @@ class ChannelCreatorCog(commands.Cog):
                     await member.move_to(voiceChannel)
                     # if the bot cant do this, dont fail...
                     try:
-                        self.log.debug(guild_id, _method , f"Setting permissions on {voiceChannel}")
+                        self.log.debug(guild_id, _method, f"Setting permissions on {voiceChannel}")
                         # if use_voice_activity is not True, some cases where people cant speak, unless they use P2T
                         await voiceChannel.set_permissions(
                             member,
@@ -317,7 +319,7 @@ class ChannelCreatorCog(commands.Cog):
                         f"{self._module}.{self._class}.{_method}",
                         f"Set user limit to {limit} on {voiceChannel}",
                     )
-                    await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate*1000), position=0)
+                    await voiceChannel.edit(name=name, user_limit=limit, bitrate=(bitrate * 1000), position=0)
 
                     self.log.debug(
                         guild_id,
@@ -398,6 +400,7 @@ class ChannelCreatorCog(commands.Cog):
                 self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", str(nf))
             except Exception as ex:
                 self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+
 
 async def setup(bot):
     await bot.add_cog(ChannelCreatorCog(bot))
