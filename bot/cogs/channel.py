@@ -401,7 +401,7 @@ class ChannelCog(commands.Cog):
             )
 
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
 
     @channel.command()
@@ -474,7 +474,7 @@ class ChannelCog(commands.Cog):
             )
 
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
 
     @channel.command()
@@ -524,7 +524,7 @@ class ChannelCog(commands.Cog):
                             delete_after=5,
                         )
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
 
     @channel.command()
@@ -557,7 +557,11 @@ class ChannelCog(commands.Cog):
                 return
             owner = await self._users.get_or_fetch_member(ctx.guild, owner_id)
             if owner:
-                selected_title = await self.ask_game_for_user(targetChannel=ctx.channel, user=owner, title=self.settings.get_string(guild_id, "title_update_to_game"))
+                selected_title = await self.ask_game_for_user(
+                    targetChannel=ctx.channel,
+                    user=owner,
+                    title=self.settings.get_string(guild_id, "title_update_to_game")
+                )
                 if selected_title:
                     await self._name(ctx, selected_title, False)
                 else:

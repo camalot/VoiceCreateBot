@@ -53,7 +53,7 @@ class GameNameCog(commands.Cog):
             await ctx.message.delete()
 
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.messaging_helper.notify_of_error(ctx)
 
     @game.command(name="name", aliases=["n"])
@@ -65,7 +65,7 @@ class GameNameCog(commands.Cog):
             await ctx.message.delete()
 
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.messaging_helper.notify_of_error(ctx)
 
     @commands.Cog.listener()
@@ -183,7 +183,7 @@ class GameNameCog(commands.Cog):
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 
 
 async def setup(bot):
