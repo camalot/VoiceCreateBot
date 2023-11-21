@@ -14,6 +14,7 @@ from bot.cogs.lib import utils
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.enums.loglevel import LogLevel
 
+
 class HelpCog(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -66,10 +67,13 @@ class HelpCog(commands.Cog):
 
             command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
-                await self.messaging.send_embed(ctx.channel,
+                await self.messaging.send_embed(
+                    ctx.channel,
                     self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
-                    color=0xFF0000, delete_after=20)
+                    color=0xFF0000,
+                    delete_after=20,
+                )
                 return
 
             cmd = command_list[command]
@@ -83,15 +87,19 @@ class HelpCog(commands.Cog):
             fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
             fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {command.lower()}`')})
             if 'examples' in cmd:
-                example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
+                example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples']]
                 if example_list and len(example_list) > 0:
                     examples = '\n'.join(example_list)
                     fields.append({"name": 'examples', "value": examples})
             await self.messaging.send_embed(
                 channel=ctx.channel,
-                title=self.settings.get_string(guild_id, "help_command_title", bot_name=self.settings.name, command=command),
+                title=self.settings.get_string(
+                    guild_id, "help_command_title", bot_name=self.settings.name, command=command
+                ),
                 message="",
-                footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
+                footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version),
+                fields=fields,
+            )
 
 
             subcommands = cmd["subcommands"]
@@ -113,7 +121,9 @@ class HelpCog(commands.Cog):
                     shield = '🛡️' if is_admin else ''
                     fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['description']})
                     fields.append({"name": 'help', "value": f"`{self._prefix(scmd['usage'])}`"})
-                    fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`')})
+                    fields.append(
+                        {"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`')}
+                    )
                     if 'examples' in scmd:
                         example_list = [ f"`{self._prefix(e)}`" for e in scmd['examples'] ]
                         if example_list and len(example_list) > 0:
@@ -122,15 +132,18 @@ class HelpCog(commands.Cog):
 
                 await self.messaging.send_embed(
                     channel=ctx.channel,
-                    title=self.settings.get_string(guild_id, "help_group_title", bot_name=self.settings.name, page=page, total_pages=pages),
+                    title=self.settings.get_string(
+                        guild_id, "help_group_title", bot_name=self.settings.name, page=page, total_pages=pages
+                    ),
                     message="",
                     footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version),
-                    fields=fields,)
+                    fields=fields,
+                )
                 page += 1
 
 
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}" , str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     async def root_help(self, ctx):
@@ -160,7 +173,7 @@ class HelpCog(commands.Cog):
                     fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
                     fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {k.lower()}`')})
                     if 'examples' in cmd:
-                        example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
+                        example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples']]
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
@@ -169,10 +182,11 @@ class HelpCog(commands.Cog):
                     title=f"{self.settings.name} Help ({page}/{pages})",
                     message="",
                     footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version),
-                    fields=fields,)
+                    fields=fields,
+                )
                 page += 1
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}" , str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def clean_command_name(self, command):

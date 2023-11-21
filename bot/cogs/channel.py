@@ -101,12 +101,18 @@ class ChannelCog(commands.Cog):
                     defaultRole=temp_default_role.id if temp_default_role else None,
                 )
 
-            is_tracked_channel = len(
-                [
-                    c for c in self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id)
-                    if c == voice_channel_id
-                ]
-            ) >= 1
+            is_tracked_channel = (
+                len(
+                    [
+                        c
+                        for c in self.channel_db.get_tracked_voice_channel_id_by_owner(
+                            guildId=guild_id, ownerId=owner_id
+                        )
+                        if c == voice_channel_id
+                    ]
+                )
+                >= 1
+            )
             if not is_tracked_channel:
                 await self._messaging.send_embed(
                     ctx.channel,
@@ -118,7 +124,9 @@ class ChannelCog(commands.Cog):
 
             user_settings = self.usersettings_db.get_user_settings(guildId=guild_id, userId=owner_id)
             if user_settings:
-                self.usersettings_db.update_user_channel_name(guildId=guild_id, userId=owner_id, channelName=voice_channel.name)
+                self.usersettings_db.update_user_channel_name(
+                    guildId=guild_id, userId=owner_id, channelName=voice_channel.name
+                )
             else:
                 self.usersettings_db.insert_user_settings(
                     guildId=guild_id,
@@ -188,12 +196,18 @@ class ChannelCog(commands.Cog):
                     defaultRole=temp_default_role.id if temp_default_role else None,
                 )
 
-            is_tracked_channel = len(
-                [
-                    c for c in self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id, ownerId=owner_id)
-                    if c == voice_channel_id
-                ]
-            ) >= 1
+            is_tracked_channel = (
+                len(
+                    [
+                        c
+                        for c in self.channel_db.get_tracked_voice_channel_id_by_owner(
+                            guildId=guild_id, ownerId=owner_id
+                        )
+                        if c == voice_channel_id
+                    ]
+                )
+                >= 1
+            )
             if not is_tracked_channel:
                 await self._messaging.send_embed(
                     ctx.channel,
@@ -236,7 +250,8 @@ class ChannelCog(commands.Cog):
                 f'''{ctx.author.mention}, {
                     utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=name)
                 }''',
-                delete_after=5)
+                delete_after=5,
+            )
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
@@ -499,7 +514,8 @@ class ChannelCog(commands.Cog):
                                     self.settings.get_string(guild_id, 'info_new_owner'), user=member.mention
                                 )
                             }""",
-                            delete_after=5)
+                            delete_after=5,
+                        )
                     else:
                         await self._messaging.send_embed(
                             ctx.channel,
