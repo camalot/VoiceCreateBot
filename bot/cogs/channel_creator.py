@@ -81,7 +81,9 @@ class ChannelCreatorCog(commands.Cog):
 
                             if after.type == discord.ChannelType.voice:
                                 # new channel name
-                                text_channel_id = self.channel_db.get_text_channel_id(guildId=guild_id, voiceChannelId=after.id)
+                                text_channel_id = self.channel_db.get_text_channel_id(
+                                    guildId=guild_id, voiceChannelId=after.id
+                                )
                                 text_channel = None
                                 if text_channel_id:
                                     text_channel = await self._channels.get_or_fetch_channel(int(text_channel_id))
@@ -91,11 +93,20 @@ class ChannelCreatorCog(commands.Cog):
                                     await self._messaging.send_embed(
                                         text_channel,
                                         self.settings.get_string(guild_id, 'title_update_channel_name'),
-                                        f'{owner.mention}, {utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=text_channel.name)}',
+                                        f'''{owner.mention}, {
+                                            utils.str_replace(
+                                                self.settings.get_string(guild_id, "info_channel_name_change"),
+                                                channel=text_channel.name,
+                                            )
+                                        }''',
                                         delete_after=5,
                                     )
                                 else:
-                                    self.log.warn(guild_id, _method, f"Unable to locate text channel for voice channel: {after.name}")
+                                    self.log.warn(
+                                        guildId=guild_id,
+                                        method=_method,
+                                        message=f"Unable to locate text channel for voice channel: {after.name}"
+                                    )
                             if after.type == discord.ChannelType.text:
                                 voiceChannel = None
                                 voice_channel_id = self.channel_db.get_voice_channel_id_from_text_channel(
@@ -255,7 +266,7 @@ class ChannelCreatorCog(commands.Cog):
                         f"Creating channel {name} in {category} with bitrate {bitrate}kbps",
                     )
                     is_community = member.guild.features.count("COMMUNITY") > 0
-                    if(useStage and is_community):
+                    if useStage and is_community:
                         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Creating Stage Channel")
                         stage_topic = utils.get_random_name(noun_count=1, adjective_count=2)
                         voiceChannel = await member.guild.create_stage_channel(
