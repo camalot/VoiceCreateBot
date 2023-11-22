@@ -681,6 +681,166 @@ class ChannelCog(commands.Cog):
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self._messaging.notify_of_error(ctx)
 
+    @channel.command()
+    async def lock(self, ctx, role: typing.Optional[discord.Role] = None):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        author = ctx.author
+        try:
+            owner_id = ctx.author.id
+            owner = ctx.author
+            category_id = ctx.author.voice.channel.category.id
+            current_voice_channel_id = None
+            if not self._users.isInVoiceChannel(ctx):
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+
+            current_voice_channel = ctx.author.voice.channel
+            current_voice_channel_id = current_voice_channel.id
+            isAdmin = self._users.isAdmin(ctx)
+            if isAdmin:
+                owner_id = self.channel_db.get_channel_owner_id(guildId=guild_id, channelId=current_voice_channel_id)
+                owner = await self._users.get_or_fetch_user(owner_id)
+            default_role = self.settings.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+
+            validRole = len([ x for x in ctx.guild.roles if x.name == default_role or x.id == default_role ]) == 1
+            if not validRole:
+                default_role = ctx.guild.default_role.id
+            owned_channel_ids = self.channel_db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
+            is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
+            if not is_owner and not isAdmin:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_channel_lock"),
+                    f'{author.mention}, {self.settings.get_string(guild_id, "info_not_owner")}',
+                    delete_after=5,
+                )
+            else:
+                everyone = utils.get_by_name_or_id(ctx.guild.roles, default_role)
+                text_channel_id = self.channel_db.get_text_channel_id(
+                    guildId=guild_id, voiceChannelId=current_voice_channel_id
+                )
+                if text_channel_id:
+                    text_channel = await self._channels.get_or_fetch_channel(text_channel_id)
+                    if text_channel:
+                        await text_channel.set_permissions(
+                            owner,
+                            connect=True,
+                            read_messages=True,
+                            send_messages=True,
+                            view_channel=True,
+                            read_message_history=True,
+                        )
+                        if everyone:
+                            await text_channel.set_permissions(
+                                everyone,
+                                read_messages=False,
+                                send_messages=False,
+                                view_channel=True,
+                                read_message_history=False,
+                            )
+
+                    await current_voice_channel.set_permissions(
+                        owner,
+                        connect=True,
+                        read_messages=True,
+                        send_messages=True,
+                        view_channel=True,
+                        read_message_history=True,
+                    )
+                    await current_voice_channel.set_permissions(
+                        everyone,
+                        connect=False,
+                        view_channel=True,
+                        stream=False,
+                    )
+                    if role:
+                        await current_voice_channel.set_permissions(
+                            role,
+                            connect=False,
+                            read_messages=False,
+                            send_messages=False,
+                            view_channel=True,
+                            stream=False,
+                        )
+                        if text_channel:
+                            await text_channel.set_permissions(role, read_messages=False,send_messages=False, view_channel=True, read_message_history=False)
+
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_channel_lock"),
+                    f'{author.mention}, Voice chat locked! 🔒',
+                    delete_after=5,
+                )
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self._messaging.notify_of_error(ctx)
+
+    @channel.command()
+    async def unlock(self, ctx, role: typing.Optional[discord.Role] = None):
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        author = ctx.author
+        try:
+            owner_id = ctx.author.id
+            owner = ctx.author
+            category_id = ctx.author.voice.channel.category.id
+            current_voice_channel_id = None
+            if self.isInVoiceChannel(ctx):
+                current_voice_channel = ctx.author.voice.channel
+                current_voice_channel_id = current_voice_channel.id
+            else:
+                await self._messaging.send_embed(
+                    ctx.channel,
+                    self.settings.get_string(guild_id, "title_not_in_channel"),
+                    f'{author.mention}, {self.settings.get_string(guild_id, "info_not_in_channel")}',
+                    delete_after=5,
+                )
+                return
+
+            if self.isAdmin(ctx):
+                owner_id = self.db.get_channel_owner_id(guildId=guild_id, channelId=current_voice_channel_id)
+                owner = await self.get_or_fetch_user(owner_id)
+            default_role = self.db.get_default_role(guildId=guild_id, categoryId=category_id, userId=owner_id)
+
+            validRole = len([ x for x in ctx.guild.roles if x.name == default_role or x.id == default_role ]) == 1
+            if not validRole:
+                default_role = ctx.guild.default_role.id
+            owned_channel_ids = self.db.get_tracked_voice_channel_id_by_owner(guildId=guild_id,ownerId=owner_id)
+            is_owner = len([ c for c in owned_channel_ids if int(c) == current_voice_channel_id ]) >= 1
+            if not is_owner and not self.isAdmin(ctx):
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_permission_denied'), f"{ctx.author.mention}, {self.get_string(guild_id, 'info_permission_denied')}", delete_after=5)
+            else:
+                # everyone = discord.utils.get(ctx.guild.roles, name=default_role)
+                everyone = self.get_by_name_or_id(ctx.guild.roles, default_role)
+                text_channel_id = self.db.get_text_channel_id(guildId=guild_id, voiceChannelId=current_voice_channel_id)
+                if text_channel_id:
+                    text_channel = await self.get_or_fetch_channel(text_channel_id)
+
+                    if text_channel:
+                        await text_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                        if everyone:
+                            await text_channel.set_permissions(everyone, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
+
+                    await current_voice_channel.set_permissions(owner, connect=True, read_messages=True, send_messages=True, view_channel=True, read_message_history=True)
+                    await current_voice_channel.set_permissions(everyone, connect=True, view_channel=True, stream=True)
+                    if role:
+                        await current_voice_channel.set_permissions(role, connect=True, read_messages=True, send_messages=True, view_channel=True, stream=True)
+                        if text_channel:
+                            await text_channel.set_permissions(role, read_messages=True,send_messages=True, view_channel=True, read_message_history=True)
+
+                await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_channel_unlock'), f'{author.mention}, {self.get_string(guild_id, "info_unlocked")}', delete_after=5)
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            await self.notify_of_error(ctx)
+        finally:
+            self.db.close()
+            await ctx.message.delete()
 
 async def setup(bot):
     await bot.add_cog(ChannelCog(bot))

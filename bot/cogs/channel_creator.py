@@ -105,7 +105,7 @@ class ChannelCreatorCog(commands.Cog):
                                     self.log.warn(
                                         guildId=guild_id,
                                         method=_method,
-                                        message=f"Unable to locate text channel for voice channel: {after.name}"
+                                        message=f"Unable to locate text channel for voice channel: {after.name}",
                                     )
                             if after.type == discord.ChannelType.text:
                                 voiceChannel = None
@@ -123,7 +123,6 @@ class ChannelCreatorCog(commands.Cog):
                                         f'{owner.mention}, {utils.str_replace(self.settings.get_string(guild_id, "info_channel_name_change"), channel=after.name)}',
                                         delete_after=5,
                                     )
-
 
                             if user_settings:
                                 self.usersettings_db.update_user_channel_name(
