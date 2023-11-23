@@ -227,6 +227,11 @@ class ChannelCreatorCog(commands.Cog):
                         )
 
                     if userSettings is None:
+                        self.log.info(
+                            guild_id,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"User Settings not found for {member.id}. Using Guild Settings or Defaults",
+                        )
                         if guildSettings is not None:
                             limit = guildSettings.channel_limit
                             locked = guildSettings.channel_locked
@@ -249,6 +254,10 @@ class ChannelCreatorCog(commands.Cog):
                         auto_name = userSettings.auto_name
                         auto_game = userSettings.auto_game
                         allow_soundboard = userSettings.allow_soundboard
+
+                        self.log.info(
+                            guild_id, f"{self._module}.{self._class}.{_method}", f"User Channel Name: {user_name}"
+                        )
 
                         if not auto_name:
                             name = user_name

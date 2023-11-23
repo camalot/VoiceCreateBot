@@ -46,3 +46,7 @@ class UsersDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+
+    # track user join channel
+
+    # track user leave channel
