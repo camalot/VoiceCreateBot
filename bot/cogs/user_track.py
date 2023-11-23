@@ -75,6 +75,13 @@ class UserTrackingCog(commands.Cog):
                 f"User {member.id} updated in guild {member.guild.id}",
             )
             self.users_db.track_user(member)
+
+            if after.channel is not None and before.channel is None:
+                self.users_db.track_user_join_channel(member.guild.id, member.id, after.channel.id)
+
+            if after.channel is None and before.channel is not None:
+                self.users_db.track_user_leave_channel(member.guild.id, member.id, before.channel.id)
+
         except Exception as e:
             self.log.error(member.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
