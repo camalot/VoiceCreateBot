@@ -23,6 +23,29 @@ class ChannelsDatabase(Database):
         )
         pass
 
+    def track_channel_name(self, guildId: int, channelId: int, ownerId: int, name: str) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "name": name,
+                "timestamp": utils.get_timestamp(),
+            }
+            self.connection.tracked_channels_history.update_one(
+                {"guild_id": str(guildId), "voice_channel_id": str(channelId), "user_id": str(ownerId)},
+                {"$set": payload},
+                upsert=False,
+            )
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
     def get_tracked_channel_owner(self, guildId: int, voiceChannelId: int) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]
         try:

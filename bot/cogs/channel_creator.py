@@ -109,6 +109,14 @@ class ChannelCreatorCog(commands.Cog):
                                         method=_method,
                                         message=f"Unable to locate text channel for voice channel: {after.name}",
                                     )
+
+                                self.channel_db.track_channel_name(
+                                    guildId=guild_id,
+                                    channelId=after.id,
+                                    ownerId=owner_id,
+                                    name=after.name,
+                                )
+
                             if after.type == discord.ChannelType.text:
                                 voiceChannel = None
                                 voice_channel_id = self.channel_db.get_voice_channel_id_from_text_channel(
@@ -143,6 +151,7 @@ class ChannelCreatorCog(commands.Cog):
                                     autoName=CategorySettingsDefaults.AUTO_NAME,
                                     allowSoundboard=CategorySettingsDefaults.ALLOW_SOUNDBOARD,
                                 )
+
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
         except Exception as e:
@@ -358,6 +367,13 @@ class ChannelCreatorCog(commands.Cog):
 
                     self.channel_db.track_new_channel_set(
                         guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id
+                    )
+
+                    self.channel_db.track_channel_name(
+                        guildId=guild_id,
+                        channelId=channelID,
+                        ownerId=mid,
+                        name=name,
                     )
 
                     try:
