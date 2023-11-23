@@ -74,7 +74,7 @@ class UsersDatabase(Database):
                         "user_id": str(user_id),
                         "channel_id": str(channel_id),
                         "leave": None,
-                        "state": UserChannelState.JOIN.value,
+                        "state": UserChannelState.JOIN.name,
                     },
                     sort=[("timestamp", -1)],
                 )
@@ -85,7 +85,7 @@ class UsersDatabase(Database):
                         guildId=guild_id,
                         level=LogLevel.ERROR,
                         method=f"{self._module}.{self._class}.{_method}",
-                        message=f"Unable to find JOIN record for user {user_id} in channel {channel_id} when attempting to update with LEAVE timestamp",
+                        message=f"Unable to find JOIN record for user {str(user_id)} in channel {str(channel_id)} when attempting to update with LEAVE timestamp",
                     )
                     return
 
@@ -97,7 +97,7 @@ class UsersDatabase(Database):
                     {"_id": join_record["_id"]},
                     {
                         "$set": {
-                            "state": state.value,
+                            "state": state.name,
                             "leave": timestamp,
                             "timestamp": timestamp,
                             "duration": duration,
@@ -115,7 +115,7 @@ class UsersDatabase(Database):
                         "user_id": str(user_id),
                         "channel_id": str(channel_id),
                         "leave": None,
-                        "state": UserChannelState.JOIN.value,
+                        "state": UserChannelState.JOIN.name,
                     },
                     sort=[("timestamp", -1)],
                 )
@@ -126,7 +126,7 @@ class UsersDatabase(Database):
                         {"_id": join_record["_id"]},
                         {
                             "$set": {
-                                "state": state.value,
+                                "state": state.name,
                                 "join": timestamp,
                                 "timestamp": timestamp,
                             }
@@ -138,7 +138,7 @@ class UsersDatabase(Database):
                     "guild_id": str(guild_id),
                     "user_id": str(user_id),
                     "channel_id": str(channel_id),
-                    "state": state.value,
+                    "state": state.name,
                     "join": timestamp,
                     "leave": None,
                     "duration": None,

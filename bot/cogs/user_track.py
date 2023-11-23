@@ -4,6 +4,7 @@ import inspect
 
 from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.logger import Log
+from bot.cogs.lib.mongodb.guilds import GuildsDatabase
 from bot.cogs.lib.mongodb.users import UsersDatabase
 from bot.cogs.lib.settings import Settings
 from discord.ext import commands
@@ -18,6 +19,7 @@ class UserTrackingCog(commands.Cog):
         self.bot = bot
         self.settings = Settings()
         self.users_db = UsersDatabase()
+        self.guilds_db = GuildsDatabase()
         log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = LogLevel.DEBUG
@@ -75,6 +77,20 @@ class UserTrackingCog(commands.Cog):
                 f"User {member.id} updated in guild {member.guild.id}",
             )
             self.users_db.track_user(member)
+
+            # need to ignore if the user is joining or leaving the AFK channel
+            if member.guild.afk_channel and after.channel is not None and after.channel.id == member.guild.afk_channel.id:
+                return
+            if member.guild.afk_channel and before.channel is not None and before.channel.id == member.guild.afk_channel.id:
+                return
+
+            # need to ignore if the user is joining or leaving a "CREATE CHANNEL" channel
+
+            create_channel_ids = self.guilds_db.get_guild_create_channels(member.guild.id)
+            if create_channel_ids is not None and after.channel is not None and after.channel.id in create_channel_ids:
+                return
+            if create_channel_ids is not None and before.channel is not None and before.channel.id in create_channel_ids:
+                return
 
             if after.channel is not None and before.channel is None:
                 self.users_db.track_user_join_channel(member.guild.id, member.id, after.channel.id)

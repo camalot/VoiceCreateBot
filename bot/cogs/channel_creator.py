@@ -11,6 +11,7 @@ from bot.cogs.lib.models.embedfield import EmbedField
 from bot.cogs.lib.mongodb.channels import ChannelsDatabase
 from bot.cogs.lib.mongodb.guilds import GuildsDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.cogs.lib.mongodb.users import UsersDatabase
 from bot.cogs.lib.mongodb.usersettings import UserSettingsDatabase
 from discord.ext import commands
 
@@ -22,6 +23,7 @@ class ChannelCreatorCog(commands.Cog):
 
         self.channel_db = ChannelsDatabase()
         self.usersettings_db = UserSettingsDatabase()
+        self.users_db = UsersDatabase()
         self.guild_db = GuildsDatabase()
         self.tracking_db = TrackingDatabase()
 
@@ -304,6 +306,9 @@ class ChannelCreatorCog(commands.Cog):
                         guild_id, f"{self._module}.{self._class}.{_method}", f"Moving {member} to {voiceChannel}"
                     )
                     await member.move_to(voiceChannel)
+
+                    self.users_db.track_user_join_channel(member.guild.id, member.id, voiceChannel.id)
+
                     # if the bot cant do this, dont fail...
                     try:
                         self.log.debug(guild_id, _method, f"Setting permissions on {voiceChannel}")
