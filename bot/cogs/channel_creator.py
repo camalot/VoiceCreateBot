@@ -366,14 +366,11 @@ class ChannelCreatorCog(commands.Cog):
                     )
 
                     self.channel_db.track_new_channel_set(
-                        guildId=guild_id, ownerId=mid, voiceChannelId=channelID, textChannelId=textChannel.id
-                    )
-
-                    self.channel_db.track_channel_name(
                         guildId=guild_id,
-                        channelId=channelID,
                         ownerId=mid,
-                        name=name,
+                        voiceChannelId=channelID,
+                        textChannelId=textChannel.id,
+                        channelName=name,
                     )
 
                     try:

@@ -28,12 +28,13 @@ class ChannelsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
+
             payload = {
                 "name": name,
                 "timestamp": utils.get_timestamp(),
             }
-            self.connection.tracked_channels_history.update_one(
-                {"guild_id": str(guildId), "voice_channel_id": str(channelId), "user_id": str(ownerId)},
+            self.connection.voice_channels.update_one(
+                {"guild_id": str(guildId), "voice_channel_id": str(channelId), "owner_id": str(ownerId)},
                 {"$set": payload},
                 upsert=False,
             )
@@ -217,12 +218,18 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def track_new_voice_channel(self, guildId: int, ownerId: int, voiceChannelId: int):
+    def track_new_voice_channel(self, guildId: int, ownerId: int, voiceChannelId: int, channelName: str):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            payload = {"guild_id": str(guildId), "owner_id": str(ownerId), "voice_channel_id": str(voiceChannelId)}
+            payload = {
+                "guild_id": str(guildId),
+                "owner_id": str(ownerId),
+                "voice_channel_id": str(voiceChannelId),
+                "name": channelName,
+                "timestamp": utils.get_timestamp()
+            }
             self.connection.voice_channels.insert_one(payload)
             return True
         except Exception as ex:
@@ -245,6 +252,7 @@ class ChannelsDatabase(Database):
                 "owner_id": str(ownerId),
                 "text_channel_id": str(textChannelId),
                 "voice_channel_id": str(voiceChannelId),
+                "timestamp": utils.get_timestamp(),
             }
             self.connection.text_channels.insert_one(payload)
             return True
@@ -258,13 +266,13 @@ class ChannelsDatabase(Database):
             )
             return False
 
-    def delete_tracked_text_channel(self, guildId, voiceChannelId, textChannelId):
+    def delete_tracked_text_channel(self, guildId: int, voiceChannelId: int, textChannelId: int):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             tracked = self.connection.text_channels.find_one(
-                {"guild_id": guildId, "voice_channel_id": voiceChannelId, "text_channel_id": textChannelId}
+                {"guild_id": str(guildId), "voice_channel_id": str(voiceChannelId), "text_channel_id": str(textChannelId)}
             )
             if tracked:
                 payload = {
@@ -291,15 +299,22 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def track_new_channel_set(self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int):
+    def track_new_channel_set(
+        self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int, channelName: str
+    ):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            result = self.track_new_voice_channel(guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId)
+            result = self.track_new_voice_channel(
+                guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId, channelName=channelName
+            )
             if result:
                 result = self.add_tracked_text_channel(
-                    guildId=guildId, ownerId=ownerId, voiceChannelId=voiceChannelId, textChannelId=textChannelId
+                    guildId=guildId,
+                    ownerId=ownerId,
+                    voiceChannelId=voiceChannelId,
+                    textChannelId=textChannelId,
                 )
             return result
         except Exception as ex:
@@ -336,6 +351,7 @@ class ChannelsDatabase(Database):
                     "owner_id": str(tracked_voice['owner_id']),
                     "text_channel_id": text_channel_id,
                     "voice_channel_id": str(tracked_voice['voice_channel_id']),
+                    "name": tracked_voice['name'],
                     "timestamp": utils.get_timestamp(),
                 }
                 self.connection.tracked_channels_history.insert_one(payload)
