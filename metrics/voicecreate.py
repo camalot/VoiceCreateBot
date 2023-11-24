@@ -49,6 +49,13 @@ class VoiceCreateMetrics:
             labelnames=["guild_id"],
         )
 
+        self.user_duration = Gauge(
+            namespace=self.namespace,
+            name=f"user_duration",
+            documentation="The duration of a user in a channel",
+            labelnames=["guild_id", "user_id", "username"],
+        )
+
         self.channel_history = Gauge(
             namespace=self.namespace,
             name=f"channel_history",
@@ -149,7 +156,7 @@ class VoiceCreateMetrics:
         try:
             for gid in known_guilds:
                 self.active_channels.labels(guild_id=gid).set(0)
-                
+
             q_active_channels = self.exporter_db.get_current_channel_count() or []
             for row in q_active_channels:
                 self.active_channels.labels(guild_id=row['_id']).set(row['total'])
@@ -157,3 +164,47 @@ class VoiceCreateMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="active_channels").set(1)
+
+        try:
+            q_user_duration = self.exporter_db.get_user_channel_time() or []
+
+            for row in q_user_duration:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if row["user"] is not None and len(row["user"]) > 0:
+                    user = row["user"][0]
+                else:
+                    user = {
+                        "name": "Unknown",
+                    }
+                labels = {
+                    "guild_id": row['_id']["guild_id"],
+                    "user_id": user["user_id"],
+                    "username": user["name"],
+                }
+                self.user_duration.labels(**labels).set(row['total'])
+            self.errors.labels(source="user_duration").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels(source="user_duration").set(1)
+
+        # try:
+        #     q_user_history = self.exporter_db.get_user_channel_history() or []
+
+        #     for row in q_user_history:
+        #         user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+        #         if row["user"] is not None and len(row["user"]) > 0:
+        #             user = row["user"][0]
+        #         else:
+        #             user = {
+        #                 "name": "Unknown",
+        #             }
+        #         labels = {
+        #             "guild_id": row['_id']["guild_id"],
+        #             "user_id": user["user_id"],
+        #             "username": user["name"],
+        #         }
+        #         self.user_history.labels(**labels).set(row['total'])
+        #     self.errors.labels(source="user_history").set(0)
+        # except Exception as ex:
+        #     self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+        #     self.errors.labels(source="user_history").set(1)

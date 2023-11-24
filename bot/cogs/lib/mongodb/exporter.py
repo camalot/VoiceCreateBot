@@ -132,42 +132,6 @@ class ExporterMongoDatabase(Database):
             )
             return None
 
-    def get_user_channel_history(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.connection is None:
-                self.open()
-            return self.connection.user_channel_history.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": {"guild_id": "$guild_id", "user_id": "$user_id"},
-                            "total": {"$sum": 1},
-                        }
-                    },
-                    {
-                        "$lookup": {
-                            "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
-                            "pipeline": [
-                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
-                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
-                            ],
-                            "as": "user",
-                        }
-                    },
-                ]
-            )
-        except Exception as ex:
-            self.log(
-                guildId=0,
-                level=LogLevel.ERROR,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"{ex}",
-                stackTrace=traceback.format_exc(),
-            )
-            return None
-
     # get metric for the time each user has spent in voice channels
     def get_user_channel_time(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
