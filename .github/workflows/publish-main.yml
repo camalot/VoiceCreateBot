@@ -1,6 +1,6 @@
 ---
 name: Docker Build Publish
-on:
+"on":
   push:
     branches:
       - develop

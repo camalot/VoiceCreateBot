@@ -1,6 +1,6 @@
 ---
 name: Docker Build Publish Beta
-on:
+"on":
   push:
     branches:
       - '**'

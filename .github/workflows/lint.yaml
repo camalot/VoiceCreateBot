@@ -1,6 +1,6 @@
 ---
 name: Lint Code Base
-on:
+"on":
   push:
     branches:
       - "**" # All branches
@@ -20,14 +20,22 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Super-Linter
-        uses: super-linter/super-linter/slim@v5
+        uses: super-linter/super-linter/slim@v7
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_PYTHON_FLAKE8: false
           VALIDATE_PYTHON_MYPY: false
+          VALIDATE_PYTHON_PYINK: false
+          VALIDATE_CHECKOV: false
+          VALIDATE_YAML_PRETTIER: false
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          FIX_MARKDOWN_PRETTIER: false
+          FIX_YAML_PRETTIER: false
+          FIX_JSON_PRETTIER: false
