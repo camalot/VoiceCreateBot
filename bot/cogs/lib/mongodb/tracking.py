@@ -39,6 +39,10 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
+
     def track_command(self, guildId: int, userId: int, command: str, args: typing.Optional[dict] = None):
         _method = inspect.stack()[0][3]
         try:
@@ -60,3 +64,6 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

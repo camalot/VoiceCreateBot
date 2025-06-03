@@ -41,6 +41,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set_create_channel(self, guildId: int, voiceChannelId: int, categoryId: int, ownerId: int, useStage: bool):
         _method = inspect.stack()[0][3]
@@ -70,6 +73,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def track_channel_name(self, guildId: int, channelId: int, ownerId: int, name: str) -> None:
         _method = inspect.stack()[0][3]
@@ -94,6 +100,9 @@ class ChannelsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_tracked_channel_owner(self, guildId: int, voiceChannelId: int) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]
@@ -115,6 +124,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def update_tracked_channel_owner(
         self,
@@ -144,6 +156,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_channel_owner_id(self, guildId: int, channelId: typing.Optional[int]):
         _method = inspect.stack()[0][3]
@@ -187,6 +202,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_text_channel_id(self, guildId: int, voiceChannelId: int) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]
@@ -208,6 +226,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_voice_channel_id_from_text_channel(self, guildId: int, textChannelId: int):
         _method = inspect.stack()[0][3]
@@ -226,6 +247,9 @@ class ChannelsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_tracked_voice_channel_id_by_owner(self, guildId: int, ownerId: typing.Optional[int]) -> typing.List[int]:
         _method = inspect.stack()[0][3]
@@ -248,6 +272,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_tracked_voice_channel_ids(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -265,6 +292,9 @@ class ChannelsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def track_new_voice_channel(self, guildId: int, ownerId: int, voiceChannelId: int, channelName: str):
         _method = inspect.stack()[0][3]
@@ -289,6 +319,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def add_tracked_text_channel(self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int):
         _method = inspect.stack()[0][3]
@@ -313,6 +346,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def delete_tracked_text_channel(self, guildId: int, voiceChannelId: int, textChannelId: int):
         _method = inspect.stack()[0][3]
@@ -346,6 +382,9 @@ class ChannelsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def track_new_channel_set(
         self, guildId: int, ownerId: int, voiceChannelId: int, textChannelId: int, channelName: str
@@ -374,6 +413,9 @@ class ChannelsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def clean_tracked_channels(self, guildId: int, voiceChannelId: int, textChannelId: typing.Optional[int]):
         _method = inspect.stack()[0][3]
@@ -415,3 +457,6 @@ class ChannelsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

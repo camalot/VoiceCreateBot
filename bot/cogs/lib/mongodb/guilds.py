@@ -39,6 +39,9 @@ class GuildsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_use_stage_on_create(self, guildId: int, channelId: int, categoryId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -61,6 +64,9 @@ class GuildsDatabase(Database):
                 traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_guild_create_channels(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -81,6 +87,9 @@ class GuildsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_guild_create_channel_settings(self, guildId: int) -> typing.Optional[GuildCreateChannels]:
         _method = inspect.stack()[0][3]
@@ -109,6 +118,9 @@ class GuildsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def delete_guild_create_channel(self, guildId: int, channelId: int, categoryId: int):
         _method = inspect.stack()[0][3]
@@ -127,6 +139,9 @@ class GuildsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def track_guild(self, guild: discord.Guild):
         _method = inspect.stack()[0][3]
@@ -156,3 +171,6 @@ class GuildsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

@@ -41,6 +41,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set(self, settings: GuildSettings):
         _method = inspect.stack()[0][3]
@@ -65,6 +68,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_language(self, guildId: int) -> str:
         _method = inspect.stack()[0][3]
@@ -84,6 +90,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return "en-us"
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set_language(self, guildId: int, language: str) -> bool:
         _method = inspect.stack()[0][3]
@@ -106,6 +115,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set_default_role(self, guildId: int, roleId: int, categoryId: typing.Optional[int] = None, userId: typing.Optional[int] = None) -> bool:
         _method = inspect.stack()[0][3]
@@ -148,6 +160,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_default_role(self, guildId: int, categoryId: typing.Optional[int], userId: typing.Optional[int]) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]
@@ -181,6 +196,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def delete_admin_role(self, guildId: int, roleId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -206,6 +224,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def add_admin_role(self, guildId: int, roleId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -231,6 +252,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set_prefixes(self, guildId: int, prefixes: typing.List[str], append: bool = False):
         _method = inspect.stack()[0][3]
@@ -266,6 +290,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_prefixes(self, guildId: int) -> typing.List[str]:
         _method = inspect.stack()[0][3]
@@ -285,6 +312,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return DefaultPrefixes.VALUE
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def set_setting(self, guildId: int, key: str, value: typing.Any) -> bool:
         _method = inspect.stack()[0][3]
@@ -309,6 +339,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_guild_category_settings(self, guildId: int, categoryId: int) -> typing.Optional[GuildCategorySettings]:
         _method = inspect.stack()[0][3]
@@ -339,6 +372,9 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def update_guild_create_channel_settings(
         self, guildId: int, createChannelId: int, categoryId: int, ownerId: int, useStage: bool
@@ -367,3 +403,6 @@ class SettingsDatabase(DatabaseBase):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()

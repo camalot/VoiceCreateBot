@@ -37,6 +37,9 @@ class UserSettingsDatabase(Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def update_user_channel_name(self, guildId: int, userId: typing.Optional[int], channelName: typing.Optional[str]):
         _method = inspect.stack()[1][3]
@@ -58,6 +61,9 @@ class UserSettingsDatabase(Database):
                 f"{ex}",
                 traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def insert_user_settings(
             self,
@@ -102,3 +108,6 @@ class UserSettingsDatabase(Database):
                 f"{ex}",
                 traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

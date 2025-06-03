@@ -27,3 +27,6 @@ class LogsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

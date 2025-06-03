@@ -47,6 +47,9 @@ class UsersDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
 
     # track user join channel
     def track_user_join_channel(self, guild_id: int, user_id: int, channel_id: int):
@@ -154,3 +157,6 @@ class UsersDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()

@@ -57,6 +57,9 @@ class CategorySettingsDatabase(Database):
                 stackTrace=traceback.format_exc()
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def get_guild_category_settings(self, guildId: int, categoryId: int):
         _method = inspect.stack()[0][3]
@@ -88,3 +91,6 @@ class CategorySettingsDatabase(Database):
                 message=f"Failed to get guild category settings: {ex}",
                 stackTrace=traceback.format_exc()
             )
+        finally:
+            if self.connection is not None:
+                self.close()

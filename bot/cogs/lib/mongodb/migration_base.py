@@ -42,6 +42,9 @@ class MigrationBase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None:
+                self.close()
 
     def track_run(self, success: bool) -> None:
         _method = inspect.stack()[0][3]
@@ -60,3 +63,6 @@ class MigrationBase(Database):
                 message=f"Failed to track migration run: {ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None:
+                self.close()
