@@ -1,52 +1,59 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
 import traceback
-import sqlite3
-import sys
+import inspect
 import os
-import glob
-import typing
-from .lib import utils
-from .lib import settings
-from .lib import sqlite
-from .lib import mongo
-from .lib import logger
-from .lib import loglevel
-from .lib import dbprovider
-class Events(commands.Cog):
+
+import discord
+from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums.loglevel import LogLevel
+from discord.ext import commands
+
+
+class EventsCog(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
         self.bot = bot
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "events.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "events.__init__", f"SQLITE DB Path: {self.settings.db_path}")
-        self.log.debug(0, "events.__init__", f"Logger initialized with level {log_level.name}")
-
+        self.log.debug(
+            0, f"{self._module}.{self._class}.{_method}", f"Initialized with log level {log_level.name}"
+        )
 
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.log.debug(0, "events.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
-        self.log.debug(0, "events.on_ready", f"Setting Bot Presence '🔊 Creating Voice Channels Like A Boss 🔊'")
+        _method = inspect.stack()[0][3]
+        self.log.debug(
+            0,
+            f"{self._module}.{self._class}.{_method}",
+            f"Logged in as {self.bot.user.name}:{self.bot.user.id}",
+        )
+        self.log.debug(
+            0,
+            f"{self._module}.{self._class}.{_method}",
+            f"Setting Bot Presence '🔊 Creating Voice Channels Like A Boss 🔊'",
+        )
         await self.bot.change_presence(activity=discord.Game(name="🔊 Creating Voice Channels Like A Boss 🔊"))
 
     @commands.Cog.listener()
     async def on_disconnect(self):
-        self.log.debug(0, "events.on_disconnect", f"Bot Disconnected")
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Disconnected")
 
     @commands.Cog.listener()
     async def on_resumed(self):
-        self.log.debug(0, "events.on_resumed", f"Bot Session Resumed")
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Session Resumed")
 
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):
-        self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
+        _method = inspect.stack()[0][3]
+        self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
 
-def setup(bot):
-    bot.add_cog(Events(bot))
+async def setup(bot):
+    await bot.add_cog(EventsCog(bot))

@@ -1,0 +1,13 @@
+{
+  "threshold": 20,
+  "reporters": [
+    "consoleFull"
+  ],
+  "ignore": [
+    "**/__snapshots__/**",
+    "**/__pycache__/**",
+    "**/.vscode/**",
+    "**/.git/**"
+  ],
+  "absolute": true
+}

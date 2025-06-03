@@ -19,8 +19,6 @@ class Database():
 
     def clean_tracked_channels(self, guildId, voiceChannelId, textChannelId):
         pass
-    def clean_guild_user_settings(self, guildId):
-        pass
     def clean_user_settings(self, guildId, userId):
         pass
     def get_tracked_voice_channel_id_by_owner(self, guildId, ownerId):
@@ -48,10 +46,6 @@ class Database():
     def update_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
         pass
     def insert_guild_create_channel_settings(self, guildId, createChannelId, categoryId, ownerId, useStage):
-        pass
-    def set_guild_category_settings(self, guildId, categoryId, channelLimit, channelLocked, bitrate, defaultRole):
-        pass
-    def get_guild_category_settings(self, guildId, categoryId):
         pass
     def update_user_channel_name(self, guildId, userId, channelName):
         pass
@@ -99,10 +93,6 @@ class Database():
     def get_all_from_voice_channel_table(self):
         pass
     def get_all_guild_settings(self):
-        pass
-    def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
-        pass
-    def clear_log(self, guildId: int):
         pass
 
     def UPDATE_SCHEMA(self):
