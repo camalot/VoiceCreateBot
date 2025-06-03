@@ -1,6 +1,6 @@
 ---
 name: Docker Build Publish Beta
-on:
+"on":
   push:
     branches:
       - '**'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Build and Push GHCR
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           provenance: false
           push: true

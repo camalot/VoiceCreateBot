@@ -2,11 +2,11 @@
   "Verbose": false,
   "Debug": false,
   "IgnoreDefaults": false,
-  "SpacesAftertabs": false,
+  "SpacesAfterTabs": false,
   "NoColor": false,
   "exclude": [
-	".git",
-	".vscode"
+    ".git",
+    ".vscode"
   ],
   "AllowedContentTypes": [],
   "PassedFiles": [],
