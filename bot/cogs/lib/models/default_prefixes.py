@@ -1,10 +1,10 @@
 
 class DefaultPrefixes:
-  VALUE = [
-    ".voice ",
-    "?voice ",
-    "!voice ",
-    ".vcb ",
-    "?vcb ",
-    "!vcb "
-]
+    VALUE = [
+        ".voice ",
+        "?voice ",
+        "!voice ",
+        ".vcb ",
+        "?vcb ",
+        "!vcb "
+    ]

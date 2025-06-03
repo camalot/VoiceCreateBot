@@ -242,4 +242,3 @@ class VoiceCreateMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="exporter_db_close").set(1)
-        
