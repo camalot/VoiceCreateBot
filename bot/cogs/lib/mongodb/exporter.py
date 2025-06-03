@@ -31,9 +31,6 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()
 
     def get_current_channel_count(self) -> typing.Optional[typing.Iterable[dict[str, typing.Any]]]:
         """Get all current channels"""
@@ -53,9 +50,6 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()
 
     def get_user_settings_count(self) -> typing.Optional[typing.Iterable[dict[str, typing.Any]]]:
         """Get all user settings"""
@@ -75,9 +69,6 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()
 
     def get_tracked_channel_history(self) -> typing.Optional[typing.Iterable[dict[str, typing.Any]]]:
         """Get all tracked channels"""
@@ -115,9 +106,6 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()
 
     def get_logs(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -143,9 +131,6 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()
 
     # get metric for the time each user has spent in voice channels
     def get_user_channel_time(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
@@ -189,6 +174,3 @@ class ExporterMongoDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None:
-                self.close()

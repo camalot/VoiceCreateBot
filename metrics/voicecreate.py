@@ -122,6 +122,8 @@ class VoiceCreateMetrics:
 
         self.check_health()
 
+        self.exporter_db.open()
+
         # 0 is the "global" guild for anything that isn't guild aware
         known_guilds = ["0"]
         try:
@@ -234,3 +236,10 @@ class VoiceCreateMetrics:
         # except Exception as ex:
         #     self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
         #     self.errors.labels(source="user_history").set(1)
+
+        try:
+            self.exporter_db.close()
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels(source="exporter_db_close").set(1)
+        
