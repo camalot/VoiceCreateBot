@@ -1,6 +1,6 @@
 discord.py==2.5.2
 validators==0.35.0
-pymongo==4.13.0
+pymongo==4.13.1
 python-dotenv==1.1.0
 requests
 pytz
