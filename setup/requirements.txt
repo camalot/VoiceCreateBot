@@ -4,7 +4,7 @@ pymongo==4.13.0
 python-dotenv==1.1.0
 requests
 pytz
-aiohttp~=3.12.7
+aiohttp~=3.13.2
 discordhealthcheck~=0.1.1
 prometheus_client~=0.22.1
 pyyaml~=6.0
