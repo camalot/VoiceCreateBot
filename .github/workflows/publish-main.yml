@@ -18,7 +18,7 @@ jobs:
       app_version: ${{ steps.semvers.outputs.patch }} # set the app_version to be the PATCH updated version
       tag: ${{ steps.semvers.outputs.v_patch }} # set the tag to be the PATCH updated version.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       # Get the current tag
@@ -89,7 +89,7 @@ jobs:
       - version
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Merge develop -> main
         uses: devmasx/merge-branch@1.4.0
         with:
